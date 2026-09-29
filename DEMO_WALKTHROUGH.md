@@ -23,3 +23,5 @@
 `npm test`, `npm run build`, khởi động server, rồi chạy `node tests/api.mjs`, `node tests/smoke.mjs`, `node tests/design.mjs` và `node tests/workspace.mjs`.
 
 `TEST_URL` chỉ định địa chỉ server. `BROWSER_CHANNEL=msedge` cho phép dùng Edge đã cài thay Chromium của Playwright. `tests/capture.mjs` chụp tổng quan để rà soát. Ảnh và dữ liệu local không đưa vào Git.
+
+`node tests/motion.mjs` kiểm tra bộ icon tách nền, hiệu ứng số liệu và chế độ giảm chuyển động; đồng thời ghi video thao tác. Hiệu ứng tự tắt nếu hệ điều hành/trình duyệt bật giảm chuyển động, không ảnh hưởng số liệu hoặc chức năng.

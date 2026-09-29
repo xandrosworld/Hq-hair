@@ -1,5 +1,14 @@
 # HQ Hair — thiết kế demo Sale
 
+## Hoàn thiện chuyển động và icon
+
+- Bộ icon 3D riêng cho Tổng quan, Đơn hàng, Khách hàng, Doanh thu: sứ trắng, men navy, viền champagne. Tạo từng ảnh bằng built-in `image_gen`, giữ nền alpha; PNG 256px để tái sử dụng, WebP 128px để hiển thị. Tổng bốn WebP khoảng 24 KB. File và prompt nằm tại `public/assets/icons/README.md`.
+- Chỉ số đếm từ 0 khi vào vùng nhìn, chuyển mượt từ giá trị hiện tại khi đổi kỳ; giá trị cuối lấy trực tiếp từ dữ liệu. Người đọc màn hình nhận giá trị cuối, không phải từng khung hình.
+- Hiệu ứng vào màn hình theo nhóm, đường biểu đồ vẽ dần, điểm tháng di chuyển mượt; phản hồi hover ở icon, thẻ số liệu, bảng tiến độ, nút và hàng dữ liệu. Ánh sáng trên thẻ số liệu theo vị trí con trỏ, không dùng React state mỗi frame.
+- Modal, tin nhắn và thông báo có hiệu ứng xuất hiện; thông báo có vạch thời gian, tiến độ đơn và dấu xác nhận có chuyển động hữu hạn. Không chạy hiệu ứng nền vô hạn trên dashboard đã tải.
+- Chuyển động dùng CSS, Web Animations API, requestAnimationFrame và IntersectionObserver; không thêm thư viện runtime. Mọi observer, frame và listener được hủy khi rời màn hình. `prefers-reduced-motion` tắt chuyển động và đưa số liệu về kết quả cuối, kể cả đổi cài đặt khi đang chạy.
+- `tests/motion.mjs` kiểm tra alpha, ảnh tải, số trung gian/kết quả cuối, đổi kỳ, hover không thay số, giảm chuyển động trực tiếp và bố cục 1120/1280/1440/1920. Video kiểm tra lưu ngoài Git tại `screenshots/motion/video/`.
+
 ## Hướng thiết kế
 
 Không gian làm việc cho ngành tóc xuất khẩu: navy, nền sáng ấm, champagne, xanh nhẹ. Font Be Vietnam Pro tự lưu trên máy chủ, icon Phosphor nhất quán. Ảnh sản phẩm tạo riêng chỉ dùng để minh họa thương hiệu, không đại diện ảnh sản phẩm thật của HQ Hair.
