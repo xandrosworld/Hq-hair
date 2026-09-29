@@ -25,6 +25,7 @@ try{
  await page.waitForFunction(()=>document.querySelector('.metric-0 .animated-number>[aria-hidden]')?.dataset.animating==='false');
  assert.equal(await numeric(),Math.round(goal));
  assert.equal(await page.locator('nav .art-icon').count(),4);
+ await page.waitForFunction(()=>[...document.querySelectorAll('.art-icon')].every(n=>n.complete&&n.naturalWidth>0));
  assert(await page.locator('.art-icon').evaluateAll(nodes=>nodes.every(n=>n.complete&&n.naturalWidth>0)));
  await page.locator('.metric-0').hover();
  await page.waitForTimeout(450);
