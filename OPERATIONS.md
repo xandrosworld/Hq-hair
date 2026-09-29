@@ -46,3 +46,5 @@ Session 8 giờ tuyệt đối, cookie HttpOnly/Secure/SameSite Strict; token ph
 Chỉ các route quản lý được đọc audit/backup/toàn bộ khách-đơn. Sale bị lọc dữ liệu tại server và kiểm tra lại quyền trước mỗi ghi. Chuyển phụ trách/khóa tài khoản có hiệu lực ở yêu cầu tiếp theo. Giao diện có thể còn dữ liệu đã tải trước đó; không thể thu hồi các bản đã được người dùng hợp lệ tải xuống trước khi đổi quyền.
 
 Nguồn kỹ thuật: [Node SQLite](https://nodejs.org/docs/latest-v22.x/api/sqlite.html), [Node crypto](https://nodejs.org/docs/latest-v22.x/api/crypto.html).
+
+Ảnh chat lưu trong bảng `chat_images` của database tương ứng (demo/workspace), tối đa 4 ảnh x 5 MiB mỗi tin. Cần theo dõi dung lượng volume và backup khi lượng ảnh tăng; ảnh không đi vào JSON danh sách đơn. Route mở ảnh kiểm tra phiên và quyền hiện tại trên đơn, kể cả sau chuyển người phụ trách.

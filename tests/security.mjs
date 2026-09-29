@@ -58,6 +58,17 @@ try{
  await a.call(`/orders/${id}/action`,{version:order.version,action:'payment',payment:{...payment,reference:'TX-002',file:'data:image/png;base64,ZmFrZQ=='}},{status:400});
  state=await a.call(`/orders/${id}/action`,{version:order.version,action:'message',text:'Internal message'});assert.equal(state.orders[0].messages[0].authorId,users.find(u=>u.email==='sale-a@example.com').id);
  assert.equal((await b.call('/state')).orders.length,0);
+ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=';
+ order=(await a.call('/state')).orders[0];
+ await a.call(`/orders/${id}/action`,{version:order.version,action:'message',images:[{name:'fake.png',data:'data:image/png;base64,ZmFrZWZha2VmYWtl'}]},{status:400});
+ await a.call(`/orders/${id}/action`,{version:order.version,action:'message',images:Array.from({length:5},()=>({name:'a.png',data:png}))},{status:400});
+ const imageKey=randomUUID(),imageBody={version:order.version,action:'message',text:'',images:[{name:'hair.png',data:png}]};
+ state=await a.call(`/orders/${id}/action`,imageBody,{key:imageKey});
+ state=await a.call(`/orders/${id}/action`,imageBody,{key:imageKey});
+ const imageId=state.orders[0].messages.at(-1).images[0].id,imagePath=`/orders/${id}/images/${imageId}`;
+ assert.equal(state.orders[0].messages.filter(m=>m.images?.length).length,1);
+ const imageResponse=await fetch(base+imagePath,{headers:{Cookie:a.cookie}});assert.equal(imageResponse.status,200);assert.equal(imageResponse.headers.get('content-type'),'image/png');assert.equal(Buffer.from(await imageResponse.arrayBuffer()).toString('base64'),png.split(',')[1]);
+ await b.call(imagePath,undefined,{status:404});await anonymous.call(imagePath,undefined,{status:401});
  await a.call('/catalog',{version:0,products:[]},{status:403});
  const product={name:'Approved test item',unit:'Gram',kind:'base',price:7,spec:'Black'};
  state=await owner.call('/catalog',{version:0,products:[product]});assert.equal(state.catalogVersion,1);
@@ -66,7 +77,7 @@ try{
  assert.equal((await a.call('/state')).orders[0].items[0].price,8);
  const beforeAssign=(await owner.call('/state')).customers[0];
  state=await owner.call('/assign',{id:c.id,version:beforeAssign.version,ownerId:users.find(u=>u.email==='sale-b@example.com').id});
- assert.equal((await a.call('/state')).orders.length,0);assert.equal((await b.call('/state')).orders.length,1);
+ assert.equal((await a.call('/state')).orders.length,0);assert.equal((await b.call('/state')).orders.length,1);await a.call(imagePath,undefined,{status:404});assert.equal((await fetch(base+imagePath,{headers:{Cookie:b.cookie}})).status,200);
  // Retried requests must not replay data from a previous permission scope.
  await a.call('/orders',draft,{key,status:404});
  assert.equal((await a.call('/customers',customer,{key:customerKey})).customers.length,0);
@@ -89,7 +100,7 @@ try{
  const copies=readdirSync(path.join(dir,'backups')).filter(n=>n.endsWith('.sqlite')).sort();assert.ok(copies.length>=1);
  const copy=new DatabaseSync(path.join(dir,'backups',copies.at(-1)),{readOnly:true});assert.equal(copy.prepare('PRAGMA integrity_check').get().integrity_check,'ok');assert.equal(JSON.parse(copy.prepare('SELECT data FROM workspace').get().data).orders.length,1);copy.close();
  const restoreDir=path.join(dir,'restore-check');const restored=spawnSync(process.execPath,['scripts/restore-workspace.mjs',path.join(dir,'backups',copies.at(-1)),restoreDir],{encoding:'utf8'});assert.equal(restored.status,0,restored.stderr);
- const restoredDb=new DatabaseSync(path.join(restoreDir,'workspace.sqlite'),{readOnly:true});assert.equal(restoredDb.prepare('SELECT COUNT(*) n FROM auth_sessions').get().n,0);assert.equal(JSON.parse(restoredDb.prepare('SELECT data FROM workspace').get().data).orders.length,1);restoredDb.close();
+ const restoredDb=new DatabaseSync(path.join(restoreDir,'workspace.sqlite'),{readOnly:true});assert.equal(restoredDb.prepare('SELECT COUNT(*) n FROM auth_sessions').get().n,0);assert.equal(JSON.parse(restoredDb.prepare('SELECT data FROM workspace').get().data).orders.length,1);assert.equal(restoredDb.prepare('SELECT COUNT(*) n FROM chat_images').get().n,1);restoredDb.close();
  await a.call('/backup-download',undefined,{status:403});const exported=await fetch(base+'/backup-download',{headers:{Cookie:owner.cookie}});assert.equal(exported.status,200);assert.match(exported.headers.get('content-disposition'),/attachment/);assert.equal(Buffer.from(await exported.arrayBuffer()).subarray(0,15).toString(),'SQLite format 3');
  await b.call('/logout',{});await b.call('/state',undefined,{status:401});
  console.log('PASS: authentication, mandatory password change, CSRF, ownership, role denial, shared data, atomic versions, idempotent retries, permission changes, immutable catalog snapshots, pending receipts, file validation, audit, revocation, restart persistence and backup integrity.');

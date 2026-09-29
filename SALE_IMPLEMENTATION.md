@@ -49,3 +49,7 @@ Xác nhận đặc tả và ngày bắt đầu theo khoản 3.2 khi đủ đầu
 - `node tests/workspace-auth.mjs`: trình duyệt đi hết login/đổi mật khẩu/cấp tài khoản/bảng giá/tạo khách/tạo đơn/gửi/chat/reload. Mặc định dùng Edge, server riêng.
 - `node tests/api.mjs`, `smoke.mjs`, `design.mjs`, `workspace.mjs`, `motion.mjs`: hồi quy demo hiện tại. Đặt TEST_URL và BROWSER_CHANNEL nếu cần.
 - Chưa nghiệm thu bằng dữ liệu đối chiếu của khách, chưa kiểm thử tải lớn hoặc toàn luồng 3 bộ phận.
+
+## Bổ sung chat ảnh theo yêu cầu khách
+
+Chat mỗi đơn hỗ trợ gửi chữ, ảnh hoặc cả hai: JPG/PNG/WebP, tối đa 5 MiB/ảnh và 4 ảnh/tin. Có xem trước, bỏ ảnh đã chọn, mở ảnh lớn và giữ nội dung khi gửi lỗi. Máy chủ kiểm tra loại, dung lượng, chữ ký định dạng và quyền theo đơn khi gửi/mở ảnh; không có URL ảnh công khai. Ảnh lưu dạng BLOB trong bảng riêng cùng database, đi theo sao lưu và khôi phục. Danh sách tin nhắn chỉ tải metadata; trình duyệt tải ảnh khi cần hiển thị. Các giới hạn này là cấu hình triển khai ban đầu, cần đưa vào đặc tả xác nhận.

@@ -1,4 +1,5 @@
 import express from 'express';
+import {setupChatImages} from './chat-images.js';
 import {DatabaseSync,backup} from 'node:sqlite';
 import {randomBytes,randomUUID,scrypt,timingSafeEqual,createHash} from 'node:crypto';
 import {promisify} from 'node:util';
@@ -35,6 +36,7 @@ export async function createWorkspace(dir){
  if(!db.prepare('SELECT id FROM users LIMIT 1').get()&&process.env.HQ_ADMIN_EMAIL&&process.env.HQ_ADMIN_PASSWORD){
   db.prepare('INSERT INTO users VALUES (?,?,?,?,?,?,1,1)').run(randomUUID(),process.env.HQ_ADMIN_EMAIL.toLowerCase(),process.env.HQ_ADMIN_NAME||'Quản lý HQ Hair','HQ-ADMIN','manager',await hashPassword(process.env.HQ_ADMIN_PASSWORD));
  }
+ setupChatImages(db);
  const dummy=await hashPassword(randomBytes(24).toString('hex'));
  const router=express.Router();
  router.use((req,res,next)=>{res.set('Cache-Control','no-store');next()});
@@ -134,7 +136,7 @@ export async function createWorkspace(dir){
  await makeBackup();const timer=setInterval(makeBackup,86400000);timer.unref();
  router.use((req,res,next)=>{
   if(!['sale','manager'].includes(req.user.role))return res.status(403).json({error:'Phân hệ này dành cho Sale và quản lý. Phân hệ của bạn sẽ được mở ở giai đoạn tương ứng.'});
-  req.data=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
+  req.imageDb=db;req.data=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
   const beforeCustomers=new Map(req.data.customers.map(c=>[c.id,JSON.stringify(c)]));
   const beforeCatalog=JSON.stringify(req.data.catalog);
   req.canRead=record=>!!record&&(req.user.role==='manager'||record.ownerId===req.user.id);
