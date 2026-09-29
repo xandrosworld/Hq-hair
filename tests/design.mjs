@@ -41,6 +41,7 @@ try{
  await page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true}).last().click();
  await shot('08-payment-shipping');
  await page.locator('nav').getByRole('button',{name:'Doanh thu & công nợ',exact:true}).click();
+ await page.getByRole('dialog',{name:'Đơn đang có thay đổi chưa lưu'}).getByRole('button',{name:'Rời và bỏ thay đổi'}).click();
  await shot('09-revenue');
  await page.locator('nav').getByRole('button',{name:'Tổng quan',exact:true}).click();
  for(const width of [1280,1920]){

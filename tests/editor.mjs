@@ -1,0 +1,56 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {mkdirSync} from 'node:fs';
+const browser=await chromium.launch(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{});
+const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+mkdirSync('screenshots/final',{recursive:true});
+try{
+ await page.goto(process.env.TEST_URL||'http://127.0.0.1:3100');
+ await page.getByRole('heading',{name:'Tổng quan kinh doanh'}).waitFor();
+ await page.screenshot({path:'screenshots/final/dashboard.png',fullPage:true});
+ assert((await page.locator('.priority-panel').boundingBox()).y<800,'Priority panel visible on first screen');
+ await page.getByRole('button',{name:'Tạo đơn hàng',exact:true}).first().click();
+ await page.getByRole('button',{name:'Lưu bản nháp',exact:true}).first().click();
+ await page.getByText('Chọn khách hàng trước khi lưu đơn.',{exact:true}).waitFor();
+ assert.equal(await page.getByLabel('Khách hàng',{exact:true}).getAttribute('aria-invalid'),'true');
+ await page.getByLabel('Khách hàng',{exact:true}).selectOption('HQ-JD-1');
+ await page.getByLabel('Số lượng 1',{exact:true}).fill('0');
+ await page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true}).last().click();
+ await page.getByRole('button',{name:'Gửi yêu cầu duyệt',exact:true}).click();
+ await page.getByText('Chọn ngày giao dự kiến.',{exact:true}).waitFor();
+ assert.equal(await page.getByLabel('Số lượng 1',{exact:true}).getAttribute('aria-invalid'),'true');
+ await page.screenshot({path:'screenshots/final/validation.png',fullPage:true});
+ await page.getByLabel('Số lượng 1',{exact:true}).fill('200');
+ await page.getByLabel('Dự kiến giao hàng',{exact:true}).fill('2026-12-20');
+ await page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true}).last().click();
+ await page.getByLabel('Số điện thoại',{exact:true}).fill('');
+ await page.getByLabel('Giảm giá (USD)',{exact:true}).fill('50');
+ await page.getByRole('button',{name:'Gửi yêu cầu duyệt',exact:true}).click();
+ await page.getByText('Nhập số điện thoại.',{exact:true}).waitFor();
+ await page.getByLabel('Số điện thoại',{exact:true}).fill('+1 202 555 0111');
+ assert.match(await page.locator('.brief-total').innerText(),/1,550\.00/);
+ await page.locator('nav').getByRole('button',{name:'Khách hàng',exact:true}).click();
+ await page.getByRole('dialog',{name:'Đơn đang có thay đổi chưa lưu'}).waitFor();
+ await page.screenshot({path:'screenshots/final/draft-guard.png'});
+ await page.getByRole('button',{name:'Tiếp tục chỉnh sửa',exact:true}).click();
+ assert.equal(await page.getByLabel('Giảm giá (USD)',{exact:true}).inputValue(),'50');
+ assert(await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;}),'Tab closing is guarded');
+ await page.getByRole('button',{name:'Lưu bản nháp',exact:true}).first().click();
+ await page.getByRole('heading',{name:/HQ-JD-1-/}).waitFor();
+ await page.getByRole('button',{name:'Chỉnh sửa',exact:true}).click();
+ await page.getByLabel('Ghi chú đơn hàng',{exact:true}).fill('Unsaved note');
+ await page.locator('nav').getByRole('button',{name:'Tổng quan',exact:true}).click();
+ await page.getByRole('button',{name:'Rời và bỏ thay đổi',exact:true}).click();
+ await page.getByRole('heading',{name:'Tổng quan kinh doanh'}).waitFor();
+ await page.getByRole('button',{name:'Tạo đơn hàng',exact:true}).first().click();
+ await page.getByLabel('Khách hàng',{exact:true}).selectOption('HQ-JD-2');
+ await page.getByRole('button',{name:'Tạo đơn hàng',exact:true}).first().click();
+ await page.getByRole('button',{name:'Rời và bỏ thay đổi',exact:true}).click();
+ assert.equal(await page.getByLabel('Khách hàng',{exact:true}).inputValue(),'','A new order starts clean after confirmed discard');
+ for(const width of [1120,1280,1440,1920]){
+  await page.setViewportSize({width,height:1000});
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),`Editor overflow ${width}`);
+ }
+ assert.deepEqual(errors,[]);console.log('PASS: field validation, automatic error step/focus, live summary, navigation/tab guard, keep/discard changes, successful save, fresh new order, desktop layout.');
+}finally{await browser.close()}

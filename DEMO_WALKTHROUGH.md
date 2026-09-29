@@ -25,3 +25,11 @@
 `TEST_URL` chỉ định địa chỉ server. `BROWSER_CHANNEL=msedge` cho phép dùng Edge đã cài thay Chromium của Playwright. `tests/capture.mjs` chụp tổng quan để rà soát. Ảnh và dữ liệu local không đưa vào Git.
 
 `node tests/motion.mjs` kiểm tra bộ icon tách nền, hiệu ứng số liệu và chế độ giảm chuyển động; đồng thời ghi video thao tác. Hiệu ứng tự tắt nếu hệ điều hành/trình duyệt bật giảm chuyển động, không ảnh hưởng số liệu hoặc chức năng.
+
+## Hoàn thiện trải nghiệm soạn đơn
+
+- Khối tóm tắt luôn phản ánh khách hàng, mức độ hoàn thiện và tổng tiền đang soạn; bấm từng mục để chuyển tới bước tương ứng.
+- Khi gửi duyệt, lỗi hiển thị ngay tại trường và đưa con trỏ tới nơi cần sửa. Có thể lưu bản nháp khi chưa đủ thông tin giao hàng.
+- Khi còn thay đổi chưa lưu, chuyển trang cần chọn tiếp tục sửa hoặc bỏ thay đổi. Đóng/tải lại tab cũng có cảnh báo của trình duyệt.
+- Sau khi gửi duyệt, dùng nút bổ sung chứng từ hoặc xem invoice ngay trên đầu chi tiết đơn.
+- `node tests/editor.mjs` kiểm tra lỗi nhập liệu, tổng tiền, lưu nháp, bảo vệ thay đổi và tạo mới liên tiếp.
