@@ -1,0 +1,10 @@
+import {chromium} from '@playwright/test';
+import {mkdirSync} from 'node:fs';
+const browser=await chromium.launch(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{});
+const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
+mkdirSync('screenshots/review',{recursive:true});
+await page.goto(process.env.TEST_URL||'http://127.0.0.1:3100');
+await page.getByRole('heading',{name:'Tổng quan kinh doanh'}).waitFor();
+await page.evaluate(()=>document.fonts.ready);
+await page.screenshot({path:'screenshots/review/dashboard.png',fullPage:true});
+await browser.close();

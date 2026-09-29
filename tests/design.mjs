@@ -1,7 +1,7 @@
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {mkdirSync} from 'node:fs';
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,...(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{})});
 const page=await browser.newPage({viewport:{width:1440,height:1050},reducedMotion:'reduce'});
 const base=process.env.TEST_URL||'http://127.0.0.1:3000';
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -22,7 +22,7 @@ try{
  await page.getByRole('dialog',{name:'Tìm kiếm nhanh'}).waitFor();
  await page.getByLabel('Tìm kiếm toàn hệ thống').fill('HQ-JD-3-1');
  await shot('02-search');
- await page.getByRole('button',{name:/HQ-JD-3-1/}).click();
+ await page.getByRole('dialog',{name:'Tìm kiếm nhanh'}).getByRole('button',{name:/HQ-JD-3-1/}).click();
  await page.getByRole('heading',{name:/HQ-JD-3-1/}).waitFor();
  await shot('03-detail');
  await page.getByRole('button',{name:'Việc cần chú ý'}).click();

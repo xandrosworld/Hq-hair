@@ -1,0 +1,53 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {mkdirSync} from 'node:fs';
+const browser=await chromium.launch(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{});
+const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+mkdirSync('screenshots/workspace',{recursive:true});
+const shot=async name=>page.screenshot({path:`screenshots/workspace/${name}.png`,fullPage:true});
+try{
+ await page.goto(process.env.TEST_URL||'http://127.0.0.1:3100');
+ await page.getByRole('heading',{name:'Tổng quan kinh doanh'}).waitFor();
+ await page.evaluate(()=>document.fonts.ready);
+ await page.getByRole('button',{name:/Bản nháp 01/}).click();
+ assert.equal(await page.locator('.recent-panel tbody tr').count(),1);
+ await page.locator('.recent-panel').getByRole('button',{name:'HQ-JD-5-1',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Khám phá demo'}).click();
+ await shot('01-demo-guide');
+ assert(await page.locator('.shell').evaluate(el=>el.inert));
+ await page.getByRole('dialog').getByRole('button',{name:/Kiểm tra hàng từ Xưởng/}).click();
+ await page.getByRole('heading',{name:/HQ-JD-3-1/}).waitFor();
+ assert.equal(await page.locator('.order-snapshot').count(),1);
+ await shot('02-sale-check');
+ await page.locator('nav').getByRole('button',{name:/Đơn hàng/}).click();
+ await page.getByRole('button',{name:'Bảng tiến độ',exact:true}).click();
+ assert.equal(await page.locator('.board-card').count(),19);
+ await shot('03-board');
+ await page.getByLabel('Tìm đơn hàng').fill('HQ-JD-3-1');
+ assert.equal(await page.locator('.board-card').count(),1);
+ await page.locator('.board-card').click();
+ await page.getByRole('heading',{name:/HQ-JD-3-1/}).waitFor();
+ await page.getByRole('button',{name:'Yêu cầu sửa lại',exact:true}).click();
+ await page.getByLabel('Nội dung yêu cầu').fill('Kiểm tra lại màu #60 theo yêu cầu của khách.');
+ await page.getByRole('button',{name:'Gửi yêu cầu',exact:true}).click();
+ await page.getByRole('dialog').waitFor({state:'hidden'});
+ await page.getByRole('heading',{name:/HQ-JD-3-1/}).waitFor();
+ assert.match(await page.locator('.timeline-step.current').innerText(),/Sản xuất/);
+ await page.getByRole('button',{name:'Xem toàn bộ nhật ký'}).click();
+ await page.locator('.audit').getByText('Kiểm tra lại màu #60 theo yêu cầu của khách.').waitFor();
+ for(const width of [1120,1280,1440,1920]){
+  await page.setViewportSize({width,height:1000});
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),`Detail overflow ${width}`);
+  await page.locator('nav').getByRole('button',{name:'Tổng quan',exact:true}).click();
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),`Dashboard overflow ${width}`);
+  const rects=await page.locator('.welcome-actions,.welcome-banner').evaluateAll(els=>els.map(e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom}}));
+  assert(rects[1].bottom<=rects[0].bottom,'Hero actions clipped');
+  await page.locator('nav').getByRole('button',{name:/Đơn hàng/}).click();
+  await page.getByRole('button',{name:'Bảng tiến độ',exact:true}).click();
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),`Board overflow ${width}`);
+  await page.locator('.board-card').filter({hasText:'HQ-JD-3-1'}).click();
+ }
+ assert.deepEqual(errors,[]);
+ console.log('PASS: pipeline filtering, guided navigation, inert modal background, board counts/search/navigation, Sale rework history, desktop overflow 1120/1280/1440/1920.');
+}finally{await browser.close()}
