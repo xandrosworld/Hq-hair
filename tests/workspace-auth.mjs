@@ -1,0 +1,37 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {mkdtempSync,mkdirSync,rmSync} from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+const dir=mkdtempSync(path.join(os.tmpdir(),'hq-auth-ui-')),base='http://127.0.0.1:3198';
+const server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:'3198',DATA_DIR:dir,NODE_ENV:'test',HQ_ADMIN_EMAIL:'owner@example.com',HQ_ADMIN_PASSWORD:'Initial-Password-2026'},stdio:'ignore'});
+let browser;
+try{
+ for(let i=0;i<100;i++){try{if((await fetch(base+'/api/health')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
+ browser=await chromium.launch({headless:true,channel:process.env.BROWSER_CHANNEL||'msedge'});
+ const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ mkdirSync('screenshots/workspace',{recursive:true});
+ await page.goto(base+'/workspace');await page.getByRole('heading',{name:'Chào mừng trở lại'}).waitFor();
+ await page.screenshot({path:'screenshots/workspace/login.png',fullPage:true});
+ await page.getByLabel('Email',{exact:true}).fill('owner@example.com');await page.getByLabel('Mật khẩu',{exact:true}).fill('Initial-Password-2026');await page.getByRole('button',{name:'Vào không gian làm việc'}).click();
+ await page.getByLabel('Mật khẩu ban đầu',{exact:true}).fill('Initial-Password-2026');await page.getByLabel('Mật khẩu mới · tối thiểu 12 ký tự').fill('Owner-Personal-Password');await page.getByLabel('Nhập lại mật khẩu mới').fill('Owner-Personal-Password');await page.getByRole('button',{name:'Lưu mật khẩu & tiếp tục'}).click();
+ await page.getByRole('heading',{name:'Tổng quan kinh doanh'}).waitFor();assert.equal(await page.getByText('Judy',{exact:true}).count(),0);
+ await page.getByRole('button',{name:'Tài khoản & đội ngũ',exact:true}).first().click();await page.getByRole('heading',{name:'Tài khoản & đội ngũ'}).waitFor();
+ await page.getByLabel('Họ và tên',{exact:true}).fill('Sale UI');await page.getByLabel('Email tài khoản').fill('sale@example.com');await page.getByLabel('Mật khẩu ban đầu',{exact:true}).fill('Sale-Initial-Password');await page.getByRole('button',{name:'Cấp tài khoản',exact:true}).click();await page.getByText('sale@example.com',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'Thêm sản phẩm',exact:true}).click();await page.getByLabel('Tên sản phẩm 1',{exact:true}).fill('HQ Bulk Hair');await page.getByLabel('Quy cách 1').fill('24 inches · Black');await page.getByLabel('Giá sản phẩm 1').fill('8');await page.getByRole('button',{name:'Lưu bảng giá',exact:true}).click();await page.getByText('Đã lưu bảng giá. Giá trên đơn đã lưu được giữ nguyên.').waitFor();
+ await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:'screenshots/workspace/team.png',fullPage:true});
+ await page.getByRole('button',{name:'Đăng xuất',exact:true}).click();await page.getByRole('heading',{name:'Chào mừng trở lại'}).waitFor();
+ await page.getByLabel('Email',{exact:true}).fill('sale@example.com');await page.getByLabel('Mật khẩu',{exact:true}).fill('Sale-Initial-Password');await page.getByRole('button',{name:'Vào không gian làm việc'}).click();await page.getByLabel('Mật khẩu ban đầu',{exact:true}).fill('Sale-Initial-Password');await page.getByLabel('Mật khẩu mới · tối thiểu 12 ký tự').fill('Sale-Personal-Password');await page.getByLabel('Nhập lại mật khẩu mới').fill('Sale-Personal-Password');await page.getByRole('button',{name:'Lưu mật khẩu & tiếp tục'}).click();
+ await page.getByRole('heading',{name:'Tổng quan kinh doanh'}).waitFor();await page.getByRole('button',{name:'Khách hàng',exact:true}).click();await page.getByRole('button',{name:'Tạo khách hàng',exact:true}).click();
+ await page.getByLabel('Tên khách hàng',{exact:true}).fill('Workspace Buyer');await page.getByLabel('Phone / WhatsApp').fill('+123456789');await page.getByLabel('Social / Website hoặc WhatsApp').fill('https://example.com');await page.getByRole('button',{name:'Dùng thông tin khách hàng'}).click();await page.getByLabel('Địa chỉ giao hàng').fill('123 Example Street');let lostReplies=0;await page.route('**/api/work/customers',async route=>{if(lostReplies<2){lostReplies++;await route.fetch();await route.abort('failed')}else await route.continue()});await page.getByRole('button',{name:'Lưu khách hàng',exact:true}).click();await page.getByText(/Mất kết nối. Nội dung vẫn được giữ/).waitFor();await page.getByRole('button',{name:'Lưu khách hàng',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+ await page.getByRole('button',{name:'Workspace Buyer',exact:true}).click();await page.getByRole('button',{name:'Tạo đơn',exact:true}).click();await page.getByLabel('Dự kiến giao hàng').fill('2027-01-20');await page.getByRole('button',{name:'Thêm sản phẩm',exact:true}).first().click();await page.getByLabel('Số lượng 1').fill('200');assert.equal(await page.getByLabel('Đơn giá 1').inputValue(),'8');
+ await page.getByRole('button',{name:'Lưu bản nháp',exact:true}).first().click();await page.getByRole('heading',{name:/HQ-S002-1-1/}).waitFor();await page.getByRole('button',{name:'Chỉnh sửa',exact:true}).click();await page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true}).last().click();await page.getByRole('button',{name:'Gửi yêu cầu duyệt'}).click();await page.getByRole('heading',{name:'Tiến độ đơn hàng'}).waitFor();
+ await page.getByLabel('Nội dung trao đổi').fill('Chờ xác nhận thông số.');await page.getByRole('button',{name:'Gửi',exact:true}).click();await page.getByText('Chờ xác nhận thông số.',{exact:true}).waitFor();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:'screenshots/workspace/order.png',fullPage:true});
+ await page.reload();await page.getByRole('heading',{name:'Tổng quan kinh doanh'}).waitFor();await page.locator('nav').getByRole('button',{name:/Đơn hàng/}).click();await page.getByRole('button',{name:'HQ-S002-1-1',exact:true}).click();await page.getByText('Chờ xác nhận thông số.',{exact:true}).waitFor();
+ for(const width of [1120,1440,1920]){await page.setViewportSize({width,height:1000});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1))}
+ assert.deepEqual(errors,[]);console.log('PASS: browser login, forced password change, team creation, catalog entry, logout, Sale account, customer/order creation, product price, lost-response retry without duplicates, submit lock, named chat, reload persistence, desktop layout.');
+}finally{
+ await browser?.close();const stopped=new Promise(r=>server.once('exit',r));if(server.exitCode===null){server.kill();await stopped}
+ if(!path.resolve(dir).startsWith(path.resolve(os.tmpdir())+path.sep))throw Error('Unsafe cleanup');rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:200});
+}

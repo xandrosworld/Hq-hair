@@ -1,6 +1,10 @@
-# HQ Hair — Demo Sale
+# HQ Hair — Sale Workspace & Demo
 
 Bản demo desktop cho buổi giới thiệu HQ Hair, dựa trên tài liệu Sale và trao đổi ngày 28/09/2026. Không phải bản nghiệm thu hệ thống 3 bộ phận.
+
+## Không gian làm việc có đăng nhập
+
+Mở `/workspace` để dùng tài khoản riêng và dữ liệu dùng chung. Xem [trạng thái theo hợp đồng](SALE_IMPLEMENTATION.md) và [hướng dẫn vận hành](OPERATIONS.md). Link gốc `/` vẫn là demo riêng theo trình duyệt; các giới hạn demo dưới đây áp dụng cho link đó. Phần công thức, bảng giá, mẫu invoice và quyền chi tiết đang chờ HQ Hair xác nhận.
 
 ## Chạy
 

@@ -1,0 +1,96 @@
+import assert from 'node:assert/strict';
+import {spawn,spawnSync} from 'node:child_process';
+import {mkdtempSync,rmSync,readdirSync} from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {DatabaseSync,backup} from 'node:sqlite';
+import {randomUUID} from 'node:crypto';
+const dir=mkdtempSync(path.join(os.tmpdir(),'hq-security-')),port=3197,base=`http://127.0.0.1:${port}/api/work`;
+let server,logs='';
+async function start(){server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:String(port),DATA_DIR:dir,NODE_ENV:'test',HQ_ADMIN_EMAIL:'owner@example.com',HQ_ADMIN_PASSWORD:'Initial-Password-2026'},stdio:['ignore','pipe','pipe']});server.stdout.on('data',s=>logs+=s);server.stderr.on('data',s=>logs+=s);for(let i=0;i<100;i++){try{if((await fetch(base.replace('/work','/health'))).ok)return}catch{}await new Promise(r=>setTimeout(r,100))}throw Error(logs)}
+async function stop(){const done=new Promise(r=>server.once('exit',r));server.kill();await done}
+function client(){return {cookie:'',csrf:'',async call(url,body,{status=200,key=randomUUID(),csrf=this.csrf}={}){const r=await fetch(base+url,{method:body?'POST':'GET',headers:{Cookie:this.cookie,...(body?{'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':key}:{})},body:body?JSON.stringify(body):undefined});const v=await r.json();assert.equal(r.status,status,`${url}: ${JSON.stringify(v)}`);const c=r.headers.get('set-cookie');if(c)this.cookie=c.split(';')[0];if(v.csrf)this.csrf=v.csrf;return v}}}
+const owner=client(),a=client(),b=client(),accountant=client(),anonymous=client();
+const customer={name:'Client A',company:'Salon A',phone:'+123456789',email:'buyer@example.com',country:'United States',group:'Salon',address:'123 Example St',recipient:'Buyer',recipientPhone:'+123456789',social:'https://example.com',source:'Website',purchase:'Đơn đầu tiên'};
+try{
+ await start();
+ await anonymous.call('/state',undefined,{status:401});
+ await owner.call('/login',{email:'owner@example.com',password:'wrong'},{status:401});
+ await owner.call('/login',{email:'owner@example.com',password:'Initial-Password-2026'});
+ await owner.call('/state',undefined,{status:403});
+ await owner.call('/password',{currentPassword:'Initial-Password-2026',password:'Owner-New-Password-2026'});
+ let users=await owner.call('/users',{name:'Sale A',email:'sale-a@example.com',role:'sale',password:'Sale-Initial-Password'});
+ users=await owner.call('/users',{name:'Sale B',email:'sale-b@example.com',role:'sale',password:'Sale-Initial-Password'});
+ users=await owner.call('/users',{name:'Accountant',email:'accounting@example.com',role:'accounting',password:'Sale-Initial-Password'});
+ for(const [c,email] of [[a,'sale-a@example.com'],[b,'sale-b@example.com'],[accountant,'accounting@example.com']]){await c.call('/login',{email,password:'Sale-Initial-Password'});await c.call('/password',{currentPassword:'Sale-Initial-Password',password:'Personal-New-Password'})}
+ await accountant.call('/state',undefined,{status:403});
+ await a.call('/users',undefined,{status:403});
+ await a.call('/reset',{}, {status:403});
+ await a.call('/customers',customer,{status:403,csrf:'bad'});
+ const customerKey=randomUUID();let state=await a.call('/customers',customer,{key:customerKey});
+ const c=state.customers[0];assert.equal(c.sale,'Sale A');assert.equal(state.customers.length,1);
+ assert.equal((await a.call('/customers',customer,{key:customerKey})).customers.length,1);
+ await a.call('/customers',{...customer,name:'Different'},{key:customerKey,status:409});
+ assert.equal((await b.call('/state')).customers.length,0);
+ assert.equal((await owner.call('/state')).customers.length,1);
+ await b.call('/customers',{...c,name:'Unauthorized'},{status:404});
+ await a.call('/customers',{...c,name:'Changed'});
+ await a.call('/customers',{...c,name:'Stale'},{status:409});
+ const draft={customerId:c.id,date:'2026-09-29',due:'2026-10-10',items:[{name:'Bulk Hair',spec:'24 inches',kind:'base',unit:'Gram',price:8,qty:100}],discount:0,shippingFee:30,paymentFee:5,payments:[],recipient:'Buyer',phone:'+12345678',email:'buyer@example.com',country:'United States',address:'Example St'};
+ const key=randomUUID();let saved=await a.call('/orders',draft,{key});const id=saved.id;
+ assert.equal((await a.call('/orders',draft,{key})).id,id);assert.equal((await a.call('/state')).orders.length,1);
+ await b.call('/orders',{...draft,id,version:1},{status:404});
+ await b.call(`/orders/${id}/action`,{action:'message',text:'Bad',version:1},{status:404});
+ await a.call('/orders',{...draft,id,version:0},{status:409});
+ saved=await a.call('/orders',{...draft,id,version:1,note:'Second version'});
+ let order=saved.state.orders[0];assert.equal(order.version,2);assert.ok(order.history.some(h=>h.snapshot?.version===1));
+ saved=await a.call('/orders',{...order,submit:true});order=saved.state.orders[0];assert.equal(order.stage,2);
+ await a.call('/orders',{...order,note:'Locked'},{status:400});
+ state=await a.call(`/orders/${id}/action`,{version:order.version,action:'edit-request',text:'Update specification'});order=state.orders[0];
+ await a.call(`/orders/${id}/action`,{version:order.version,action:'grant-edit',text:'Bypass'},{status:403});
+ state=await owner.call(`/orders/${id}/action`,{version:order.version,action:'grant-edit',text:'Reviewed request'});order=state.orders[0];assert.equal(order.stage,0);assert.ok(order.history.some(h=>h.title==='Cấp quyền chỉnh sửa'));
+ saved=await a.call('/orders',{...order,submit:true});order=saved.state.orders[0];
+ await a.call(`/orders/${id}/action`,{version:order.version,action:'accept'},{status:400});
+ const payment={sender:'Buyer',amount:100,method:'Wise',date:'2026-09-29',reference:'TX-001'};
+ state=await a.call(`/orders/${id}/action`,{version:order.version,action:'payment',payment});order=state.orders[0];
+ assert.equal(order.payments[0].confirmed,false);
+ await a.call(`/orders/${id}/action`,{version:order.version,action:'payment',payment},{status:400});
+ await a.call(`/orders/${id}/action`,{version:order.version,action:'payment',payment:{...payment,reference:'TX-002',file:'data:image/png;base64,ZmFrZQ=='}},{status:400});
+ state=await a.call(`/orders/${id}/action`,{version:order.version,action:'message',text:'Internal message'});assert.equal(state.orders[0].messages[0].authorId,users.find(u=>u.email==='sale-a@example.com').id);
+ assert.equal((await b.call('/state')).orders.length,0);
+ await a.call('/catalog',{version:0,products:[]},{status:403});
+ const product={name:'Approved test item',unit:'Gram',kind:'base',price:7,spec:'Black'};
+ state=await owner.call('/catalog',{version:0,products:[product]});assert.equal(state.catalogVersion,1);
+ await owner.call('/catalog',{version:0,products:[]},{status:409});
+ assert.equal((await a.call('/state')).catalog[0].name,product.name);
+ assert.equal((await a.call('/state')).orders[0].items[0].price,8);
+ const beforeAssign=(await owner.call('/state')).customers[0];
+ state=await owner.call('/assign',{id:c.id,version:beforeAssign.version,ownerId:users.find(u=>u.email==='sale-b@example.com').id});
+ assert.equal((await a.call('/state')).orders.length,0);assert.equal((await b.call('/state')).orders.length,1);
+ // Retried requests must not replay data from a previous permission scope.
+ await a.call('/orders',draft,{key,status:404});
+ assert.equal((await a.call('/customers',customer,{key:customerKey})).customers.length,0);
+ assert.ok((await owner.call('/audit')).some(e=>e.action==='customer-assign'));
+ const pair=await Promise.all([b.call('/orders',draft),b.call('/orders',draft)]);assert.notEqual(pair[0].id,pair[1].id);
+ const concurrent=await Promise.all([1,2].map(n=>fetch(base+`/orders/${pair[0].id}/action`,{method:'POST',headers:{Cookie:b.cookie,'Content-Type':'application/json','X-CSRF-Token':b.csrf,'Idempotency-Key':randomUUID()},body:JSON.stringify({version:1,action:'message',text:'Concurrent '+n})})));
+ assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,409]);
+ await b.call(`/orders/${pair[0].id}/action`,{version:2,action:'delete'});await b.call(`/orders/${pair[1].id}/action`,{version:1,action:'delete'});
+ const nextDraft=await b.call('/orders',draft);assert.ok(!pair.some(o=>o.id===nextDraft.id));await b.call(`/orders/${nextDraft.id}/action`,{version:1,action:'delete'});
+
+ const beforeCookie=b.cookie;
+ await owner.call('/users',{id:users.find(u=>u.email==='sale-b@example.com').id,active:false});
+ await b.call('/state',undefined,{status:401});
+ await owner.call('/users',{id:users.find(u=>u.email==='sale-b@example.com').id,active:true,password:'Reset-New-Password'});
+ b.cookie=beforeCookie;await b.call('/state',undefined,{status:401});
+ await b.call('/login',{email:'sale-b@example.com',password:'Reset-New-Password'});
+ await b.call('/password',{currentPassword:'Reset-New-Password',password:'Final-New-Password'});
+ await stop();await start();assert.equal((await b.call('/state')).orders[0].id,id);
+ const backupInfo=await owner.call('/backup-status');assert.ok(backupInfo.lastBackup);
+ const copies=readdirSync(path.join(dir,'backups')).filter(n=>n.endsWith('.sqlite')).sort();assert.ok(copies.length>=1);
+ const copy=new DatabaseSync(path.join(dir,'backups',copies.at(-1)),{readOnly:true});assert.equal(copy.prepare('PRAGMA integrity_check').get().integrity_check,'ok');assert.equal(JSON.parse(copy.prepare('SELECT data FROM workspace').get().data).orders.length,1);copy.close();
+ const restoreDir=path.join(dir,'restore-check');const restored=spawnSync(process.execPath,['scripts/restore-workspace.mjs',path.join(dir,'backups',copies.at(-1)),restoreDir],{encoding:'utf8'});assert.equal(restored.status,0,restored.stderr);
+ const restoredDb=new DatabaseSync(path.join(restoreDir,'workspace.sqlite'),{readOnly:true});assert.equal(restoredDb.prepare('SELECT COUNT(*) n FROM auth_sessions').get().n,0);assert.equal(JSON.parse(restoredDb.prepare('SELECT data FROM workspace').get().data).orders.length,1);restoredDb.close();
+ await a.call('/backup-download',undefined,{status:403});const exported=await fetch(base+'/backup-download',{headers:{Cookie:owner.cookie}});assert.equal(exported.status,200);assert.match(exported.headers.get('content-disposition'),/attachment/);assert.equal(Buffer.from(await exported.arrayBuffer()).subarray(0,15).toString(),'SQLite format 3');
+ await b.call('/logout',{});await b.call('/state',undefined,{status:401});
+ console.log('PASS: authentication, mandatory password change, CSRF, ownership, role denial, shared data, atomic versions, idempotent retries, permission changes, immutable catalog snapshots, pending receipts, file validation, audit, revocation, restart persistence and backup integrity.');
+}finally{if(server?.exitCode===null)await stop();if(!path.resolve(dir).startsWith(path.resolve(os.tmpdir())+path.sep))throw Error('Unsafe cleanup path');try{rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:200})}catch{console.error('Temporary test data retained:',dir)}}
