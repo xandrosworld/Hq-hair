@@ -2,7 +2,7 @@
 export function factoryView(user){return user.factory_view||user.factoryView||'full'}
 export function canReadRecord(user,record){
  if(!record)return false;
- if(user.role==='manager')return true;
+ if(['manager','sales_lead'].includes(user.role))return true;
  if(user.role==='sale')return record.ownerId===user.id;
  // Factory gets submitted orders. Drafts remain the Sale's work in progress.
  if(user.role==='factory')return Number.isInteger(record.stage)&&record.stage>=2;
@@ -15,3 +15,5 @@ export function factoryOrder(order){
   messages:order.messages.map(m=>({id:m.id,text:m.text,author:m.author,time:m.time,images:m.images})),
   history:order.history.map(h=>({title:h.title,actor:h.actor,time:h.time}))};
 }
+
+export const leadReadOnly=user=>user?.role==='sales_lead'&&!user.leadEdit;

@@ -11,7 +11,7 @@ export function assertContentAction(order,user,action,body){
 }
 export function applySaleWorkflow(order,user,action,body,event){
  if(!['accept','rework','inspection','received','complete','manager-stage'].includes(action))return false;
- if(!['sale','manager'].includes(user.role))fail('Bạn không có quyền thực hiện bước này.');
+ if(!['sale','manager','sales_lead'].includes(user.role))fail('Bạn không có quyền thực hiện bước này.');
  const now=new Date().toISOString();
  if(action==='accept'||action==='rework'){
   if(order.stage!==5)fail('Đơn chưa đến bước Sale tiếp nhận.');

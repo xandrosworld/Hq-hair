@@ -82,3 +82,11 @@ Xem SALE_IMPLEMENTATION.md để theo dõi trạng thái hiện tại, không d�
 - 60A và Grey thuộc tông Sáng. Migration một lần thêm hai màu đơn và nối lại thành phần của #Balayage 2-4/60A, #Ombre Grey-9C; cả hai mẫu lấy giá Sáng. Không đổi 2.874 giá hoặc giá trên đơn đã lưu. Danh mục có 96 mẫu sau bổ sung (94 mẫu nguồn + 2 màu đơn).
 - Chuẩn bị một tài khoản Judy, mã HQ-JD, vai trò Sale, đổi mật khẩu lần đầu. Email/mật khẩu bàn giao giữ trong thư mục data bị loại khỏi Git, không đưa thông tin đăng nhập lên kho công khai. Chưa cấp quyền sửa giá/thêm màu khi khách chưa chỉ định.
 - Chủ doanh nghiệp giữ quản trị bằng email cá nhân; chưa có địa chỉ email cụ thể. Không tự suy ra từ email doanh nghiệp hoặc tài khoản Sale.
+
+## Trưởng nhóm Sale — yêu cầu bổ sung ngày 01/10/2026
+
+- Vai trò riêng `sales_lead`, không dùng tài khoản quản trị. Xem toàn bộ khách/đơn, chỉ số tổng, tổng hợp theo người phụ trách, bảng giá, chat/ảnh và báo cáo/invoice.
+- Mặc định chỉ đọc; không tạo/sửa/xóa đơn hoặc khách, không gửi chat/chứng từ/chuyển trạng thái, không đổi giá/màu, không cấp tài khoản/quyền, không tải database hoặc đọc nhật ký quản trị.
+- Quản trị có hai quyền độc lập, mặc định tắt: `leadEdit` (thao tác khách/đơn như Sale, vẫn tuân thủ khóa sau gửi và bước 8), `leadAssign` (chuyển khách cùng đơn liên quan sang Sale/quản trị đang hoạt động). Cấp/thu hồi có audit, kiểm tra lại tại máy chủ mỗi yêu cầu. Không bao gồm ngoại lệ quản trị, quyền duyệt tiền hoặc quản lý tài khoản.
+- Hỗ trợ tên đăng nhập nội bộ cho trưởng nhóm; giao diện đăng nhập nhận email hoặc tên đăng nhập. Thông tin bàn giao lưu riêng trong data, không đưa mật khẩu vào Git.
+- `node tests/sales-lead.mjs` kiểm tra hai Sale độc lập, Lead xem tổng, chặn API ghi, đăng nhập tên nội bộ/đổi mật khẩu, UI chỉ đọc, xuất báo cáo và cấp/thu hồi hai quyền độc lập.

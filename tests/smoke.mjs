@@ -14,7 +14,7 @@ try{
  await page.getByLabel('Tên khách hàng',{exact:false}).fill('Demo Review');
  await page.getByLabel('Công ty / Salon').fill('Review Hair Studio');
  await page.getByLabel('Điện thoại / WhatsApp').fill('+1 202 555 0199');
- await page.getByLabel('Email',{exact:true}).fill('review@example.com');
+ await page.getByLabel('Email hoặc tên đăng nhập',{exact:true}).fill('review@example.com');
  await page.getByLabel('Mạng xã hội / Trang web hoặc WhatsApp').fill('https://example.com');
  await page.getByRole('button',{name:'Dùng thông tin khách hàng'}).click();
  await page.getByLabel('Địa chỉ giao hàng').fill('123 Demo Street, Sample City');

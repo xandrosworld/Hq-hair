@@ -15,7 +15,7 @@ export function setupPricing(router,db,audit){
  const read=()=>JSON.parse(db.prepare('SELECT data FROM pricing WHERE id=1').get().data);
  const can=(u,key)=>u.role==='manager'||(u.role==='sale'&&!!u[key]);
  const view=u=>({...read(),canEditPrices:can(u,'price_edit'),canEditColors:can(u,'color_edit')});
- router.use('/pricing',(req,res,next)=>['manager','sale'].includes(req.user.role)?next():res.status(403).json({error:'Bảng giá dành cho kinh doanh và quản trị.'}));
+ router.use('/pricing',(req,res,next)=>['manager','sale','sales_lead'].includes(req.user.role)?next():res.status(403).json({error:'Bảng giá dành cho kinh doanh và quản trị.'}));
  router.get('/pricing',(req,res)=>res.json(view(req.user)));
  router.get('/pricing/images/:id',(req,res)=>{const id=req.params.id;if(!seed.colors.some(c=>c.images.some(i=>i.id===id)))return res.status(404).end();res.type('webp').sendFile(fileURLToPath(new URL('./resources/color-images/'+id+'.webp',import.meta.url)))});
  router.get('/pricing/history',(req,res)=>{if(!can(req.user,'price_edit'))fail(403,'Bạn chưa được cấp quyền quản lý giá.');res.json(db.prepare('SELECT * FROM pricing_history ORDER BY rowid DESC LIMIT 50').all().map(h=>{const d=JSON.parse(h.details);return {id:h.id,time:h.time,actor:h.actor_name,...d,changes:d.changes.map(c=>({id:c.id,before:c.before,after:c.after}))}}))});

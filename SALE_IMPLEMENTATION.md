@@ -58,3 +58,5 @@ Căn cứ: hợp đồng 2809/2026-HĐDV.XANDRO-HQ, C01–C04 và S01–S13; ph�
 Chỉ ghi đạt nghiệm thu sau khi đối chiếu C01–C04/S01–S13 bằng dữ liệu được khách xác nhận, khắc phục lỗi trọng yếu và có biên bản. GĐ1 không thay nghiệm thu phân hệ Kế toán/Xưởng hoặc liên thông cuối dự án.
 
 Công nợ đã chốt độc lập theo từng đơn: đơn mới không mang nợ/tiền trả từ đơn cũ. Chưa xác nhận phạm vi chuyển dữ liệu lịch sử.
+
+Trưởng nhóm Sale đã có vai trò riêng mặc định chỉ đọc toàn đội; tổng hợp theo người phụ trách. Quản trị có thể cấp riêng thao tác như Sale và phân công khách, không biến Lead thành quản trị. Xem CUSTOMER_PERMISSIONS.md và tests/sales-lead.mjs.

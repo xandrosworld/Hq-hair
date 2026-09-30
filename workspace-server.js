@@ -12,7 +12,7 @@ import path from 'node:path';
 const derive=promisify(scrypt);
 const digest=value=>createHash('sha256').update(value).digest('hex');
 const reject=(status,message)=>{throw Object.assign(new Error(message),{status})};
-export const safeUser=u=>({id:u.id,name:u.name,email:u.email,role:u.role,code:u.code,active:!!u.active,mustChange:!!u.must_change,factoryView:factoryView(u),priceEdit:!!u.price_edit,colorEdit:!!u.color_edit});
+export const safeUser=u=>({id:u.id,name:u.name,email:u.email,role:u.role,code:u.code,active:!!u.active,mustChange:!!u.must_change,factoryView:factoryView(u),priceEdit:!!u.price_edit,colorEdit:!!u.color_edit,leadEdit:!!u.lead_edit,leadAssign:!!u.lead_assign});
 export async function hashPassword(password){
  if(typeof password!=='string'||password.length<12||password.length>128)reject(400,'Mật khẩu cần từ 12 đến 128 ký tự.');
  const salt=randomBytes(16).toString('hex');
@@ -40,6 +40,7 @@ export async function createWorkspace(dir){
  if(!db.prepare('SELECT id FROM users LIMIT 1').get()&&process.env.HQ_ADMIN_EMAIL&&process.env.HQ_ADMIN_PASSWORD){
   db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(randomUUID(),process.env.HQ_ADMIN_EMAIL.toLowerCase(),process.env.HQ_ADMIN_NAME||'Quản lý HQ Hair','HQ-ADMIN','manager',await hashPassword(process.env.HQ_ADMIN_PASSWORD));
  }
+ for(const column of ['lead_edit','lead_assign'])if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name===column))db.exec(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 0`);
  setupChatImages(db);
  const dummy=await hashPassword(randomBytes(24).toString('hex'));
  const router=express.Router();
@@ -89,6 +90,13 @@ export async function createWorkspace(dir){
  });
  const manager=(req,res,next)=>req.user.role==='manager'?next():res.status(403).json({error:'Chỉ quản lý được thực hiện thao tác này.'});
  setupPricing(router,db,audit);
+ router.get('/sales-roster',(req,res)=>{if(req.user.role!=='manager'&&!(req.user.role==='sales_lead'&&req.user.lead_assign))return res.status(403).json({error:'Chưa được cấp quyền phân công.'});res.json(db.prepare("SELECT id,name,code,role,active FROM users WHERE role IN ('sale','manager')").all())});
+ router.post('/users/:id/lead-permissions',manager,(req,res)=>{
+  const u=db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
+  if(!u||u.role!=='sales_lead'||typeof req.body.leadEdit!=='boolean'||typeof req.body.leadAssign!=='boolean')reject(400,'Chọn trưởng nhóm và quyền hợp lệ.');
+  db.exec('BEGIN IMMEDIATE');try{db.prepare('UPDATE users SET lead_edit=?,lead_assign=? WHERE id=?').run(+req.body.leadEdit,+req.body.leadAssign,u.id);audit(req.user,'lead-permissions',u.id,{before:{leadEdit:!!u.lead_edit,leadAssign:!!u.lead_assign},after:req.body});db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}res.json({ok:true});
+ });
+
  router.get('/users',manager,(req,res)=>res.json(db.prepare('SELECT * FROM users ORDER BY name').all().map(safeUser)));
  router.post('/users',manager,async(req,res)=>{
   const b=req.body;
@@ -102,12 +110,12 @@ export async function createWorkspace(dir){
    db.prepare('DELETE FROM auth_sessions WHERE user_id=?').run(b.id);audit(req.user,password?'user-reset':'user-status',b.id);
   }else{
    const email=String(b.email||'').trim().toLowerCase(),name=String(b.name||'').trim().slice(0,100);
-   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!name||!['sale','manager','accounting','factory'].includes(b.role))reject(400,'Kiểm tra tên, email và vai trò.');
+   if(!(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||(b.role==='sales_lead'&&/^[a-z][a-z0-9._-]{2,39}$/.test(email)))||!name||!['sale','sales_lead','manager','accounting','factory'].includes(b.role))reject(400,'Kiểm tra tên, email và vai trò.');
    const password=await hashPassword(b.password);
    if(!db.prepare('SELECT token FROM auth_sessions WHERE token=?').get(req.session.token))reject(401,'Phiên đã kết thúc.');
    if(db.prepare('SELECT id FROM users WHERE email=?').get(email))reject(409,'Email đã được sử dụng.');
    const id=randomUUID();
-   const prefix={sale:'HQ',manager:'QT',accounting:'KT',factory:'SX'}[b.role];
+   const prefix={sale:'HQ',sales_lead:'TL',manager:'QT',accounting:'KT',factory:'SX'}[b.role];
    let code=String(b.code||'').trim().toUpperCase();
    if(code&&!new RegExp('^'+prefix+'-[A-Z0-9]{2,12}$').test(code))reject(400,`Mã tài khoản cần dạng ${prefix}-TÊNVIẾTTẮT (2–12 chữ cái hoặc số).`);
    if(!code){let n=db.prepare('SELECT COUNT(*) AS n FROM users').get().n+1;do{code=prefix+'-S'+String(n++).padStart(3,'0')}while(db.prepare('SELECT id FROM users WHERE code=?').get(code))}
@@ -146,7 +154,7 @@ export async function createWorkspace(dir){
  });
  await makeBackup();const timer=setInterval(makeBackup,86400000);timer.unref();
  router.use((req,res,next)=>{
-  if(!['sale','manager','factory'].includes(req.user.role))return res.status(403).json({error:'Phân hệ này dành cho Sale và quản lý. Phân hệ của bạn sẽ được mở ở giai đoạn tương ứng.'});
+  if(!['sale','manager','sales_lead','factory'].includes(req.user.role))return res.status(403).json({error:'Phân hệ này dành cho Sale và quản lý. Phân hệ của bạn sẽ được mở ở giai đoạn tương ứng.'});
   req.imageDb=db;req.data=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
   const beforeCustomers=new Map(req.data.customers.map(c=>[c.id,JSON.stringify(c)]));
   const beforeCatalog=JSON.stringify(req.data.catalog);
@@ -162,6 +170,7 @@ export async function createWorkspace(dir){
    return db.prepare('UPDATE workspace SET data=? WHERE id=1').run(JSON.stringify(req.data));
   };
   if(req.method==='GET')return next();
+  if(req.user.role==='sales_lead'&&!req.user.lead_edit&&!(req.path==='/assign'&&req.user.lead_assign))return res.status(403).json({error:'Trưởng nhóm đang ở quyền chỉ xem. Quản trị có thể cấp thêm quyền.'});
   if(req.user.role==='factory'&&!( /^\/orders\/[^/]+\/action$/.test(req.path)&&req.body.action==='message'))return res.status(403).json({error:'Tài khoản Xưởng hiện được xem đơn và trao đổi; không được sửa nội dung hoặc thanh toán.'});
   if(req.path==='/reset')return res.status(403).json({error:'Không gian làm việc không hỗ trợ khôi phục dữ liệu mẫu.'});
   const key=req.get('Idempotency-Key');if(!key||!/^[\w-]{16,100}$/.test(key))return res.status(400).json({error:'Thiếu mã thao tác. Vui lòng tải lại trang.'});
@@ -192,7 +201,7 @@ export async function createWorkspace(dir){
   if(new Set(products.map(p=>p.id)).size!==products.length)reject(400,'Sản phẩm bị lặp mã.');
   req.data.catalog=products;req.data.catalogVersion=(req.data.catalogVersion||0)+1;req.save();res.json(req.view());
  });
- router.post('/assign',manager,(req,res)=>{
+ router.post('/assign',(req,res,next)=>req.user.role==='manager'||(req.user.role==='sales_lead'&&req.user.lead_assign)?next():res.status(403).json({error:'Chưa được cấp quyền phân công khách hàng.'}),(req,res)=>{
   const c=req.data.customers.find(c=>c.id===req.body.id);req.assertAccess(c);req.assertVersion(c);
   const owner=db.prepare("SELECT * FROM users WHERE id=? AND active=1 AND role IN ('sale','manager')").get(req.body.ownerId);
   if(!owner)reject(400,'Chọn nhân sự Sale hoặc quản lý đang hoạt động.');
