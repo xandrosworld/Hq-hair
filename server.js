@@ -1,4 +1,5 @@
 import express from 'express';
+import {contentLocked,exceptionReason,assertContentAction,applySaleWorkflow} from './order-workflow.js';
 import {deploymentGate} from './deployment-mode.js';
 import {cleanProductFields} from './product-fields.js';
 import {parseChatImages,setupChatImages} from './chat-images.js';
@@ -60,11 +61,15 @@ function cleanPayment(p){
 business.post('/orders',(req,res)=>{
  const b=req.body;const old=req.data.orders.find(o=>o.id===b.id);
  if(b.id){req.assertAccess(old);req.assertVersion(old)}
- if(b.id&&!old)fail('Không tìm thấy đơn hàng.');if(old?.stage)fail('Đơn đã gửi duyệt đã bị khóa. Vui lòng gửi yêu cầu chỉnh sửa.');
+ if(b.id&&!old)fail('Không tìm thấy đơn hàng.');
+ const exception=!!(old&&(old.stage||contentLocked(old))&&req.work&&req.user.role==='manager');
+ if(old&&(old.stage||contentLocked(old))&&!exception)fail('Đơn đã gửi duyệt đã bị khóa. Vui lòng gửi yêu cầu chỉnh sửa.');
+ const reason=exception?exceptionReason(b.reason):'';
  const c=req.data.customers.find(c=>c.id===b.customerId);req.assertAccess(c);if(!c)fail('Vui lòng chọn khách hàng.');
  if(old&&old.customerId!==c.id)fail('Không thể đổi khách hàng của đơn đã lưu.');
  const o={customerId:c.id,sale:c.sale,ownerId:c.ownerId||req.user.id,version:(old?.version||0)+1,stage:0};
- for(const k of ['date','due','recipient','phone','email','address','country','carrier','service','tracking','note'])o[k]=text(b[k]);
+ for(const k of ['date','due','paymentDue','recipient','phone','email','address','country','carrier','service','tracking','note'])o[k]=text(b[k]);
+ if(o.paymentDue&&(!/^\d{4}-\d{2}-\d{2}$/.test(o.paymentDue)||!Number.isFinite(Date.parse(o.paymentDue))||new Date(o.paymentDue).toISOString().slice(0,10)!==o.paymentDue||o.paymentDue<o.date))fail('Hạn thanh toán phải là ngày hợp lệ, không trước ngày đặt hàng.');
  for(const k of ['discount','shippingFee','paymentFee'])o[k]=num(b[k]);
  if(!Array.isArray(b.items)||b.items.length>50)fail('Danh sách sản phẩm không hợp lệ.');
  o.items=b.items.map(i=>({...cleanProductFields(i),productId:text(i.productId||i.id,80),name:text(i.name,120),spec:text(i.spec,200),unit:text(i.unit,30),kind:['base','extra','gift'].includes(i.kind)?i.kind:'base',qty:num(i.qty,100000),price:i.kind==='gift'?0:num(i.price,100000)}));
@@ -73,27 +78,39 @@ business.post('/orders',(req,res)=>{
  const refs=new Set();for(const p of o.payments){if(!p.reference)continue;const key=p.method+'|'+p.reference.toLowerCase();if(refs.has(key)||req.data.orders.some(other=>other.id!==old?.id&&other.payments.some(q=>q.method===p.method&&q.reference?.toLowerCase()===p.reference.toLowerCase())))fail('Mã giao dịch đã được ghi nhận.');refs.add(key)}
  if(totals(o).revenue<0)fail('Giảm giá không được vượt tổng giá sản phẩm.');
  if(o.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email))fail('Email chưa đúng định dạng.');
- if(b.submit){
+ if(b.submit||exception){
   if(!o.date||!o.due||!Number.isFinite(Date.parse(o.date))||!Number.isFinite(Date.parse(o.due))||o.due<o.date||!o.recipient||!o.phone||!o.address||!o.country||!o.items.some(i=>i.kind==='base'&&i.qty>0)||o.items.some(i=>!i.name||i.qty<=0))fail('Kiểm tra sản phẩm, ngày giao và thông tin người nhận trước khi gửi duyệt.');
-  o.stage=2;
+  o.stage=exception?old.stage:2;
  }
  o.id=old?.id||(req.work?`${c.id}-${req.nextCode('order:'+c.id)}`:`${c.id}-${Math.max(0,...req.data.orders.filter(o=>o.customerId===c.id).map(o=>Number(o.id.split('-').at(-1))))+1}`);
  o.messages=old?.messages||[];o.history=old?.history||[];
+ if(old)for(const key of ['contentLockedAt','inspection','shippedDate','saleReview','receivedAt','completedAt','editRequested'])if(old[key]!==undefined)o[key]=old[key];
  if(req.work&&old)o.history.push({title:'Lưu phiên bản trước chỉnh sửa',actor:req.user.name,actorId:req.user.id,time:new Date().toISOString(),snapshot:{...old,history:undefined,messages:undefined}});
- event(req,o,old?'Cập nhật bản nháp':'Nhập đơn');if(b.submit)event(req,o,'Chờ duyệt','Đã chuyển yêu cầu đến Kế toán. Đơn được khóa chỉnh sửa.');
+ event(req,o,exception?'Quản trị chỉnh sửa ngoại lệ':old?'Cập nhật bản nháp':'Nhập đơn',reason);if(b.submit&&!exception)event(req,o,'Chờ duyệt','Đã chuyển yêu cầu đến Kế toán. Đơn được khóa chỉnh sửa.');
  if(old)Object.assign(old,o);else {if(req.data.orders.length>=(req.work?30000:300))fail('Bản demo hỗ trợ tối đa 300 đơn.');req.data.orders.unshift(o)}
  req.save();res.json({state:req.view(),id:o.id});
 });
 business.post('/orders/:id/action',(req,res)=>{
  const o=req.data.orders.find(o=>o.id===req.params.id);req.assertAccess(o);req.assertVersion(o);if(!o)fail('Không tìm thấy đơn hàng.');const {action}=req.body;
+ const beforeException=req.work&&req.user.role==='manager'&&action!=='message'?structuredClone(o):null;
+ assertContentAction(o,req.user,action,req.body);
  if(action==='delete'){if(o.stage)fail('Chỉ xóa được bản nháp.');req.recordAudit?.('order-delete',o.id,{before:o});req.data.orders=req.data.orders.filter(x=>x.id!==o.id)}
  else if(action==='message'){const t=text(req.body.text);const images=parseChatImages(req.body.images);if(!t&&!images.length)fail('Nhập nội dung hoặc chọn ảnh trao đổi.');if(o.messages.length>=200)fail('Đã đạt giới hạn tin nhắn demo.');for(const image of images)req.imageDb.prepare('INSERT INTO chat_images VALUES (?,?,?)').run(image.id,image.bytes,image.mime);o.messages.push({id:randomUUID(),text:t,images:images.map(({id,name,mime,size})=>({id,name,mime,size})),author:req.user.name+' · '+(req.user.role==='manager'?'Quản lý':req.user.role==='factory'?'Xưởng':'Sale'),authorId:req.user.id,time:new Date().toISOString()})}
- else if(action==='grant-edit'){if(!req.work||req.user.role!=='manager')return res.status(403).json({error:'Chỉ quản lý được cấp quyền sửa.'});if(o.stage!==2||!o.editRequested)fail('Chỉ mở lại đơn đang chờ duyệt và đã có yêu cầu sửa.');const reason=text(req.body.text);if(!reason)fail('Nhập lý do cấp quyền sửa.');o.stage=0;o.editRequested=false;event(req,o,'Cấp quyền chỉnh sửa',reason)}
+ else if(action==='grant-edit'){if(!req.work||req.user.role!=='manager')return res.status(403).json({error:'Chỉ quản lý được cấp quyền sửa.'});if(contentLocked(o))fail('Không mở lại bản nháp của đơn đã khóa sau bước 8. Quản trị dùng chỉnh sửa ngoại lệ.');if(o.stage!==2||!o.editRequested)fail('Chỉ mở lại đơn đang chờ duyệt và đã có yêu cầu sửa.');const reason=text(req.body.text);if(!reason)fail('Nhập lý do cấp quyền sửa.');o.stage=0;o.editRequested=false;event(req,o,'Cấp quyền chỉnh sửa',reason)}
  else if(action==='edit-request'){if(!o.stage)fail('Bản nháp được chỉnh sửa trực tiếp.');if(o.editRequested)fail('Yêu cầu chỉnh sửa đang chờ xử lý.');const reason=text(req.body.text);if(!reason)fail('Vui lòng ghi lý do chỉnh sửa.');o.editRequested=true;event(req,o,'Yêu cầu chỉnh sửa',reason)}
- else if(action==='payment'){if(!o.stage)fail('Thêm thanh toán trong form bản nháp.');if(o.payments.length>=20)fail('Đã đạt giới hạn thanh toán demo.');const payment=cleanPayment(req.body.payment);if(payment.reference&&req.data.orders.some(order=>order.payments.some(p=>p.reference?.trim().toLowerCase()===payment.reference.toLowerCase()&&p.method===payment.method)))fail('Mã giao dịch này đã được ghi nhận. Kiểm tra lại chứng từ.');o.payments.push(payment);event(req,o,'Bổ sung chứng từ','Chờ Kế toán đối soát; chưa cộng vào tiền thực nhận.')}
- else if(action==='accept'){if(o.stage!==5)fail('Đơn chưa đến bước Sale tiếp nhận.');o.stage=6;event(req,o,'Sale tiếp nhận','Đã kiểm tra và xác nhận gửi đến văn phòng.');event(req,o,'Gửi đến văn phòng')}
- else if(action==='rework'){if(o.stage!==5)fail('Đơn chưa đến bước Sale tiếp nhận.');const reason=text(req.body.text);if(!reason)fail('Nhập yêu cầu sửa lại.');o.stage=4;event(req,o,'Yêu cầu xưởng sửa lại',reason)}
- else fail('Thao tác không được hỗ trợ.');o.version=(o.version||0)+1;req.save();res.json(req.view());
+ else if(action==='payment'){if(!o.stage)fail('Thêm thanh toán trong form bản nháp.');if(o.payments.length>=20)fail('Đã đạt giới hạn thanh toán demo.');const payment=cleanPayment(req.body.payment);if(payment.reference&&req.data.orders.some(order=>order.payments.some(p=>p.reference?.trim().toLowerCase()===payment.reference.toLowerCase()&&p.method===payment.method)))fail('Mã giao dịch này đã được ghi nhận. Kiểm tra lại chứng từ.');o.payments.push(payment);event(req,o,'Bổ sung chứng từ','Chờ Kế toán đối soát; chưa cộng vào tiền thực nhận.'+(req.body.reason?' Lý do ngoại lệ: '+text(req.body.reason):''))}
+ else if(action==='manager-payment'){
+  if(!req.work||req.user.role!=='manager')return res.status(403).json({error:'Chỉ quản trị được điều chỉnh thanh toán ngoại lệ.'});
+  const reason=exceptionReason(req.body.text),payment=o.payments.find(p=>p.id===req.body.paymentId);
+  if(!payment)fail('Không tìm thấy lần thanh toán.');
+  const amount=num(req.body.amount);
+  if(amount<=0||typeof req.body.confirmed!=='boolean')fail('Nhập số tiền lớn hơn 0 và trạng thái xác nhận hợp lệ.');
+  const before={...payment};payment.amount=amount;payment.confirmed=req.body.confirmed;
+  payment.correctedBy=req.user.id;payment.correctedAt=new Date().toISOString();
+  event(req,o,'Quản trị điều chỉnh thanh toán',`${reason} · ${before.amount} → ${amount} USD · ${before.confirmed?'đã xác nhận':'chờ xác nhận'} → ${payment.confirmed?'đã xác nhận':'chờ xác nhận'}`);
+ }
+ else if(applySaleWorkflow(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}
+ else fail('Thao tác không được hỗ trợ.');if(beforeException)req.recordAudit('manager-order-action',o.id,{action,reason:text(req.body.reason||req.body.text),before:beforeException,after:o});o.version=(o.version||0)+1;req.save();res.json(req.view());
 });
 app.use('/api',business);
 app.use('/api',(req,res)=>res.status(404).json({error:'Không tìm thấy chức năng.'}));

@@ -7,7 +7,7 @@ const post=async(path,data)=>api.post(path,{data});
 try{
  const state=await get();const review=state.orders.find(o=>o.stage===5);
  let r=await post(`/api/orders/${review.id}/action`,{action:'accept'});assert(r.ok());
- assert.equal((await get()).orders.find(o=>o.id===review.id).stage,6);
+ assert.equal((await get()).orders.find(o=>o.id===review.id).stage,4);
  r=await post(`/api/orders/${review.id}/action`,{action:'accept'});assert.equal(r.status(),400);
  r=await post(`/api/orders/${review.id}/action`,{action:'delete'});assert.equal(r.status(),400);
  r=await post(`/api/orders/${review.id}/action`,{action:'edit-request',text:'Xin thay đổi thông số tóc'});assert(r.ok());

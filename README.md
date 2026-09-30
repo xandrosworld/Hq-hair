@@ -4,7 +4,7 @@ Bản demo desktop cho buổi giới thiệu HQ Hair, dựa trên tài liệu Sa
 
 ## Không gian làm việc có đăng nhập
 
-Mở `/workspace` để dùng tài khoản riêng và dữ liệu dùng chung. Xem [trạng thái theo hợp đồng](SALE_IMPLEMENTATION.md) và [hướng dẫn vận hành](OPERATIONS.md). Link gốc `/` vẫn là demo riêng theo trình duyệt; các giới hạn demo dưới đây áp dụng cho link đó. Phần công thức, bảng giá, mẫu invoice và quyền chi tiết đang chờ HQ Hair xác nhận.
+Mở `/workspace` để dùng tài khoản riêng và dữ liệu dùng chung. Xem [trạng thái theo hợp đồng](SALE_IMPLEMENTATION.md) và [hướng dẫn vận hành](OPERATIONS.md). Trên VPS, link gốc `/` chuyển tới workspace; `/demo` là demo riêng theo trình duyệt; các giới hạn demo dưới đây áp dụng cho link đó. Bảng giá và quy tắc màu đã nhập theo HQ Hair; công thức cuối và mẫu invoice còn chờ đối chiếu đơn thật.
 
 ## Chạy
 
@@ -83,7 +83,7 @@ cat /opt/hqhaircrm/state/current
 curl -fsS http://127.0.0.1:3000/api/health
 ```
 
-Dữ liệu được sao lưu trước mỗi lần triển khai và hằng ngày lúc 02:15 UTC, kiểm tra SQLite integrity, giữ 14 ngày. Bản sao hằng ngày nằm trong `/opt/hqhaircrm/backups`, trên cùng VPS; chưa có đích sao lưu ngoài VPS định kỳ. Bản chuyển máy chủ ban đầu được giữ thêm trên máy vận hành (`data/migration/railway-final.tar.gz`, gitignored) và volume Railway. Khôi phục dữ liệu cần dừng app và kiểm tra bản sao trước, không chép SQLite đang mở lên nhau.
+Dữ liệu được sao lưu trước mỗi lần triển khai và hằng ngày lúc 02:15 UTC, kiểm tra SQLite integrity, giữ 14 ngày. Bản sao hằng ngày nằm trong `/opt/hqhaircrm/backups`, trên cùng VPS. Máy vận hành có tác vụ `HQHair-OutsideVPS-Backup` tải bản sao đã kiểm tra về `data/offsite-backups` lúc 09:30 và khi đăng nhập; cần máy bật, người dùng đăng nhập và có mạng. Chưa có kho backup độc lập luôn hoạt động. Bản chuyển máy chủ ban đầu được giữ thêm trên máy vận hành (`data/migration/railway-final.tar.gz`, gitignored) và volume Railway. Khôi phục dữ liệu cần dừng app và kiểm tra bản sao trước, không chép SQLite đang mở lên nhau.
 
 Railway cũ giữ bản dữ liệu trước chuyển máy chủ và chuyển hướng sang tên miền mới. `deployment-mode.json` trong volume cũ khóa mọi ghi API; không chuyển file này sang VPS. Không xóa volume dự phòng khi chưa quyết định thời gian lưu. Theo dõi phí Railway trong thời gian giữ chuyển hướng/dự phòng.
 

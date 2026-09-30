@@ -106,7 +106,12 @@ export async function createWorkspace(dir){
    const password=await hashPassword(b.password);
    if(!db.prepare('SELECT token FROM auth_sessions WHERE token=?').get(req.session.token))reject(401,'Phiên đã kết thúc.');
    if(db.prepare('SELECT id FROM users WHERE email=?').get(email))reject(409,'Email đã được sử dụng.');
-   const id=randomUUID();const code='HQ-S'+String(db.prepare('SELECT COUNT(*) AS n FROM users').get().n+1).padStart(3,'0');
+   const id=randomUUID();
+   const prefix={sale:'HQ',manager:'QT',accounting:'KT',factory:'SX'}[b.role];
+   let code=String(b.code||'').trim().toUpperCase();
+   if(code&&!new RegExp('^'+prefix+'-[A-Z0-9]{2,12}$').test(code))reject(400,`Mã tài khoản cần dạng ${prefix}-TÊNVIẾTTẮT (2–12 chữ cái hoặc số).`);
+   if(!code){let n=db.prepare('SELECT COUNT(*) AS n FROM users').get().n+1;do{code=prefix+'-S'+String(n++).padStart(3,'0')}while(db.prepare('SELECT id FROM users WHERE code=?').get(code))}
+   if(db.prepare('SELECT id FROM users WHERE code=?').get(code))reject(409,'Mã tài khoản đã được sử dụng. Chọn mã khác.');
    db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(id,email,name,code,b.role,password);audit(req.user,'user-create',id,{name,email,role:b.role,code});
   }
   res.json(db.prepare('SELECT * FROM users ORDER BY name').all().map(safeUser));

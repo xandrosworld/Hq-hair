@@ -48,3 +48,14 @@ Chỉ các route quản lý được đọc audit/backup/toàn bộ khách-đơn
 Nguồn kỹ thuật: [Node SQLite](https://nodejs.org/docs/latest-v22.x/api/sqlite.html), [Node crypto](https://nodejs.org/docs/latest-v22.x/api/crypto.html).
 
 Ảnh chat lưu trong bảng `chat_images` của database tương ứng (demo/workspace), tối đa 4 ảnh x 5 MiB mỗi tin. Cần theo dõi dung lượng volume và backup khi lượng ảnh tăng; ảnh không đi vào JSON danh sách đơn. Route mở ảnh kiểm tra phiên và quyền hiện tại trên đơn, kể cả sau chuyển người phụ trách.
+
+
+## Cập nhật vận hành VPS và bản sao trên máy vận hành
+
+- Hệ thống hiện chạy tại https://hqhaircrm.io.vn/workspace trên Vietnix; Railway chỉ chuyển hướng và giữ bản trước chuyển máy chủ. Hướng dẫn Railway phía trên là lịch sử.
+- VPS tự kiểm tra GitHub main mỗi 2 phút, build/test, backup rồi thay container; lỗi khởi động sẽ quay lại image trước. Không tự quay lùi dữ liệu.
+- Bản sao VPS hằng ngày lưu 14 ngày. `python -X utf8 scripts/vps-backup.py` tạo online snapshot riêng của cả workspace/demo, tải qua SSH đã ghim host key, đối chiếu SHA-256 và SQLite integrity; lưu ngoài VPS tại `data/offsite-backups` (gitignored, ACL chỉ tài khoản vận hành và SYSTEM).
+- Windows task `HQHair-OutsideVPS-Backup` chạy nền lúc 09:30 giờ máy và khi người dùng đăng nhập, chạy bù khi có thể. Cài lại bằng `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-backup-task.ps1`. Tác vụ không chứa mật khẩu; script đọc .env ở workspace.
+- Điều kiện: máy bật, đúng người dùng đăng nhập, có mạng, Python/paramiko/python-dotenv và thư mục dự án còn nguyên. Đây là bản sao vận hành bổ sung, chưa thay kho sao lưu độc lập luôn hoạt động do khách quản lý.
+- Kiểm tra `Get-ScheduledTaskInfo -TaskName HQHair-OutsideVPS-Backup`, `data/offsite-backups/status.json` (lần thành công gần nhất) và `last-error.json` nếu có. Giữ một bản thành công/ngày trong 14 ngày; thời gian ngừng máy không tạo được bản mới.
+- Thử khôi phục từ bản ngoài VPS vào thư mục mới bằng `scripts/restore-workspace.mjs`; không khôi phục đè dữ liệu live khi kiểm tra.

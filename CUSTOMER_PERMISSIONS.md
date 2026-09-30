@@ -33,7 +33,7 @@ Trước mốc khóa không có nghĩa Sale được tự sửa toàn bộ đơn
 ## Tiêu chí kiểm thử khi triển khai
 
 1. Hai Sale không đọc được đơn, ảnh, tổng doanh thu hoặc kết quả xuất của nhau, kể cả gọi API trực tiếp.
-2. Xưởng không nhận các trường tài chính/khách hàng trong JSON, file tải xuống, lịch sử snapshot, tìm kiếm, thông báo hoặc ảnh bill; chỉ thấy ảnh chat được phép.
+2. Khi quản trị chọn chế độ chỉ sản phẩm/chat, Xưởng không nhận trường tài chính/khách hàng, snapshot hoặc ảnh bill. Chế độ mặc định full được xem toàn bộ theo xác nhận 14:11.
 3. Sau hoàn tất bước 8, mọi đường ghi nội dung/chứng từ đều bị từ chối ở máy chủ; chat và chuyển đúng bước 9/10 vẫn hoạt động.
 4. Sale không thực hiện bước 6 thay Xưởng; không bỏ qua bước hoặc tự duyệt tiền.
 5. Cấp quyền bổ sung chỉ cho phép đúng thao tác/phạm vi được cấp, lưu người cấp, người sửa, thời gian và nội dung thay đổi.
@@ -64,3 +64,13 @@ Trước mốc khóa không có nghĩa Sale được tự sửa toàn bộ đơn
 - Điều chỉnh % theo toàn bộ/bảng/loại sản phẩm, xem trước, làm tròn 0,01 USD, kiểm tra phiên bản, chống ghi lặp; lịch sử và khôi phục lần điều chỉnh gần nhất. Không ghi lại giá đơn cũ.
 - Chọn từ bảng giá trong màn hình tạo đơn lưu giá và tham chiếu phiên bản vào dòng hàng; hỗ trợ sản phẩm gốc/bổ sung/quà tặng. Basic/Baby/Premium là dòng bảng giá, không tự gán thành nguồn tóc.
 - Import chỉ khởi tạo khi DB chưa có bảng giá, không ghi đè chỉnh sửa quản trị khi khởi động lại. Dữ liệu và lịch sử nằm cùng workspace.sqlite, đi theo sao lưu hiện có.
+
+## Tiến độ triển khai bổ sung — cuối ngày 30/09/2026
+
+Các ghi chú “chưa triển khai” ở phần lịch sử trên được cập nhật như sau:
+- Sale check không tự chuyển bước 6; tiếp tục sản xuất hoặc cần sửa đều trả về Xưởng ở bước 4, lưu kết quả phản hồi.
+- Bước 8 lưu kiểm định/tracking/ngày đặt ship và khóa nội dung; bước 9/10 có kiểm tra điều kiện. Khóa không mất khi quản trị đổi trạng thái.
+- Quản trị sửa ngoại lệ nội dung đơn, đổi trạng thái, điều chỉnh số tiền/trạng thái xác nhận của lần thanh toán; bắt buộc lý do và lưu trước/sau. Không thay mã đơn/khách, không gỡ khóa cho Sale.
+- Chưa hoàn thiện hệ cấp quyền tổng quát cho mọi thao tác, quyền Kế toán cấp bổ sung hàng và luồng nghiệp vụ Kế toán/Xưởng.
+- Quy tắc đóng đơn khi còn nợ chưa có xác nhận: tạm giữ quyền đóng cho quản trị có lý do, không xóa nợ; Sale chỉ đóng khi hết nợ.
+Xem SALE_IMPLEMENTATION.md để theo dõi trạng thái hiện tại, không dùng các mô tả lịch sử làm bằng chứng nghiệm thu.
