@@ -15,7 +15,7 @@ Căn cứ: hợp đồng 2809/2026-HĐDV.XANDRO-HQ, C01–C04 và S01–S13; ph�
 | C01–C02 | Đăng nhập, đổi mật khẩu ban đầu, khóa/reset tài khoản và thu hồi phiên; Sale chỉ xem khách/đơn/chỉ số của mình; quản trị xem toàn bộ; mã tùy chọn HQ-JD / KT-xx / SX-xx / QT-xx; khách và đơn tự sinh theo mã, chặn trùng | Chờ tên/email thật; mã đã cấp không sửa tự do. Tài khoản cũ giữ mã hiện có |
 | C03–C04 | Audit người/thời gian, snapshot trước sửa, chat chữ/ảnh, kiểm tra quyền khi đọc ảnh; bảng việc cần chú ý gồm bước 2/5/8/9 | Thông báo dạng bảng việc và tải lại định kỳ, chưa có email/push; liên thông Kế toán/Xưởng kiểm thử ở giai đoạn sau |
 | S01–S03 | Hồ sơ khách, tìm/lọc, người phụ trách, lịch sử đơn/doanh thu; địa chỉ riêng trên đơn; chuyển phụ trách có audit | Chốt dữ liệu cũ, trường bắt buộc, quy tắc khách mới/quay lại và kỳ biểu đồ theo bộ mẫu |
-| S04 | 2.874 giá từ 38 sheet, 94 mẫu màu và 167 ảnh; USD/100g hoặc USD/cái; màu phối lấy tông cao nhất; thay đổi % theo phạm vi, xem trước, lịch sử, khôi phục lần gần nhất; cấp quyền giá/màu riêng | Chờ nhóm giá 60A và Grey; hai mẫu phụ thuộc bị chặn tra giá đến khi đủ dữ liệu. Giá đơn cũ không đổi theo bảng giá |
+| S04 | 2.874 giá từ 38 sheet, 96 mẫu màu (94 nguồn + 2 bổ sung) và 167 ảnh; USD/100g hoặc USD/cái; màu phối lấy tông cao nhất; thay đổi % theo phạm vi, xem trước, lịch sử, khôi phục lần gần nhất; cấp quyền giá/màu riêng | 60A/Grey và các mẫu phối liên quan đã chốt tông Sáng. Giá đơn cũ không đổi theo bảng giá |
 | S05–S09 | Hai phần sản phẩm/thanh toán, ba nhóm hàng, lưu nháp/gửi duyệt/khóa sửa; nhiều chứng từ chờ xác nhận; hạn thanh toán riêng; mã chống gửi trùng và version chống ghi đè | Chờ đơn mẫu xác nhận công thức/làm tròn/phí. Kế toán cấp quyền thêm hàng trong sản xuất sẽ nối ở GĐ2 |
 | S10–S11 | Tìm/lọc trạng thái/tháng/khách/người phụ trách, bảng tiến độ; Sale check → tiếp tục sản xuất hoặc cần sửa, không thực hiện bước gửi văn phòng thay Xưởng; thao tác kiểm định/đặt ship → nhận hàng → hoàn thành | Đầu vào bước 5 và 8 từ Xưởng/Kế toán hoàn thiện ở GĐ2/3. Kiểm thử Sale dùng dữ liệu riêng có đánh dấu, không giả xác nhận Kế toán trên đơn thật |
 | S12 | Invoice tiếng Anh, xem/in/lưu PDF, không xuất chat/bill/lịch sử nội bộ | Mẫu hiện còn DRAFT; chờ mẫu khách duyệt trước dùng làm chứng từ thật |
@@ -48,11 +48,13 @@ Căn cứ: hợp đồng 2809/2026-HĐDV.XANDRO-HQ, C01–C04 và S01–S13; ph�
 
 ## Chờ dữ liệu khách và nghiệm thu
 
-1. Tên/email tương ứng HQ-JD/HQ-EM/HQ-LN; người giữ quản trị và quyền sửa giá/thêm màu.
+1. Đã có email Judy/HQ-JD; chờ email cá nhân chủ doanh nghiệp để cấp quản trị, nhân sự còn lại và người được sửa giá/thêm màu.
 2. Khoảng 5 đơn có kết quả tính tay; công thức giảm giá/phí, làm tròn/tỷ giá nếu có, hạn thanh toán, đóng đơn còn nợ.
 3. Mẫu invoice và phiếu kiểm định, thông tin cần hiện/ẩn.
-4. Nhóm giá của 60A và Grey; không hỏi lại Other hoặc quy tắc phối màu đã chốt.
+4. Nhóm giá 60A/Grey đã xác nhận Sáng lúc 23:48; không cần hỏi lại.
 5. Có chuyển khách/đơn/công nợ cũ không; file nguồn và phạm vi nếu có.
 6. Người chạy thử/xác nhận, lịch kiểm tra và ngày bắt đầu đã thống nhất.
 
 Chỉ ghi đạt nghiệm thu sau khi đối chiếu C01–C04/S01–S13 bằng dữ liệu được khách xác nhận, khắc phục lỗi trọng yếu và có biên bản. GĐ1 không thay nghiệm thu phân hệ Kế toán/Xưởng hoặc liên thông cuối dự án.
+
+Công nợ đã chốt độc lập theo từng đơn: đơn mới không mang nợ/tiền trả từ đơn cũ. Chưa xác nhận phạm vi chuyển dữ liệu lịch sử.

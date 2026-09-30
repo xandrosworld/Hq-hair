@@ -1,4 +1,5 @@
 import {readFileSync} from 'node:fs';
+import {migrateBrightColors} from './color-confirmations.js';
 import {fileURLToPath} from 'node:url';
 import {randomUUID,createHash} from 'node:crypto';
 import {highestTone,adjustedPrice,matchingPrices,toneNames} from './pricing-domain.js';
@@ -10,6 +11,7 @@ export function setupPricing(router,db,audit){
  CREATE TABLE IF NOT EXISTS pricing_requests(user_id TEXT NOT NULL,key TEXT NOT NULL,hash TEXT NOT NULL,result TEXT NOT NULL,PRIMARY KEY(user_id,key));`);
  for(const column of ['price_edit','color_edit'])if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name===column))db.exec(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 0`);
  db.prepare('INSERT OR IGNORE INTO pricing VALUES(1,?)').run(JSON.stringify(seed));
+ migrateBrightColors(db,audit);
  const read=()=>JSON.parse(db.prepare('SELECT data FROM pricing WHERE id=1').get().data);
  const can=(u,key)=>u.role==='manager'||(u.role==='sale'&&!!u[key]);
  const view=u=>({...read(),canEditPrices:can(u,'price_edit'),canEditColors:can(u,'color_edit')});

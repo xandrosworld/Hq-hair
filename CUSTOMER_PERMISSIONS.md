@@ -74,3 +74,11 @@ Các ghi chú “chưa triển khai” ở phần lịch sử trên được c�
 - Chưa hoàn thiện hệ cấp quyền tổng quát cho mọi thao tác, quyền Kế toán cấp bổ sung hàng và luồng nghiệp vụ Kế toán/Xưởng.
 - Quy tắc đóng đơn khi còn nợ chưa có xác nhận: tạm giữ quyền đóng cho quản trị có lý do, không xóa nợ; Sale chỉ đóng khi hết nợ.
 Xem SALE_IMPLEMENTATION.md để theo dõi trạng thái hiện tại, không dùng các mô tả lịch sử làm bằng chứng nghiệm thu.
+
+## Xác nhận bổ sung lúc 23:47–23:49 ngày 30/09/2026
+
+- Thanh toán và công nợ gắn riêng với từng đơn. Tạo đơn mới không chuyển nợ hoặc tiền đã trả của đơn cũ sang đơn mới; báo cáo khách chỉ tổng hợp, không tự bù trừ giữa các đơn.
+- Câu trả lời này chưa xác nhận có nhập các đơn/công nợ cũ vào hệ thống hay không; giữ việc chuyển dữ liệu cũ là đầu vào cần làm rõ.
+- 60A và Grey thuộc tông Sáng. Migration một lần thêm hai màu đơn và nối lại thành phần của #Balayage 2-4/60A, #Ombre Grey-9C; cả hai mẫu lấy giá Sáng. Không đổi 2.874 giá hoặc giá trên đơn đã lưu. Danh mục có 96 mẫu sau bổ sung (94 mẫu nguồn + 2 màu đơn).
+- Chuẩn bị một tài khoản Judy, mã HQ-JD, vai trò Sale, đổi mật khẩu lần đầu. Email/mật khẩu bàn giao giữ trong thư mục data bị loại khỏi Git, không đưa thông tin đăng nhập lên kho công khai. Chưa cấp quyền sửa giá/thêm màu khi khách chưa chỉ định.
+- Chủ doanh nghiệp giữ quản trị bằng email cá nhân; chưa có địa chỉ email cụ thể. Không tự suy ra từ email doanh nghiệp hoặc tài khoản Sale.

@@ -1,3 +1,4 @@
+import {totals} from '../shared.js';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {mkdtempSync,rmSync} from 'node:fs';
@@ -43,6 +44,7 @@ try{
  await action(admin,'manager-payment',{paymentId:order.payments[0].id,amount:10,confirmed:true,text:'Correct received amount'});assert.equal(order.payments[0].confirmed,true);
  await action(admin,'manager-stage',{stage:2,text:'Correct mistaken stage'});assert.ok(order.contentLockedAt);
  await action(admin,'grant-edit',{text:'Attempt to reopen locked draft'},400);await sale.call('/orders',{...order,submit:false},400);
+ const newOrder=await sale.call('/orders',draft);assert.notEqual(newOrder.id,id);assert.equal(newOrder.state.orders.find(o=>o.id===newOrder.id).customerId,order.customerId);assert.equal(totals(newOrder.state.orders.find(o=>o.id===newOrder.id)).debt,10);assert.equal(totals(newOrder.state.orders.find(o=>o.id===id)).debt,0);
  const audit=await admin.call('/audit');assert.ok(audit.some(a=>a.action==='manager-order-action'&&JSON.parse(a.details).before));
  assert.equal((await other.call('/state')).orders.length,0);
  console.log('PASS: custom employee codes, uniqueness, ownership, real API workflow, factory boundary, sticky lock, manager reason and snapshots, idempotency, post-lock chat, unpaid closure and audit.');
