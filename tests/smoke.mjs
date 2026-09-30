@@ -13,9 +13,9 @@ try{
  await page.getByRole('button',{name:'Tạo khách hàng',exact:true}).click();
  await page.getByLabel('Tên khách hàng',{exact:false}).fill('Demo Review');
  await page.getByLabel('Công ty / Salon').fill('Review Hair Studio');
- await page.getByLabel('Phone / WhatsApp').fill('+1 202 555 0199');
+ await page.getByLabel('Điện thoại / WhatsApp').fill('+1 202 555 0199');
  await page.getByLabel('Email',{exact:true}).fill('review@example.com');
- await page.getByLabel('Social / Website hoặc WhatsApp').fill('https://example.com');
+ await page.getByLabel('Mạng xã hội / Trang web hoặc WhatsApp').fill('https://example.com');
  await page.getByRole('button',{name:'Dùng thông tin khách hàng'}).click();
  await page.getByLabel('Địa chỉ giao hàng').fill('123 Demo Street, Sample City');
  await page.getByRole('button',{name:'Lưu khách hàng',exact:true}).click();
@@ -54,7 +54,7 @@ try{
  assert.equal(order.stage,2);assert.equal(order.payments[0].confirmed,false);
  const forbidden=await context.request.post(base+'/api/orders',{data:{...order,note:'bypass lock'}});assert.equal(forbidden.status(),400);
  const other=await browser.newContext();const separate=await(await other.request.get(base+'/api/state')).json();assert(!separate.orders.some(o=>o.id==='HQ-JD-9-1'));await other.close();
- await page.getByRole('button',{name:'In invoice'}).click();await page.getByText('COMMERCIAL INVOICE').waitFor();
+ await page.getByRole('button',{name:'In hóa đơn'}).click();await page.getByText('COMMERCIAL INVOICE').waitFor();
  await page.screenshot({path:'screenshots/04-invoice.png',fullPage:true,animations:'disabled'});
  await page.emulateMedia({media:'print'});await page.pdf({path:'screenshots/invoice.pdf',format:'A4'});await page.emulateMedia({media:'screen'});
  await page.getByRole('button',{name:'Đóng',exact:true}).click();

@@ -13,7 +13,7 @@ try{
  await page.getByRole('button',{name:/Bản nháp 01/}).click();
  assert.equal(await page.locator('.recent-panel tbody tr').count(),1);
  await page.locator('.recent-panel').getByRole('button',{name:'HQ-JD-5-1',exact:true}).waitFor();
- await page.getByRole('button',{name:'Khám phá demo'}).click();
+ await page.getByRole('button',{name:'Khám phá bản dùng thử'}).click();
  await shot('01-demo-guide');
  assert(await page.locator('.shell').evaluate(el=>el.inert));
  await page.getByRole('dialog').getByRole('button',{name:/Kiểm tra hàng từ Xưởng/}).click();

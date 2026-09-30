@@ -45,3 +45,9 @@ Trước mốc khóa không có nghĩa Sale được tự sửa toàn bộ đơn
 - Quản trị chọn phạm vi xem cho từng tài khoản Xưởng: `full` (mặc định theo xác nhận mới) hoặc `products` (chỉ sản phẩm/chat). Chế độ products dùng allowlist ở API, loại khách, tiền, bill, bảng giá, snapshot và ghi chú lịch sử. Chat do Sale/Xưởng tự gửi vẫn hiển thị.
 - Thay đổi quyền áp dụng trên yêu cầu tiếp theo; giao diện Xưởng làm mới mỗi 15 giây và khi quay lại tab. Dữ liệu đã tải trước khi đổi quyền không thể thu hồi khỏi thiết bị người dùng.
 - Bản này triển khai quyền Xưởng xem/chat và cấu hình phạm vi xem. Chưa triển khai quyền quản trị sửa mọi trường, phân quyền ngoại lệ tổng quát, chuyển trạng thái Xưởng/Kế toán hoặc khóa sau hoàn tất bước 8. Các mục đó vẫn là yêu cầu tiếp theo, không coi là đã nghiệm thu.
+
+## Ngôn ngữ giao diện — xác nhận 30/09/2026 14:14
+
+- Giao diện nội bộ dùng tiếng Việt, gồm kinh doanh, quản trị và Xưởng.
+- Hóa đơn sản phẩm gửi khách dùng nhãn tiếng Anh; nút xem/in vẫn tiếng Việt. Bảng sản phẩm chung nhận ngôn ngữ riêng khi in.
+- Giữ nguyên dữ liệu do người dùng nhập (tên sản phẩm, thông số, ghi chú, tên khách), mã nghiệp vụ và thương hiệu. Nhãn danh mục có sẵn được dịch ở lớp hiển thị, không đổi khóa lưu trữ.

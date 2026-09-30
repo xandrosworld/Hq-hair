@@ -10,5 +10,5 @@ export function OrderBrief({order,customer,dirty,onStep}){
 
 export function DemoNextStep({order,onInvoice,onPayment}){
  if(order.stage!==2)return null;
- return <div className="demo-next-step"><CheckCircle size={22}/><div><b>Đơn đã chuyển sang Chờ duyệt</b><p>Tiếp theo, bạn có thể bổ sung chứng từ hoặc xem invoice gửi khách.</p></div><button className="btn" onClick={onPayment}>Bổ sung chứng từ</button><button className="btn primary" onClick={onInvoice}>Xem invoice <ArrowRight size={15}/></button></div>;
+ return <div className="demo-next-step"><CheckCircle size={22}/><div><b>Đơn đã chuyển sang Chờ duyệt</b><p>Tiếp theo, bạn có thể bổ sung chứng từ hoặc xem hóa đơn gửi khách.</p></div><button className="btn" onClick={onPayment}>Bổ sung chứng từ</button><button className="btn primary" onClick={onInvoice}>Xem hóa đơn <ArrowRight size={15}/></button></div>;
 }

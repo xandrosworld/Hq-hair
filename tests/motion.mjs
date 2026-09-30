@@ -55,7 +55,7 @@ try{
  await page.locator('.board-card').filter({hasText:'HQ-JD-3-1'}).click();
  await page.getByRole('heading',{name:/HQ-JD-3-1/}).waitFor();
  await page.waitForTimeout(1500);
- await page.getByRole('button',{name:'In invoice'}).click();await page.waitForTimeout(550);
+ await page.getByRole('button',{name:'In hóa đơn'}).click();await page.waitForTimeout(550);
  await page.screenshot({path:'screenshots/motion/03-invoice.png'});
  await page.keyboard.press('Escape');
  await page.locator('nav').getByRole('button',{name:'Tổng quan',exact:true}).click();
