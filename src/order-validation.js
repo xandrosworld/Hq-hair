@@ -1,3 +1,4 @@
+import {validDate} from '../reporting.js';
 import {totals} from '../shared.js';
 
 export function validateOrder(order,{submit=false}={}){
@@ -8,12 +9,15 @@ export function validateOrder(order,{submit=false}={}){
   }
   if(totals(order).revenue<0)errors.discount='Giảm giá không được vượt tổng giá sản phẩm.';
   (order.items||[]).forEach((item,i)=>{
-    if(!Number.isFinite(Number(item.qty))||Number(item.qty)<(submit?1:0)||Number(item.qty)>100000)errors[`qty-${i}`]='Số lượng phải từ '+(submit?'1':'0')+' đến 100.000.';
+    if(!Number.isFinite(Number(item.qty))||(submit?Number(item.qty)<=0:Number(item.qty)<0)||Number(item.qty)>100000)errors[`qty-${i}`]='Số lượng phải '+(submit?'lớn hơn 0':'từ 0')+' và không vượt 100.000.';
     if(!Number.isFinite(Number(item.price))||Number(item.price)<0||Number(item.price)>100000)errors[`price-${i}`]='Đơn giá phải từ 0 đến 100.000 USD.';
   });
+  if(order.paymentDue&&(!validDate(order.paymentDue)||order.paymentDue<order.date))errors.paymentDue='Hạn thanh toán phải hợp lệ và không trước ngày đặt hàng.';
+  if(order.date&&!validDate(order.date))errors.date='Ngày đặt hàng chưa hợp lệ.';
+  if(order.due&&!validDate(order.due))errors.due='Ngày giao chưa hợp lệ.';
   if(submit){
-    if(!order.date||!Number.isFinite(Date.parse(order.date)))errors.date='Chọn ngày đặt hàng.';
-    if(!order.due||!Number.isFinite(Date.parse(order.due)))errors.due='Chọn ngày giao dự kiến.';
+    if(!validDate(order.date))errors.date='Chọn ngày đặt hàng.';
+    if(!validDate(order.due))errors.due='Chọn ngày giao dự kiến.';
     else if(order.due<order.date)errors.due='Ngày giao phải từ ngày đặt hàng trở đi.';
     if(!order.items?.some(i=>i.kind==='base'&&Number(i.qty)>0))errors.items='Thêm ít nhất một sản phẩm gốc có số lượng lớn hơn 0.';
     for(const [key,label] of [['recipient','tên người nhận'],['phone','số điện thoại'],['address','địa chỉ giao hàng'],['country','quốc gia']])if(!order[key]?.trim())errors[key]=`Nhập ${label}.`;

@@ -1,3 +1,4 @@
+import {validDate} from './reporting.js';
 import express from 'express';
 import {contentLocked,exceptionReason,assertContentAction,applySaleWorkflow} from './order-workflow.js';
 import {deploymentGate} from './deployment-mode.js';
@@ -10,7 +11,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createWorkspace} from './workspace-server.js';
 import {seed} from './seed.js';
-import {totals,groups,countries} from './shared.js';
+import {totals,groups,countries,today} from './shared.js';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const dir=process.env.DATA_DIR||path.join(root,'data');mkdirSync(dir,{recursive:true});
 const db=new DatabaseSync(path.join(dir,'demo.sqlite'));db.exec('PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)');
@@ -22,12 +23,15 @@ app.get('/api/health',(req,res)=>res.json({ok:true,revision:process.env.APP_REVI
 app.use('/api/work',express.json({limit:'30mb'}));
 app.use('/api',express.json({limit:'30mb'}));
 app.use('/api',(req,res,next)=>{
+ if(req.method==='POST'&&(!req.body||Array.isArray(req.body)||typeof req.body!=='object'))return res.status(400).json({error:'Nội dung yêu cầu phải là một đối tượng hợp lệ.'});
  if(req.method!=='GET'&&req.get('origin')){try{if(new URL(req.get('origin')).host!==req.get('host'))return res.status(403).json({error:'Yêu cầu không hợp lệ.'})}catch{return res.status(403).json({error:'Yêu cầu không hợp lệ.'})}}
  next();
 });
 const workspace=await createWorkspace(dir);
 const business=express.Router();
-app.use('/api/work',workspace.router,business,(req,res)=>res.status(404).json({error:'Không tìm thấy chức năng.'}));
+workspace.router.use(business);
+workspace.router.use((req,res)=>res.status(404).json({error:'Không tìm thấy chức năng.'}));
+app.use('/api/work',workspace.router);
 app.use('/api',(req,res,next)=>{
  if(req.method!=='GET' && req.get('origin') && new URL(req.get('origin')).host!==req.get('host'))return res.status(403).json({error:'Yêu cầu không hợp lệ.'});
  let id=req.headers.cookie?.match(/(?:^|; )hq_demo=([a-f0-9-]{36})(?:;|$)/)?.[1];
@@ -37,7 +41,7 @@ app.use('/api',(req,res,next)=>{
 });
 const fail=(message)=>{const e=new Error(message);e.status=400;throw e};
 const text=(v,max=1000)=>typeof v==='string'?v.trim().slice(0,max):'';
-const num=(v,max=10000000)=>{const n=Number(v);if(!Number.isFinite(n)||n<0||n>max)fail('Số tiền hoặc số lượng không hợp lệ.');return n};
+const num=(v,max=10000000)=>{const n=Number(v);if((typeof v!=='number'&&typeof v!=='string')||!Number.isFinite(n)||n<0||n>max)fail('Số tiền hoặc số lượng không hợp lệ.');return n};
 const event=(req,o,title,note='')=>o.history.push({title,note,actor:req.user.name+' · '+(req.user.role==='manager'?'Quản lý':req.user.role==='factory'?'Xưởng':req.user.role==='sales_lead'?'Trưởng nhóm Sale':'Sale'),actorId:req.user.id,time:new Date().toISOString()});
 business.get('/orders/:id/images/:imageId',(req,res)=>{const o=req.data.orders.find(o=>o.id===req.params.id);req.assertAccess(o);if(!o||!o.messages.some(m=>m.images?.some(i=>i.id===req.params.imageId)))return res.status(404).json({error:'Không tìm thấy ảnh trong đơn này.'});const image=req.imageDb.prepare('SELECT data,mime FROM chat_images WHERE id=?').get(req.params.imageId);if(!image)return res.status(404).json({error:'Không tìm thấy ảnh.'});res.set({'Cache-Control':'private, no-store','Content-Type':image.mime,'Content-Security-Policy':"default-src 'none'; sandbox"});res.send(Buffer.from(image.data))});
 business.get('/state',(req,res)=>res.json(req.view()));
@@ -49,12 +53,13 @@ business.post('/customers',(req,res)=>{
  if(!b.id&&req.data.customers.length>=(req.work?10000:200))fail('Bản demo hỗ trợ tối đa 200 khách hàng.');
  const existing=req.data.customers.find(x=>x.id===b.id);
  if(b.id){req.assertAccess(existing);req.assertVersion(existing)}
- if(existing)Object.assign(existing,c,{version:(existing.version||0)+1});else req.data.customers.push({...c,ownerId:req.user.id,version:1,id:req.work?`${req.user.code}-${req.nextCode('customer:'+req.user.id)}`:`HQ-JD-${Math.max(0,...req.data.customers.map(x=>Number(x.id.split('-').at(-1))))+1}`,sale:req.user.name,created:new Date().toISOString().slice(0,10)});
+ if(existing)Object.assign(existing,c,{version:(existing.version||0)+1});else req.data.customers.push({...c,ownerId:req.user.id,version:1,id:req.work?`${req.user.code}-${req.nextCode('customer:'+req.user.id)}`:`HQ-JD-${Math.max(0,...req.data.customers.map(x=>Number(x.id.split('-').at(-1))))+1}`,sale:req.user.name,created:today()});
  req.save();res.json(req.view());
 });
 function cleanPayment(p){
+ if(!p||typeof p!=='object'||Array.isArray(p))fail('Chứng từ thanh toán không hợp lệ.');
  const result={id:randomUUID(),sender:text(p.sender),method:text(p.method),date:text(p.date),reference:text(p.reference),amount:num(p.amount),confirmed:false};
- if(result.amount<=0||!result.sender||!result.method||!/^\d{4}-\d{2}-\d{2}$/.test(result.date)||!Number.isFinite(Date.parse(result.date)))fail('Lần thanh toán cần người gửi, ngày gửi và số tiền lớn hơn 0.');
+ if(result.amount<=0||!result.sender||!result.method||!validDate(result.date))fail('Lần thanh toán cần người gửi, ngày gửi và số tiền lớn hơn 0.');
  if(p.file){if(!/^data:(image\/(png|jpeg|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/.test(p.file)||p.file.length>1500000)fail('Chứng từ chỉ nhận PNG, JPG, WebP hoặc PDF tối đa 1 MB.');const bytes=Buffer.from(p.file.split(',')[1],'base64');const mime=p.file.slice(5,p.file.indexOf(';'));const valid=mime==='application/pdf'?bytes.subarray(0,5).toString()==='%PDF-':mime==='image/png'?bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])):mime==='image/jpeg'?bytes[0]===255&&bytes[1]===216&&bytes[2]===255:bytes.subarray(0,4).toString()==='RIFF'&&bytes.subarray(8,12).toString()==='WEBP';if(!valid||bytes.length>1048576)fail('Nội dung tệp không khớp định dạng chứng từ.');result.file=p.file;result.fileName=text(p.fileName,120)}
  return result;
 }
@@ -69,17 +74,19 @@ business.post('/orders',(req,res)=>{
  if(old&&old.customerId!==c.id)fail('Không thể đổi khách hàng của đơn đã lưu.');
  const o={customerId:c.id,sale:c.sale,ownerId:c.ownerId||req.user.id,version:(old?.version||0)+1,stage:0};
  for(const k of ['date','due','paymentDue','recipient','phone','email','address','country','carrier','service','tracking','note'])o[k]=text(b[k]);
- if(o.paymentDue&&(!/^\d{4}-\d{2}-\d{2}$/.test(o.paymentDue)||!Number.isFinite(Date.parse(o.paymentDue))||new Date(o.paymentDue).toISOString().slice(0,10)!==o.paymentDue||o.paymentDue<o.date))fail('Hạn thanh toán phải là ngày hợp lệ, không trước ngày đặt hàng.');
+ if((o.date&&!validDate(o.date))||(o.due&&!validDate(o.due)))fail('Ngày đặt và ngày giao phải là ngày hợp lệ.');
+ if(o.paymentDue&&(!validDate(o.paymentDue)||o.paymentDue<o.date))fail('Hạn thanh toán phải là ngày hợp lệ, không trước ngày đặt hàng.');
  for(const k of ['discount','shippingFee','paymentFee'])o[k]=num(b[k]);
- if(!Array.isArray(b.items)||b.items.length>50)fail('Danh sách sản phẩm không hợp lệ.');
+ if(!Array.isArray(b.items)||b.items.length>50||b.items.some(i=>!i||typeof i!=='object'||Array.isArray(i)))fail('Danh sách sản phẩm không hợp lệ.');
  o.items=b.items.map(i=>({...cleanProductFields(i),productId:text(i.productId||i.id,80),name:text(i.name,120),spec:text(i.spec,200),unit:text(i.unit,30),kind:['base','extra','gift'].includes(i.kind)?i.kind:'base',qty:num(i.qty,100000),price:i.kind==='gift'?0:num(i.price,100000)}));
- if(!Array.isArray(b.payments)||b.payments.length>20)fail('Tối đa 20 chứng từ cho một đơn.');
+ if(!Array.isArray(b.payments)||b.payments.length>20||b.payments.some(p=>!p||typeof p!=='object'||Array.isArray(p)))fail('Tối đa 20 chứng từ cho một đơn.');
  o.payments=(old?.payments||[]).filter(p=>p.confirmed).concat((b.payments||[]).filter(p=>!p.confirmed).slice(0,20).map(cleanPayment));
+ if(o.payments.length>20)fail('Tối đa 20 chứng từ cho một đơn, gồm cả các lần đã xác nhận.');
  const refs=new Set();for(const p of o.payments){if(!p.reference)continue;const key=p.method+'|'+p.reference.toLowerCase();if(refs.has(key)||req.data.orders.some(other=>other.id!==old?.id&&other.payments.some(q=>q.method===p.method&&q.reference?.toLowerCase()===p.reference.toLowerCase())))fail('Mã giao dịch đã được ghi nhận.');refs.add(key)}
  if(totals(o).revenue<0)fail('Giảm giá không được vượt tổng giá sản phẩm.');
  if(o.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email))fail('Email chưa đúng định dạng.');
  if(b.submit||exception){
-  if(!o.date||!o.due||!Number.isFinite(Date.parse(o.date))||!Number.isFinite(Date.parse(o.due))||o.due<o.date||!o.recipient||!o.phone||!o.address||!o.country||!o.items.some(i=>i.kind==='base'&&i.qty>0)||o.items.some(i=>!i.name||i.qty<=0))fail('Kiểm tra sản phẩm, ngày giao và thông tin người nhận trước khi gửi duyệt.');
+  if(!validDate(o.date)||!validDate(o.due)||o.due<o.date||!o.recipient||!o.phone||!o.address||!o.country||!o.items.some(i=>i.kind==='base'&&i.qty>0)||o.items.some(i=>!i.name||i.qty<=0))fail('Kiểm tra sản phẩm, ngày giao và thông tin người nhận trước khi gửi duyệt.');
   o.stage=exception?old.stage:2;
  }
  o.id=old?.id||(req.work?`${c.id}-${req.nextCode('order:'+c.id)}`:`${c.id}-${Math.max(0,...req.data.orders.filter(o=>o.customerId===c.id).map(o=>Number(o.id.split('-').at(-1))))+1}`);
@@ -112,6 +119,10 @@ business.post('/orders/:id/action',(req,res)=>{
  else if(applySaleWorkflow(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}
  else fail('Thao tác không được hỗ trợ.');if(beforeException)req.recordAudit('manager-order-action',o.id,{action,reason:text(req.body.reason||req.body.text),before:beforeException,after:o});o.version=(o.version||0)+1;req.save();res.json(req.view());
 });
+// Synchronous business mutations must release their transaction before leaving
+// this router: Express can yield between routers while other requests arrive.
+business.use((req,res,next)=>{req.rollback?.();next()});
+business.use((error,req,res,next)=>{req.rollback?.();next(error)});
 app.use('/api',business);
 app.use('/api',(req,res)=>res.status(404).json({error:'Không tìm thấy chức năng.'}));
 app.use(express.static(path.join(root,'dist')));

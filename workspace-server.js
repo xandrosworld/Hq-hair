@@ -179,14 +179,17 @@ export async function createWorkspace(dir){
   if(old){if(old.hash!==hash)return res.status(409).json({error:'Mã thao tác đã được dùng cho nội dung khác.'});const result=JSON.parse(old.result);if(result.id){req.assertAccess(req.data.orders.find(o=>o.id===result.id));return res.json({id:result.id,state:req.view()})}return res.json(req.view())}
   db.exec('BEGIN IMMEDIATE');
   const json=res.json.bind(res);let done=false;
+  req.rollback=()=>{if(!done){done=true;if(db.isTransaction)db.exec('ROLLBACK')}};
   res.json=value=>{
-   if(!done){done=true;if(res.statusCode<400){
+   if(!done){if(res.statusCode<400){
+    try{
     audit(req.user,req.path,req.params.id||req.body.id||value.id||'',{action:req.body.action||null,version:req.body.version||null});
-    db.prepare('INSERT INTO requests VALUES (?,?,?,?,?)').run(req.user.id,key,hash,JSON.stringify({id:value.id}),Date.now());db.exec('COMMIT');
-   }else db.exec('ROLLBACK')}
+    db.prepare('INSERT INTO requests VALUES (?,?,?,?,?)').run(req.user.id,key,hash,JSON.stringify({id:value.id}),Date.now());db.exec('COMMIT');done=true;
+    }catch(error){req.rollback();throw error}
+   }else req.rollback()}
    return json(value);
   };
-  res.on('close',()=>{if(!done&&db.isTransaction){done=true;db.exec('ROLLBACK')}});
+  res.on('close',req.rollback);
   next();
  });
  router.post('/catalog',manager,(req,res)=>{
@@ -210,5 +213,7 @@ export async function createWorkspace(dir){
   for(const order of req.data.orders.filter(o=>o.customerId===c.id)){order.ownerId=owner.id;order.sale=owner.name;order.version++;order.history.push({title:'Chuyển người phụ trách',actor:req.user.name,actorId:req.user.id,time:new Date().toISOString(),note:`Chuyển tới ${owner.name}`})}
   req.save();res.json(req.view());
  });
+ // Roll back inside this router before Express yields to its parent on errors.
+ router.use((error,req,res,next)=>{req.rollback?.();next(error)});
  return {router,db,makeBackup};
 }
