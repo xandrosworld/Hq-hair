@@ -3,7 +3,7 @@ Usage: python scripts/vps-ssh.py command.sh [local-file remote-path ...]
 Uploads optional pairs before running the shell file on the VPS.
 """
 from pathlib import Path
-import sys,hashlib
+import sys,hashlib,uuid,shlex
 import paramiko
 from dotenv import dotenv_values
 
@@ -19,16 +19,26 @@ class FirstKnownHost(paramiko.MissingHostKeyPolicy):
    raise RuntimeError('VPS host key changed; verify before connecting.')
   client.get_host_keys().add(hostname,key.get_name(),key);client.save_host_keys(str(known))
 client.set_missing_host_key_policy(FirstKnownHost())
+remote_script=None
 try:
  client.connect(config['VPS_HOST'],port=int(config['VPS_SSH_PORT']),username=config['VPS_SSH_USER'],password=config.get('VPS_SSH_PASSWORD') or None,key_filename=config.get('VPS_SSH_KEY_PATH') or None,passphrase=config.get('VPS_SSH_KEY_PASSPHRASE') or None,look_for_keys=False,allow_agent=False,timeout=20)
  if len(sys.argv)>2:
   with client.open_sftp() as sftp:
    for local,remote in zip(sys.argv[2::2],sys.argv[3::2]):sftp.put(local,remote);sftp.chmod(remote,0o600)
  script=Path(sys.argv[1]).read_text(encoding='utf-8-sig')
- stdin,stdout,stderr=client.exec_command('bash -se',get_pty=False)
- stdin.write(script);stdin.channel.shutdown_write()
+ remote_script='/tmp/hq-operator-'+uuid.uuid4().hex+'.sh'
+ with client.open_sftp() as sftp:
+  with sftp.open(remote_script,'w') as f:f.write(script)
+  sftp.chmod(remote_script,0o700)
+ stdin,stdout,stderr=client.exec_command('bash -e '+shlex.quote(remote_script),get_pty=False)
+ stdin.channel.shutdown_write()
  # Merge remote stderr into stdout; keep only script output, never local auth values.
  stdout.channel.set_combine_stderr(True)
  for line in stdout:print(line,end='',flush=True)
  raise SystemExit(stdout.channel.recv_exit_status())
-finally:client.close()
+finally:
+ if remote_script:
+  try:
+   with client.open_sftp() as sftp:sftp.remove(remote_script)
+  except Exception:pass
+ client.close()

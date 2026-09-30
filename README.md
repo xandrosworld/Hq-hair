@@ -68,17 +68,25 @@ git commit -m "Describe the change"
 git push origin main
 ```
 
-Railway được kết nối trực tiếp với repo `xandrosworld/Hq-hair`, nhánh `main`, service `sale-web` trong project `hq-hair-sale-demo`. Push lên `main` sẽ kích hoạt build/deploy Dockerfile ở thư mục gốc. Không cần Railway CLI trên máy mới cho việc deploy thông thường.
+Máy chủ chính từ 30/09/2026: **https://hqhaircrm.io.vn/workspace**, VPS Vietnix Ubuntu 24.04 LTS. Truy cập `/` chuyển đến đăng nhập; bản demo vẫn ở `/demo`.
 
-Dashboard: https://railway.com/project/74bba706-31fa-4b6f-ad2a-4787f48ffed9
+Push lên `main` như trên. VPS kiểm tra GitHub mỗi 2 phút bằng `hqhair-deploy.timer`, build Docker và chạy unit tests trước khi thay container. Dữ liệu nằm ngoài image tại `/opt/hqhaircrm/data`. Bản build thành công được kiểm tra `/api/health` đúng mã commit; nếu lỗi khởi động sẽ quay về image trước (không tự ghi đè cơ sở dữ liệu).
 
-Nếu cần quản trị qua CLI, cài Railway CLI, chạy `railway login`, sau đó:
+Các file vận hành mẫu nằm trong `deploy/`. Bản đang chạy nằm ở `/opt/hqhaircrm/config`; thay đổi các file hạ tầng này cần được người vận hành cài lại, không tự thay cùng mã ứng dụng. SSH được lưu riêng trong `.env` local và không đưa vào Git, Docker hoặc GitHub Secrets. Có thể dùng `python scripts/vps-ssh.py <file-lệnh.sh>` từ máy đã có `.env`, Python paramiko và python-dotenv.
+
+Kiểm tra trên VPS:
 
 ```sh
-railway link --project 74bba706-31fa-4b6f-ad2a-4787f48ffed9 --environment production --service sale-web
-railway service status --service sale-web
+systemctl status hqhair-deploy.timer hqhair-backup.timer
+journalctl -u hqhair-deploy.service -n 80 --no-pager
+cat /opt/hqhaircrm/state/current
+curl -fsS http://127.0.0.1:3000/api/health
 ```
 
-Giữ volume mount `/data` và biến `PORT=3000`; Dockerfile đặt `DATA_DIR=/data`. Không commit cơ sở dữ liệu, cookie phiên, `.env` hay token. Trình duyệt trên máy khác có phiên demo riêng; mã nguồn được đồng bộ qua GitHub.
+Dữ liệu được sao lưu trước mỗi lần triển khai và hằng ngày lúc 02:15 UTC, kiểm tra SQLite integrity, giữ 14 ngày. Bản sao hằng ngày nằm trong `/opt/hqhaircrm/backups`, trên cùng VPS; chưa có đích sao lưu ngoài VPS định kỳ. Bản chuyển máy chủ ban đầu được giữ thêm trên máy vận hành (`data/migration/railway-final.tar.gz`, gitignored) và volume Railway. Khôi phục dữ liệu cần dừng app và kiểm tra bản sao trước, không chép SQLite đang mở lên nhau.
+
+Railway cũ giữ bản dữ liệu trước chuyển máy chủ và chuyển hướng sang tên miền mới. `deployment-mode.json` trong volume cũ khóa mọi ghi API; không chuyển file này sang VPS. Không xóa volume dự phòng khi chưa quyết định thời gian lưu. Theo dõi phí Railway trong thời gian giữ chuyển hướng/dự phòng.
+
+Không commit cơ sở dữ liệu, cookie phiên, `.env`, khóa SSH hoặc token. Tài khoản và mật khẩu quản trị giữ nguyên sau chuyển máy chủ. Cookie theo tên miền nên cần đăng nhập lại ở địa chỉ mới; dữ liệu demo cũ được giữ trong DB, nhưng trình duyệt ở tên miền mới có cookie demo riêng.
 
 Kiểm tra giao diện (tùy chọn): `npx playwright install chromium`, khởi động server, rồi chạy `node tests/smoke.mjs` và `node tests/design.mjs`.
