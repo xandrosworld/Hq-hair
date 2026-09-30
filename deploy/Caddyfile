@@ -1,0 +1,10 @@
+hqhaircrm.io.vn {
+ encode zstd gzip
+ @home path /
+ redir @home /workspace 302
+ reverse_proxy app:3000
+}
+
+www.hqhaircrm.io.vn {
+ redir https://hqhaircrm.io.vn{uri} permanent
+}

@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build && npm prune --omit=dev
+RUN npm test && npm run build && npm prune --omit=dev
 ENV NODE_ENV=production
 ENV DATA_DIR=/data
 EXPOSE 3000

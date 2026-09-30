@@ -1,0 +1,11 @@
+[Unit]
+Description=HQ Hair deploy latest GitHub main revision
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/hqhaircrm/config/deploy.sh
+TimeoutStartSec=1800
+Nice=10

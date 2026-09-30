@@ -1,0 +1,6 @@
+[Unit]
+Description=HQ Hair verified daily SQLite backups
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/hqhaircrm/config/backup.sh

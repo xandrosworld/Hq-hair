@@ -1,4 +1,5 @@
 import express from 'express';
+import {deploymentGate} from './deployment-mode.js';
 import {cleanProductFields} from './product-fields.js';
 import {parseChatImages,setupChatImages} from './chat-images.js';
 import {DatabaseSync} from 'node:sqlite';
@@ -14,8 +15,9 @@ const dir=process.env.DATA_DIR||path.join(root,'data');mkdirSync(dir,{recursive:
 const db=new DatabaseSync(path.join(dir,'demo.sqlite'));db.exec('PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)');
 setupChatImages(db);
 const app=express();app.disable('x-powered-by');app.set('trust proxy',1);
+app.use(deploymentGate(dir));
 app.use((req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'same-origin','X-Robots-Tag':'noindex, nofollow'});next()});
-app.get('/api/health',(req,res)=>res.json({ok:true}));
+app.get('/api/health',(req,res)=>res.json({ok:true,revision:process.env.APP_REVISION||null}));
 app.use('/api/work',express.json({limit:'30mb'}));
 app.use('/api',express.json({limit:'30mb'}));
 app.use('/api',(req,res,next)=>{
