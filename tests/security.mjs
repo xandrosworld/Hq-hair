@@ -10,7 +10,7 @@ let server,logs='';
 async function start(){server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:String(port),DATA_DIR:dir,NODE_ENV:'test',HQ_ADMIN_EMAIL:'owner@example.com',HQ_ADMIN_PASSWORD:'Initial-Password-2026'},stdio:['ignore','pipe','pipe']});server.stdout.on('data',s=>logs+=s);server.stderr.on('data',s=>logs+=s);for(let i=0;i<100;i++){try{if((await fetch(base.replace('/work','/health'))).ok)return}catch{}await new Promise(r=>setTimeout(r,100))}throw Error(logs)}
 async function stop(){const done=new Promise(r=>server.once('exit',r));server.kill();await done}
 function client(){return {cookie:'',csrf:'',async call(url,body,{status=200,key=randomUUID(),csrf=this.csrf}={}){const r=await fetch(base+url,{method:body?'POST':'GET',headers:{Cookie:this.cookie,...(body?{'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':key}:{})},body:body?JSON.stringify(body):undefined});const v=await r.json();assert.equal(r.status,status,`${url}: ${JSON.stringify(v)}`);const c=r.headers.get('set-cookie');if(c)this.cookie=c.split(';')[0];if(v.csrf)this.csrf=v.csrf;return v}}}
-const owner=client(),a=client(),b=client(),accountant=client(),anonymous=client();
+const owner=client(),a=client(),b=client(),accountant=client(),factory=client(),anonymous=client();
 const customer={name:'Client A',company:'Salon A',phone:'+123456789',email:'buyer@example.com',country:'United States',group:'Salon',address:'123 Example St',recipient:'Buyer',recipientPhone:'+123456789',social:'https://example.com',source:'Website',purchase:'Đơn đầu tiên'};
 try{
  await start();
@@ -22,7 +22,8 @@ try{
  let users=await owner.call('/users',{name:'Sale A',email:'sale-a@example.com',role:'sale',password:'Sale-Initial-Password'});
  users=await owner.call('/users',{name:'Sale B',email:'sale-b@example.com',role:'sale',password:'Sale-Initial-Password'});
  users=await owner.call('/users',{name:'Accountant',email:'accounting@example.com',role:'accounting',password:'Sale-Initial-Password'});
- for(const [c,email] of [[a,'sale-a@example.com'],[b,'sale-b@example.com'],[accountant,'accounting@example.com']]){await c.call('/login',{email,password:'Sale-Initial-Password'});await c.call('/password',{currentPassword:'Sale-Initial-Password',password:'Personal-New-Password'})}
+ users=await owner.call('/users',{name:'Factory',email:'factory@example.com',role:'factory',password:'Sale-Initial-Password'});
+ for(const [c,email] of [[factory,'factory@example.com'],[a,'sale-a@example.com'],[b,'sale-b@example.com'],[accountant,'accounting@example.com']]){await c.call('/login',{email,password:'Sale-Initial-Password'});await c.call('/password',{currentPassword:'Sale-Initial-Password',password:'Personal-New-Password'})}
  await accountant.call('/state',undefined,{status:403});
  await a.call('/users',undefined,{status:403});
  await a.call('/reset',{}, {status:403});
@@ -75,6 +76,17 @@ try{
  await owner.call('/catalog',{version:0,products:[]},{status:409});
  assert.equal((await a.call('/state')).catalog[0].name,product.name);
  assert.equal((await a.call('/state')).orders[0].items[0].price,8);
+ const fullFactory=await factory.call('/state');assert.equal(fullFactory.orders.length,1);assert.equal(fullFactory.orders[0].payments[0].amount,100);assert.equal(fullFactory.customers[0].email,'buyer@example.com');
+ await factory.call('/orders',{...fullFactory.orders[0]},{status:403});await factory.call('/customers',customer,{status:403});await factory.call('/users',undefined,{status:403});
+ await factory.call(`/orders/${id}/action`,{version:fullFactory.orders[0].version,action:'payment',payment},{status:403});
+ const fmessage=await factory.call(`/orders/${id}/action`,{version:fullFactory.orders[0].version,action:'message',text:'Factory can coordinate'});assert.match(fmessage.orders[0].messages.at(-1).author,/Xưởng/);
+ const factoryId=users.find(u=>u.role==='factory').id;
+ await a.call(`/users/${factoryId}/visibility`,{factoryView:'products'},{status:403});
+ await owner.call(`/users/${factoryId}/visibility`,{factoryView:'products'});
+ const limited=await factory.call('/state');assert.equal(limited.customers.length,0);assert.equal(limited.catalog.length,0);assert.equal(limited.orders[0].payments,undefined);assert.equal(limited.orders[0].items[0].price,undefined);assert.equal(limited.orders[0].customerId,undefined);assert.equal(limited.orders[0].recipient,undefined);assert.ok(limited.orders[0].history.every(h=>!h.snapshot&&!h.note));assert.ok(limited.orders[0].messages.length);
+ assert.equal((await fetch(base+imagePath,{headers:{Cookie:factory.cookie}})).status,200);
+ await factory.call('/audit',undefined,{status:403});await factory.call('/backup-download',undefined,{status:403});
+ await owner.call(`/users/${factoryId}/visibility`,{factoryView:'full'});assert.equal((await factory.call('/state')).orders[0].payments[0].amount,100);
  const beforeAssign=(await owner.call('/state')).customers[0];
  state=await owner.call('/assign',{id:c.id,version:beforeAssign.version,ownerId:users.find(u=>u.email==='sale-b@example.com').id});
  assert.equal((await a.call('/state')).orders.length,0);assert.equal((await b.call('/state')).orders.length,1);await a.call(imagePath,undefined,{status:404});assert.equal((await fetch(base+imagePath,{headers:{Cookie:b.cookie}})).status,200);

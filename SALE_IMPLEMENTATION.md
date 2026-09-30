@@ -59,3 +59,11 @@ Chat mỗi đơn hỗ trợ gửi chữ, ảnh hoặc cả hai: JPG/PNG/WebP, t�
 Đã tách Type of hair extension (tên/loại sản phẩm), Origin of hair, LENGTH (CM), Type (kiểu tóc), Hair segment, Color, Note, Weight/Qty, Unit price và Amount. Sản phẩm tính theo USD/100G dùng `grams / 100 * price`; mẫu Bulk / Raw hair / 55cm / Straight / Super Double Drawn / #2H / 800g / 98,5 USD/100g cho 788 USD. Bảng giá, dòng đơn, chi tiết và invoice dùng cùng trường và cách tính. Dòng cũ không có priceBasis giữ USD/đơn vị, không tự chuyển giá cũ. Phụ kiện/quà tặng vẫn có đơn vị riêng.
 
 Giữ quy tắc cộng các giá trị trước khi làm tròn tổng nhóm như bản trước; quy tắc làm tròn chính thức chờ khách xác nhận. Bảng giá thật và danh sách lựa chọn cho các thông số chưa được cung cấp; các trường cho phép nhập tự do. Ảnh mẫu có phần Color rộng/chia ô nhưng chỉ có một giá trị #2H; hiện lưu một trường Color, chưa tự suy diễn ô còn lại là ảnh màu hoặc mã màu thứ hai. Phân quyền theo DOCX đang chờ làm rõ, không thay đổi trong bản sản phẩm này.
+
+## Cập nhật phân quyền 30/09/2026 lúc 14:00
+
+Đã nhận câu trả lời của Xuân Hải: Sale chỉ xem đơn/chỉ số của mình; khóa nội dung sau bước 8; chat dùng cho Sale–Xưởng. Phương án slide 1/2 và các điểm còn cần xác nhận được ghi tại [CUSTOMER_PERMISSIONS.md](CUSTOMER_PERMISSIONS.md). Đây là cập nhật đặc tả, chưa phải báo cáo hoàn tất triển khai quyền Xưởng/Kế toán hoặc các bước 8–10.
+
+## Quyền Xưởng cập nhật 30/09/2026 lúc 14:11
+
+Theo xác nhận mới, Xưởng được xem toàn bộ thông tin đơn. Đã mở giao diện Xưởng xem các đơn đã gửi duyệt, thông tin khách, giá, thanh toán/chứng từ và chat ảnh. Quản trị có cấu hình phạm vi xem theo tài khoản, mặc định toàn bộ, có thể đổi thành chỉ sản phẩm/chat. Xem [CUSTOMER_PERMISSIONS.md](CUSTOMER_PERMISSIONS.md) để phân biệt phần đã triển khai với quyền quản trị toàn diện và luồng trạng thái còn tiếp tục.

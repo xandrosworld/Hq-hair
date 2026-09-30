@@ -1,4 +1,5 @@
 import express from 'express';
+import {canReadRecord,factoryOrder,factoryView} from './permissions.js';
 import {cleanProductFields} from './product-fields.js';
 import {setupChatImages} from './chat-images.js';
 import {DatabaseSync,backup} from 'node:sqlite';
@@ -10,7 +11,7 @@ import path from 'node:path';
 const derive=promisify(scrypt);
 const digest=value=>createHash('sha256').update(value).digest('hex');
 const reject=(status,message)=>{throw Object.assign(new Error(message),{status})};
-export const safeUser=u=>({id:u.id,name:u.name,email:u.email,role:u.role,code:u.code,active:!!u.active,mustChange:!!u.must_change});
+export const safeUser=u=>({id:u.id,name:u.name,email:u.email,role:u.role,code:u.code,active:!!u.active,mustChange:!!u.must_change,factoryView:factoryView(u)});
 export async function hashPassword(password){
  if(typeof password!=='string'||password.length<12||password.length>128)reject(400,'Mật khẩu cần từ 12 đến 128 ký tự.');
  const salt=randomBytes(16).toString('hex');
@@ -32,10 +33,11 @@ export async function createWorkspace(dir){
  CREATE TABLE IF NOT EXISTS requests(user_id TEXT NOT NULL,key TEXT NOT NULL,hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(user_id,key));
  CREATE TABLE IF NOT EXISTS login_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,reset INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS sequences(key TEXT PRIMARY KEY,value INTEGER NOT NULL);`);
+ if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='factory_view'))db.exec("ALTER TABLE users ADD COLUMN factory_view TEXT NOT NULL DEFAULT 'full'");
  db.prepare('INSERT OR IGNORE INTO workspace VALUES (1,?)').run(JSON.stringify({customers:[],orders:[],catalog:[]}));
  const audit=(user,action,target='',details={})=>db.prepare('INSERT INTO audit(actor,time,action,target,details) VALUES (?,?,?,?,?)').run(user.id,new Date().toISOString(),action,target,JSON.stringify(details));
  if(!db.prepare('SELECT id FROM users LIMIT 1').get()&&process.env.HQ_ADMIN_EMAIL&&process.env.HQ_ADMIN_PASSWORD){
-  db.prepare('INSERT INTO users VALUES (?,?,?,?,?,?,1,1)').run(randomUUID(),process.env.HQ_ADMIN_EMAIL.toLowerCase(),process.env.HQ_ADMIN_NAME||'Quản lý HQ Hair','HQ-ADMIN','manager',await hashPassword(process.env.HQ_ADMIN_PASSWORD));
+  db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(randomUUID(),process.env.HQ_ADMIN_EMAIL.toLowerCase(),process.env.HQ_ADMIN_NAME||'Quản lý HQ Hair','HQ-ADMIN','manager',await hashPassword(process.env.HQ_ADMIN_PASSWORD));
  }
  setupChatImages(db);
  const dummy=await hashPassword(randomBytes(24).toString('hex'));
@@ -103,10 +105,11 @@ export async function createWorkspace(dir){
    if(!db.prepare('SELECT token FROM auth_sessions WHERE token=?').get(req.session.token))reject(401,'Phiên đã kết thúc.');
    if(db.prepare('SELECT id FROM users WHERE email=?').get(email))reject(409,'Email đã được sử dụng.');
    const id=randomUUID();const code='HQ-S'+String(db.prepare('SELECT COUNT(*) AS n FROM users').get().n+1).padStart(3,'0');
-   db.prepare('INSERT INTO users VALUES (?,?,?,?,?,?,1,1)').run(id,email,name,code,b.role,password);audit(req.user,'user-create',id,{name,email,role:b.role,code});
+   db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(id,email,name,code,b.role,password);audit(req.user,'user-create',id,{name,email,role:b.role,code});
   }
   res.json(db.prepare('SELECT * FROM users ORDER BY name').all().map(safeUser));
  });
+ router.post('/users/:id/visibility',manager,(req,res)=>{const user=db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);if(!user||user.role!=='factory')reject(400,'Chọn tài khoản Xưởng.');if(!['full','products'].includes(req.body.factoryView))reject(400,'Phạm vi xem không hợp lệ.');db.prepare('UPDATE users SET factory_view=? WHERE id=?').run(req.body.factoryView,user.id);audit(req.user,'factory-visibility',user.id,{before:user.factory_view,after:req.body.factoryView});res.json(db.prepare('SELECT * FROM users ORDER BY name').all().map(safeUser))});
  router.get('/audit',manager,(req,res)=>res.json(db.prepare('SELECT audit.*,users.name AS actorName FROM audit LEFT JOIN users ON users.id=audit.actor ORDER BY audit.id DESC LIMIT 200').all()));
  const backupDir=process.env.BACKUP_DIR||path.join(dir,'backups');mkdirSync(backupDir,{recursive:true});
  let backingUp=false,lastBackup=null,backupError=null;
@@ -136,22 +139,23 @@ export async function createWorkspace(dir){
  });
  await makeBackup();const timer=setInterval(makeBackup,86400000);timer.unref();
  router.use((req,res,next)=>{
-  if(!['sale','manager'].includes(req.user.role))return res.status(403).json({error:'Phân hệ này dành cho Sale và quản lý. Phân hệ của bạn sẽ được mở ở giai đoạn tương ứng.'});
+  if(!['sale','manager','factory'].includes(req.user.role))return res.status(403).json({error:'Phân hệ này dành cho Sale và quản lý. Phân hệ của bạn sẽ được mở ở giai đoạn tương ứng.'});
   req.imageDb=db;req.data=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
   const beforeCustomers=new Map(req.data.customers.map(c=>[c.id,JSON.stringify(c)]));
   const beforeCatalog=JSON.stringify(req.data.catalog);
-  req.canRead=record=>!!record&&(req.user.role==='manager'||record.ownerId===req.user.id);
+  req.canRead=record=>canReadRecord(req.user,record);
   req.recordAudit=(action,target,details)=>audit(req.user,action,target,details);
   req.assertAccess=record=>{if(!req.canRead(record))reject(404,'Không tìm thấy dữ liệu trong phạm vi được giao.')};
   req.assertVersion=record=>{if(record&&req.body.version!==record.version)reject(409,'Dữ liệu đã được cập nhật ở nơi khác. Tải lại trang trước khi sửa tiếp.')};
   req.nextCode=key=>db.prepare('INSERT INTO sequences VALUES (?,1) ON CONFLICT(key) DO UPDATE SET value=value+1 RETURNING value').get(key).value;
-  req.view=()=>({...req.data,customers:req.data.customers.filter(req.canRead),orders:req.data.orders.filter(req.canRead),user:safeUser(req.user),mode:'workspace'});
+  req.view=()=>{const orders=req.data.orders.filter(req.canRead);if(req.user.role==='factory')return {orders:factoryView(req.user)==='products'?orders.map(factoryOrder):orders,customers:factoryView(req.user)==='products'?[]:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};return {...req.data,customers:req.data.customers.filter(req.canRead),orders,user:safeUser(req.user),mode:'workspace'}};
   req.save=()=>{
    for(const c of req.data.customers){const before=beforeCustomers.get(c.id);if(before!==JSON.stringify(c))audit(req.user,before?'customer-update':'customer-create',c.id,{before:before?JSON.parse(before):null,after:c})}
    if(beforeCatalog!==JSON.stringify(req.data.catalog))audit(req.user,'catalog-update','catalog',{before:JSON.parse(beforeCatalog),after:req.data.catalog});
    return db.prepare('UPDATE workspace SET data=? WHERE id=1').run(JSON.stringify(req.data));
   };
   if(req.method==='GET')return next();
+  if(req.user.role==='factory'&&!( /^\/orders\/[^/]+\/action$/.test(req.path)&&req.body.action==='message'))return res.status(403).json({error:'Tài khoản Xưởng hiện được xem đơn và trao đổi; không được sửa nội dung hoặc thanh toán.'});
   if(req.path==='/reset')return res.status(403).json({error:'Không gian làm việc không hỗ trợ khôi phục dữ liệu mẫu.'});
   const key=req.get('Idempotency-Key');if(!key||!/^[\w-]{16,100}$/.test(key))return res.status(400).json({error:'Thiếu mã thao tác. Vui lòng tải lại trang.'});
   const hash=digest(req.path+JSON.stringify(req.body));
