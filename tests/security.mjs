@@ -70,7 +70,7 @@ try{
  const imageResponse=await fetch(base+imagePath,{headers:{Cookie:a.cookie}});assert.equal(imageResponse.status,200);assert.equal(imageResponse.headers.get('content-type'),'image/png');assert.equal(Buffer.from(await imageResponse.arrayBuffer()).toString('base64'),png.split(',')[1]);
  await b.call(imagePath,undefined,{status:404});await anonymous.call(imagePath,undefined,{status:401});
  await a.call('/catalog',{version:0,products:[]},{status:403});
- const product={name:'Approved test item',unit:'Gram',kind:'base',price:7,spec:'Black'};
+ const product={name:'Bulk',unit:'Gram',kind:'base',price:98.5,spec:'',origin:'Raw hair',lengthCm:55,texture:'Straight',segment:'Super Double Drawn',color:'#2H',priceBasis:'100g'};
  state=await owner.call('/catalog',{version:0,products:[product]});assert.equal(state.catalogVersion,1);
  await owner.call('/catalog',{version:0,products:[]},{status:409});
  assert.equal((await a.call('/state')).catalog[0].name,product.name);
@@ -82,6 +82,7 @@ try{
  await a.call('/orders',draft,{key,status:404});
  assert.equal((await a.call('/customers',customer,{key:customerKey})).customers.length,0);
  assert.ok((await owner.call('/audit')).some(e=>e.action==='customer-assign'));
+ const specimen=await b.call('/orders',{...draft,items:[{...product,qty:800}]});assert.equal(specimen.state.orders.find(o=>o.id===specimen.id).items[0].priceBasis,'100g');assert.equal(specimen.state.orders.find(o=>o.id===specimen.id).items[0].lengthCm,55);await b.call(`/orders/${specimen.id}/action`,{version:1,action:'delete'});
  const pair=await Promise.all([b.call('/orders',draft),b.call('/orders',draft)]);assert.notEqual(pair[0].id,pair[1].id);
  const concurrent=await Promise.all([1,2].map(n=>fetch(base+`/orders/${pair[0].id}/action`,{method:'POST',headers:{Cookie:b.cookie,'Content-Type':'application/json','X-CSRF-Token':b.csrf,'Idempotency-Key':randomUUID()},body:JSON.stringify({version:1,action:'message',text:'Concurrent '+n})})));
  assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,409]);

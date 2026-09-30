@@ -1,4 +1,5 @@
 import express from 'express';
+import {cleanProductFields} from './product-fields.js';
 import {setupChatImages} from './chat-images.js';
 import {DatabaseSync,backup} from 'node:sqlite';
 import {randomBytes,randomUUID,scrypt,timingSafeEqual,createHash} from 'node:crypto';
@@ -175,7 +176,7 @@ export async function createWorkspace(dir){
   const products=b.products.map(p=>{
    const name=String(p.name||'').trim(),unit=String(p.unit||'').trim(),price=Number(p.price);
    if(!name||name.length>120||!unit||unit.length>30||!Number.isFinite(price)||price<0||price>100000||!['base','extra','gift'].includes(p.kind))reject(400,'Kiểm tra tên, đơn vị, nhóm và giá sản phẩm.');
-   return {id:p.id&&req.data.catalog.some(x=>x.id===p.id)?p.id:randomUUID(),name,unit,price:p.kind==='gift'?0:price,kind:p.kind,spec:String(p.spec||'').trim().slice(0,200)};
+   return {...cleanProductFields(p),id:p.id&&req.data.catalog.some(x=>x.id===p.id)?p.id:randomUUID(),name,unit,price:p.kind==='gift'?0:price,kind:p.kind,spec:String(p.spec||'').trim().slice(0,200)};
   });
   if(new Set(products.map(p=>p.id)).size!==products.length)reject(400,'Sản phẩm bị lặp mã.');
   req.data.catalog=products;req.data.catalogVersion=(req.data.catalogVersion||0)+1;req.save();res.json(req.view());

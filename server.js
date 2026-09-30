@@ -1,4 +1,5 @@
 import express from 'express';
+import {cleanProductFields} from './product-fields.js';
 import {parseChatImages,setupChatImages} from './chat-images.js';
 import {DatabaseSync} from 'node:sqlite';
 import {randomUUID} from 'node:crypto';
@@ -64,7 +65,7 @@ business.post('/orders',(req,res)=>{
  for(const k of ['date','due','recipient','phone','email','address','country','carrier','service','tracking','note'])o[k]=text(b[k]);
  for(const k of ['discount','shippingFee','paymentFee'])o[k]=num(b[k]);
  if(!Array.isArray(b.items)||b.items.length>50)fail('Danh sách sản phẩm không hợp lệ.');
- o.items=b.items.map(i=>({productId:text(i.productId||i.id,80),name:text(i.name,120),spec:text(i.spec,200),unit:text(i.unit,30),kind:['base','extra','gift'].includes(i.kind)?i.kind:'base',qty:num(i.qty,100000),price:i.kind==='gift'?0:num(i.price,100000)}));
+ o.items=b.items.map(i=>({...cleanProductFields(i),productId:text(i.productId||i.id,80),name:text(i.name,120),spec:text(i.spec,200),unit:text(i.unit,30),kind:['base','extra','gift'].includes(i.kind)?i.kind:'base',qty:num(i.qty,100000),price:i.kind==='gift'?0:num(i.price,100000)}));
  if(!Array.isArray(b.payments)||b.payments.length>20)fail('Tối đa 20 chứng từ cho một đơn.');
  o.payments=(old?.payments||[]).filter(p=>p.confirmed).concat((b.payments||[]).filter(p=>!p.confirmed).slice(0,20).map(cleanPayment));
  const refs=new Set();for(const p of o.payments){if(!p.reference)continue;const key=p.method+'|'+p.reference.toLowerCase();if(refs.has(key)||req.data.orders.some(other=>other.id!==old?.id&&other.payments.some(q=>q.method===p.method&&q.reference?.toLowerCase()===p.reference.toLowerCase())))fail('Mã giao dịch đã được ghi nhận.');refs.add(key)}

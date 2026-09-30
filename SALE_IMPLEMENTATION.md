@@ -53,3 +53,9 @@ Xác nhận đặc tả và ngày bắt đầu theo khoản 3.2 khi đủ đầu
 ## Bổ sung chat ảnh theo yêu cầu khách
 
 Chat mỗi đơn hỗ trợ gửi chữ, ảnh hoặc cả hai: JPG/PNG/WebP, tối đa 5 MiB/ảnh và 4 ảnh/tin. Có xem trước, bỏ ảnh đã chọn, mở ảnh lớn và giữ nội dung khi gửi lỗi. Máy chủ kiểm tra loại, dung lượng, chữ ký định dạng và quyền theo đơn khi gửi/mở ảnh; không có URL ảnh công khai. Ảnh lưu dạng BLOB trong bảng riêng cùng database, đi theo sao lưu và khôi phục. Danh sách tin nhắn chỉ tải metadata; trình duyệt tải ảnh khi cần hiển thị. Các giới hạn này là cấu hình triển khai ban đầu, cần đưa vào đặc tả xác nhận.
+
+## Mẫu sản phẩm khách gửi ngày 30/09/2026
+
+Đã tách Type of hair extension (tên/loại sản phẩm), Origin of hair, LENGTH (CM), Type (kiểu tóc), Hair segment, Color, Note, Weight/Qty, Unit price và Amount. Sản phẩm tính theo USD/100G dùng `grams / 100 * price`; mẫu Bulk / Raw hair / 55cm / Straight / Super Double Drawn / #2H / 800g / 98,5 USD/100g cho 788 USD. Bảng giá, dòng đơn, chi tiết và invoice dùng cùng trường và cách tính. Dòng cũ không có priceBasis giữ USD/đơn vị, không tự chuyển giá cũ. Phụ kiện/quà tặng vẫn có đơn vị riêng.
+
+Giữ quy tắc cộng các giá trị trước khi làm tròn tổng nhóm như bản trước; quy tắc làm tròn chính thức chờ khách xác nhận. Bảng giá thật và danh sách lựa chọn cho các thông số chưa được cung cấp; các trường cho phép nhập tự do. Ảnh mẫu có phần Color rộng/chia ô nhưng chỉ có một giá trị #2H; hiện lưu một trường Color, chưa tự suy diễn ô còn lại là ảnh màu hoặc mã màu thứ hai. Phân quyền theo DOCX đang chờ làm rõ, không thay đổi trong bản sản phẩm này.
