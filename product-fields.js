@@ -7,6 +7,7 @@ export function cleanProductFields(p){
  const fail=message=>{throw Object.assign(new Error(message),{status:400})};
  if(p.priceBasis!==undefined&&!['unit','100g'].includes(p.priceBasis))fail('Đơn vị tính giá không hợp lệ.');
  const fields={priceBasis:p.priceBasis||'unit'};
+ if(p.priceReference&&typeof p.priceReference==='object'){fields.priceReference={};for(const key of ['id','tier','tone','colorId','variant'])fields.priceReference[key]=String(p.priceReference[key]||'').slice(0,120);if(Number.isSafeInteger(p.priceReference.version)&&p.priceReference.version>0)fields.priceReference.version=p.priceReference.version;}
  for(const [key] of hairFields){
   if(key==='lengthCm'){
    const v=p[key];if(v!==undefined&&v!==null&&v!==''){if(!Number.isFinite(Number(v))||Number(v)<=0||Number(v)>300)fail('Chiều dài tóc phải lớn hơn 0 và không quá 300 cm.');fields[key]=Number(v)}else fields[key]='';

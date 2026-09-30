@@ -51,3 +51,16 @@ Trước mốc khóa không có nghĩa Sale được tự sửa toàn bộ đơn
 - Giao diện nội bộ dùng tiếng Việt, gồm kinh doanh, quản trị và Xưởng.
 - Hóa đơn sản phẩm gửi khách dùng nhãn tiếng Anh; nút xem/in vẫn tiếng Việt. Bảng sản phẩm chung nhận ngôn ngữ riêng khi in.
 - Giữ nguyên dữ liệu do người dùng nhập (tên sản phẩm, thông số, ghi chú, tên khách), mã nghiệp vụ và thương hiệu. Nhãn danh mục có sẵn được dịch ở lớp hiển thị, không đổi khóa lưu trữ.
+
+## Bảng giá và danh mục màu — xác nhận 30/09/2026
+
+- Mọi tên sheet có chứa Closure, Frontal, Ponytail hoặc Topper (không phân biệt hoa thường) tính USD/cái, gồm Ponytail Baby. Mọi sheet khác tính USD/100g; HD Lace cũng theo quy tắc tên khách chốt, không tự suy diễn lại đơn vị.
+- Đã nhập 2.874 ô giá từ 38 sheet: Basic 2.004, Baby 402, Premium 468. Giữ sheet/ô nguồn, chiều dài inch/cm, phân khúc, kích thước và tông; đối soát không bỏ sót ô số ngoài cột chiều dài.
+- Nhập 94 mã màu từ bảng Airtable HQ COLOR, kèm 167 ảnh lưu cục bộ. 16 video được dẫn về bảng gốc; không giữ URL ảnh có chữ ký hết hạn trong dữ liệu triển khai.
+- Màu phối Ombre/Piano/Balayage lấy tông cao nhất: Đen < Nâu < Sáng. Other (Dark Red, Light Red, Light Pink, Orange) là Sáng theo khách xác nhận 16:54:25.
+- Hai mẫu chưa suy được tông chắc chắn: #Balayage 2-4/60A (thiếu màu đơn 60A), #Ombre Grey-9C (thiếu màu đơn Grey). Khóa lấy giá cho hai mẫu đến khi người có quyền bổ sung màu đơn hoặc xác định lại thành phần. Không tự suy đoán theo tên/ảnh.
+- Tab Bảng giá & màu chỉ cho kinh doanh/quản trị; ảnh yêu cầu đăng nhập. Xưởng giữ quyền xem đơn hiện tại, không tự được quyền sửa bảng giá.
+- Quản trị cấp riêng quyền điều chỉnh giá và quyền thêm/sửa mẫu màu cho từng tài khoản kinh doanh. Kiểm tra quyền tại máy chủ ở mỗi yêu cầu.
+- Điều chỉnh % theo toàn bộ/bảng/loại sản phẩm, xem trước, làm tròn 0,01 USD, kiểm tra phiên bản, chống ghi lặp; lịch sử và khôi phục lần điều chỉnh gần nhất. Không ghi lại giá đơn cũ.
+- Chọn từ bảng giá trong màn hình tạo đơn lưu giá và tham chiếu phiên bản vào dòng hàng; hỗ trợ sản phẩm gốc/bổ sung/quà tặng. Basic/Baby/Premium là dòng bảng giá, không tự gán thành nguồn tóc.
+- Import chỉ khởi tạo khi DB chưa có bảng giá, không ghi đè chỉnh sửa quản trị khi khởi động lại. Dữ liệu và lịch sử nằm cùng workspace.sqlite, đi theo sao lưu hiện có.

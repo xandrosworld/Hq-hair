@@ -1,3 +1,4 @@
+import {setupPricing} from './pricing-server.js';
 import express from 'express';
 import {canReadRecord,factoryOrder,factoryView} from './permissions.js';
 import {cleanProductFields} from './product-fields.js';
@@ -11,7 +12,7 @@ import path from 'node:path';
 const derive=promisify(scrypt);
 const digest=value=>createHash('sha256').update(value).digest('hex');
 const reject=(status,message)=>{throw Object.assign(new Error(message),{status})};
-export const safeUser=u=>({id:u.id,name:u.name,email:u.email,role:u.role,code:u.code,active:!!u.active,mustChange:!!u.must_change,factoryView:factoryView(u)});
+export const safeUser=u=>({id:u.id,name:u.name,email:u.email,role:u.role,code:u.code,active:!!u.active,mustChange:!!u.must_change,factoryView:factoryView(u),priceEdit:!!u.price_edit,colorEdit:!!u.color_edit});
 export async function hashPassword(password){
  if(typeof password!=='string'||password.length<12||password.length>128)reject(400,'Mật khẩu cần từ 12 đến 128 ký tự.');
  const salt=randomBytes(16).toString('hex');
@@ -87,6 +88,7 @@ export async function createWorkspace(dir){
   audit(req.user,'password-change');res.json(issue({...req.user,must_change:0},res));
  });
  const manager=(req,res,next)=>req.user.role==='manager'?next():res.status(403).json({error:'Chỉ quản lý được thực hiện thao tác này.'});
+ setupPricing(router,db,audit);
  router.get('/users',manager,(req,res)=>res.json(db.prepare('SELECT * FROM users ORDER BY name').all().map(safeUser)));
  router.post('/users',manager,async(req,res)=>{
   const b=req.body;

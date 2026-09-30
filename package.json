@@ -19,6 +19,7 @@
   "devDependencies": {
     "@playwright/test": "^1.55.1",
     "@vitejs/plugin-react": "^5.0.3",
+    "msgpackr": "^2.1.0",
     "sharp": "^0.35.5",
     "vite": "^7.1.7"
   },
