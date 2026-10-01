@@ -22,7 +22,7 @@ try{
  await call(admin,`/orders/${id}/action`,{version:1,action:'manager-stage',stage:8,text:'Test fixture: accounting handoff'});
  const page=await sale.newPage(),owner=await admin.newPage(),errors=[];
  for(const p of [page,owner])p.on('pageerror',e=>errors.push(e.message));
- async function open(p){await p.goto(base+'/workspace');await p.getByRole('heading',{name:'Tổng quan kinh doanh'}).waitFor();await p.locator('nav').getByRole('button',{name:/Đơn hàng/}).click();await p.getByRole('button',{name:id,exact:true}).click()}
+ async function open(p){await p.goto(base+'/workspace');await p.getByRole('heading',{name:/^(Tổng quan kinh doanh|Đơn hàng)$/}).waitFor();await p.locator('nav').getByRole('button',{name:/Đơn hàng/}).click();await p.getByRole('button',{name:id,exact:true}).click()}
  await open(page);await page.getByRole('button',{name:'Hoàn tất kiểm định & đặt ship',exact:true}).click();
  let dialog=page.getByRole('dialog');await dialog.getByLabel('Đơn vị vận chuyển',{exact:true}).fill('DHL');await dialog.getByLabel('Dịch vụ vận chuyển').fill('Express');await dialog.getByLabel('Mã vận đơn',{exact:true}).fill('TRACK-UI-1');await dialog.getByLabel('Mã phiếu kiểm định (nếu có)').fill('QC-UI-1');await dialog.getByRole('checkbox').check();await dialog.getByRole('button',{name:'Xác nhận',exact:true}).click();await dialog.waitFor({state:'hidden'});
  await page.getByText('Nội dung đã khóa sau bước 8',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Xin quyền chỉnh sửa',exact:true}).count(),0);
