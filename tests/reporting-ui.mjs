@@ -27,9 +27,28 @@ try{
  await page.getByLabel('Tìm công nợ').fill('no-such-customer');content=await csv('Xuất báo cáo CSV');assert.equal(content.split('\r\n').length,1);await page.getByLabel('Tìm công nợ').fill('');
  await page.locator('.metric strong').filter({hasText:'$1,576'}).first().waitFor();
  mkdirSync('screenshots/reporting',{recursive:true});await page.screenshot({path:'screenshots/reporting/revenue.png',fullPage:true});
- await page.locator('nav').getByRole('button',{name:/Khách hàng/}).click();await page.getByLabel('Năm thống kê khách').selectOption('2026');await page.getByRole('img',{name:'Tháng 1: 1 khách mua tiếp',exact:true}).waitFor();await page.getByRole('img',{name:'Tháng 1: 0 khách có đơn đầu tiên',exact:true}).waitFor();
- await page.getByRole('button',{name:'Xem bảng số liệu',exact:true}).click();await page.getByText('1/2026',{exact:true}).waitFor();await page.screenshot({path:'screenshots/reporting/customers.png',fullPage:true});
+ await page.locator('nav').getByRole('button',{name:/Khách hàng/}).click();await page.getByLabel('Năm thống kê khách').selectOption('2026');assert.equal(await page.getByTestId('buyers-total').locator('[aria-hidden="true"]').textContent(),'1');assert.equal(await page.getByTestId('buyers-repeat').locator('[aria-hidden="true"]').textContent(),'1');assert.equal(await page.getByTestId('buyers-rate').locator('[aria-hidden="true"]').textContent(),'100');
+ await page.getByRole('button',{name:'Xem bảng số liệu',exact:true}).click();await page.getByText('1/2026',{exact:true}).waitFor();await page.getByRole('button',{name:'Ẩn bảng số liệu',exact:true}).click();await page.screenshot({path:'screenshots/reporting/customers.png',fullPage:true});
  await page.locator('nav').getByRole('button',{name:/Đơn hàng/}).click();await page.getByLabel('Năm thống kê đơn').selectOption('2026');await page.getByRole('img',{name:'Tháng 1: 2 đơn',exact:true}).waitFor();
+
+ // Create every state independently in this isolated database. Completed and draft
+ // orders must not inflate the eight open-state counters.
+ const fixture=(await call('/state')).orders[0];
+ for(const stage of [3,4,5,6,7,8,9,10]){
+  const saved=await call('/orders',{...fixture,id:undefined,version:undefined,payments:[],submit:true});
+  await call(`/orders/${saved.id}/action`,{version:1,action:'manager-stage',stage,text:'Isolated fixture for all workflow states'});
+ }
+ const draft=await call('/orders',{...fixture,id:undefined,version:undefined,payments:[],submit:false});
+ await page.reload();await page.getByRole('heading',{name:'Tổng quan kinh doanh'}).waitFor();await page.locator('nav').getByRole('button',{name:/Đơn hàng/}).click();
+ await page.getByRole('heading',{name:'Danh sách đơn hàng chưa hoàn thành',exact:true}).waitFor();
+ assert.equal(await page.getByTestId('open-total').locator('[aria-hidden="true"]').textContent(),'11');
+ for(let stage=2;stage<=9;stage++)assert.equal(await page.getByTestId(`stage-count-${stage}`).textContent(),stage===2?'4':'1');
+ assert.equal(await page.getByRole('button',{name:draft.id,exact:true}).count(),0);
+ const tableIds=await page.locator('table tbody .order-link').allTextContents();assert.equal(tableIds.length,11);assert.deepEqual(tableIds.slice(0,4),ids);
+ await page.getByRole('button',{name:/Lọc bước 9:/}).click();assert.equal(await page.locator('table tbody tr').count(),1);
+ await page.getByRole('button',{name:'Hoàn thành',exact:true}).click();assert.equal(await page.locator('table tbody tr').count(),1);
+ await page.getByRole('button',{name:'Bản nháp',exact:true}).click();await page.getByRole('button',{name:draft.id,exact:true}).waitFor();
+ await page.getByRole('button',{name:'Chưa hoàn thành',exact:true}).click();await page.screenshot({path:'screenshots/reporting/all-open-states.png',fullPage:true});
  for(const width of [1120,1440,1920]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));}
  assert.deepEqual(errors,[]);console.log('PASS: historical report year, month/query filters, exact CSV/debt exports, repeat customers, monthly orders and desktop widths.');
 }finally{if(browser)await browser.close();const done=new Promise(r=>server.once('exit',r));server.kill();await done;const resolved=path.resolve(dir);assert.ok(resolved.startsWith(path.resolve(os.tmpdir())+path.sep)&&path.basename(resolved).startsWith('hq-report-ui-'));rmSync(resolved,{recursive:true,force:true});}
