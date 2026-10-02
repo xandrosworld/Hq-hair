@@ -90,7 +90,7 @@ try{
    if(who===a){const step=page.locator('.timeline-step').nth(2);assert.ok(await step.locator('svg').count());await page.getByText('Thanh toán đủ',{exact:true}).waitFor();}
    await page.getByRole('button',{name:'Phiếu kiểm định',exact:true}).click();
    await page.getByRole('heading',{name:'KIỂM ĐỊNH ĐƠN HÀNG (QC)'}).waitFor();
-   assert.deepEqual(await page.locator('.qc-product-row').first().locator('td').allTextContents(),['1','Bulk Hair','Raw Hair','55','Straight','Super Double Drawn','1A','Product specification note','100Gam']);
+   assert.deepEqual(await page.locator('.qc-product-row').first().locator('td').allTextContents(),['1','Bulk Hair','Raw Hair','55','Straight','Super Double Drawn','1A','Product specification note','100G']);
    assert.equal(await page.locator('.qc-table thead th').count(),9);
    if(who===factory){
     await page.getByLabel('Đánh giá sản phẩm 1',{exact:true}).fill('Factory UI checked');

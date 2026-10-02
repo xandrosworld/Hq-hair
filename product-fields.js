@@ -16,3 +16,5 @@ export function cleanProductFields(p){
  if(fields.priceBasis==='100g'&&!['gram','grams','g'].includes(String(p.unit).toLowerCase()))fail('Đơn giá USD/100g phải dùng trọng lượng Gram.');
  return fields;
 }
+
+export const displayUnit=unit=>/^(g|gam|grams?)$/i.test(String(unit||'').trim())?'G':unit;
