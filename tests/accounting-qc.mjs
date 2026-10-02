@@ -98,6 +98,15 @@ try{
     await page.getByText('Đã hoàn tất phiếu kiểm định.',{exact:true}).waitFor();
    }else if(who===accountant)assert.equal(await page.getByRole('button',{name:'Lưu QC',exact:true}).count(),0);
    else assert.ok(await page.getByLabel('Đánh giá sản phẩm 1',{exact:true}).isEditable());
+   if(who===a){
+    for(const width of [1120,1280,1440,1920]){
+     await page.setViewportSize({width,height:1000});
+     const layout=await page.locator('.qc-sheet').evaluate(el=>({fits:el.scrollWidth<=el.clientWidth,tableFits:[...el.querySelectorAll('.table-scroll')].every(x=>x.scrollWidth<=x.clientWidth+1),noteHeight:el.querySelector('.qc-review-fields textarea').getBoundingClientRect().height}));
+     assert.ok(layout.fits&&layout.tableFits,JSON.stringify({width,...layout}));assert.ok(layout.noteHeight<=70);
+     await page.screenshot({path:`screenshots/qc-layout-${width}.png`,fullPage:true,animations:'disabled'});
+    }
+    await page.setViewportSize({width:1280,height:1000});
+   }
    await page.screenshot({path:`screenshots/qc-${who===factory?'factory':who===accountant?'accounting':'sale'}.png`,fullPage:true,animations:'disabled'});
    await ctx.close();
   }
