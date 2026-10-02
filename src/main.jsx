@@ -25,6 +25,7 @@ import './workspace.css';
 import {AnimatedNumber,ArtIcon,useWorkspaceMotion} from './motion.jsx';
 import './motion.css';
 import './finish.css';
+import './order-layout.css';
 import {validateOrder,validationStep} from './order-validation.js';
 import {OrderBrief,DemoNextStep} from './order-assistance.jsx';
 import {WorkspaceGate,TeamSettings,isWorkspace,workspaceAPI,roleName} from './workspace-access.jsx';

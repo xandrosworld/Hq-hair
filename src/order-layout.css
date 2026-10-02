@@ -1,0 +1,56 @@
+/* Keep navigation readable while giving order specifications more room. */
+@media screen and (min-width: 1001px) {
+  .sidebar { width: 196px; padding: 22px 10px 0; }
+  .shell { margin-left: 196px; }
+  .sidebar .brand { gap: 8px; padding: 0 4px 20px; font-size: 15px; }
+  .sidebar .brand-mark { min-width: 38px; font-size: 25px; padding: 8px 3px; }
+  .sidebar .brand small { font-size: 6px; letter-spacing: .8px; }
+  .sidebar .workspace { padding: 12px 6px; gap: 6px; font-size: 10px; margin-bottom: 14px; }
+  .sidebar .workspace small { font-size: 9px; }
+  .sidebar .new-order { margin-bottom: 18px; }
+  .sidebar .nav-item { gap: 7px; padding: 10px 7px; min-height: 48px; }
+  .sidebar .nav-item .art-icon { width: 28px; height: 28px; }
+  .sidebar .nav-item > span { font-size: 11px; white-space: normal; }
+  .shell > main { max-width: none; padding: 24px 20px 30px; }
+  .detail-layout { grid-template-columns: minmax(0, 1fr) 196px; gap: 14px; }
+  .detail-layout.no-timeline { grid-template-columns: minmax(0, 1fr); }
+  .timeline-panel .panel-head { padding: 16px 12px; gap: 6px; }
+  .timeline-panel .panel-heading { font-size: 12px; }
+  .timeline-panel .badge { padding: 4px 6px; font-size: 10px; }
+  .timeline-panel .timeline { padding: 4px 12px; }
+  .timeline-panel .timeline-step { gap: 8px; min-height: 70px; }
+  .timeline-panel .timeline-step > div { min-width: 0; }
+  .timeline-panel .timeline-step b { font-size: 11px; }
+  .timeline-panel .timeline-step small { font-size: 10px; overflow-wrap: anywhere; }
+  .timeline-panel .audit { padding: 12px; overflow-wrap: anywhere; }
+}
+
+/* On smaller desktops the full product table takes priority over a side column. */
+@media screen and (min-width: 1001px) and (max-width: 1199px) {
+  .detail-layout { grid-template-columns: minmax(0, 1fr); }
+  .timeline-panel .timeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .timeline-panel .timeline-step::before { display: none; }
+}
+
+@media screen and (min-width: 1001px) {
+  .detail-layout .hair-read { min-width: 0; table-layout: fixed; }
+  .detail-layout .hair-read th,
+  .detail-layout .hair-read td { min-width: 0; max-width: none; padding: 10px 5px; overflow-wrap: anywhere; }
+  .detail-layout .hair-read th { font-size: 10px; line-height: 1.5; }
+  .detail-layout .hair-read td { font-size: 11px; }
+  .detail-layout .hair-read th small,
+  .detail-layout .hair-read td small { font-size: 9px; }
+  .detail-layout .hair-read th:nth-child(1) { width: 4%; }
+  .detail-layout .hair-read th:nth-child(2) { width: 12%; }
+  .detail-layout .hair-read th:nth-child(3) { width: 8%; }
+  .detail-layout .hair-read th:nth-child(4) { width: 7%; }
+  .detail-layout .hair-read th:nth-child(5) { width: 8%; }
+  .detail-layout .hair-read th:nth-child(6) { width: 12%; }
+  .detail-layout .hair-read th:nth-child(7) { width: 6%; }
+  .detail-layout .hair-read th:nth-child(8) { width: 7%; }
+  .detail-layout .hair-read th:nth-child(9) { width: 8%; }
+  .detail-layout .hair-read th:nth-child(10) { width: 9%; }
+  .detail-layout .hair-read th:nth-child(11) { width: 9%; }
+  .detail-layout .hair-read th:last-child,
+  .detail-layout .hair-read td:last-child { position: static; box-shadow: none; }
+}
