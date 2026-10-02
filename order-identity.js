@@ -2,6 +2,18 @@
 export const isOfficialOrder = order => !!order.orderCode && !order.cancelledAt && order.stage > 0;
 export const orderLabel = order => order.orderCode || order.requestCode || `YC-${order.id || 'mới'}`;
 
+// Reports use the first accounting approval, not order entry or later balance payments.
+const approvalDateFormat=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'});
+export function approvalDate(order) {
+ const dates=[order.approvedAt,...(order.history||[]).filter(h=>h.title==='Kế toán duyệt').map(h=>h.time),order.accountingApproval?.time]
+  .filter(v=>typeof v==='string').map(v=>{
+   if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
+   const date=new Date(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(v)?v:v+'+07:00');
+   return Number.isFinite(date.getTime())?approvalDateFormat.format(date):'';
+  }).filter(Boolean).sort();
+ return dates[0]||'';
+}
+
 // Only historical accounting evidence qualifies; a manager moving a workflow
 // stage alone must never create a purchase or consume an official number.
 export function migrateOrderIdentity(orders) {

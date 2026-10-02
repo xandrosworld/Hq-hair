@@ -36,7 +36,7 @@ test('legacy migration preserves approved codes and ignores stage adjustments wi
  assert.ok(orders.slice(1).every(o=>o.orderCode===null&&!isOfficialOrder(o)));
  assert.equal(orderLabel(orders[1]),'YC-HQ-JD-1-5');
  const before=structuredClone(orders);migrateOrderIdentity(orders);assert.deepEqual(orders,before);
- const next={id:'stable-uuid',customerId:'HQ-JD-1',stage:3,accountingApproval:{status:'partial',time:'now'}};
+ const next={id:'stable-uuid',customerId:'HQ-JD-1',stage:3,accountingApproval:{status:'partial',time:'2026-10-01T08:00:00+07:00'}};
  orders.push(next);assignOrderCode(next,orders);assert.equal(next.orderCode,'HQ-JD-1-5');
  next.accountingApproval.status='full';assignOrderCode(next,orders);assert.equal(next.orderCode,'HQ-JD-1-5');assert.equal(next.id,'stable-uuid');
 });
@@ -48,9 +48,9 @@ test('pending/cancelled requests never count as purchases; first and repeat appr
  assert.equal(monthlySeries(orders,2026,'count')[9],0);assert.equal(financialSummary(orders).revenue,0);
  assert.equal(reportOrders({customers,orders}).length,0);assert.equal(reportCSV(orders,customers).split('\r\n').length,1);
  assert.equal(customerActivity(orders,2026)[9].orders,0);
- const first=orders[1];first.stage=3;first.accountingApproval={status:'partial',time:'now'};assignOrderCode(first,orders);
+ const first=orders[1];first.stage=3;first.accountingApproval={status:'partial',time:'2026-10-01T08:00:00+07:00'};assignOrderCode(first,orders);
  assert.equal(first.orderCode,'c-1');assert.equal(buyerStatistics(customers,orders,'2026-10-02').total,1);
- const second={...first,id:'other',orderCode:null,accountingApproval:{status:'full',time:'later'}};orders.push(second);assignOrderCode(second,orders);
+ const second={...first,id:'other',orderCode:null,accountingApproval:{status:'full',time:'2026-10-02T08:00:00+07:00'}};orders.push(second);assignOrderCode(second,orders);
  assert.equal(second.orderCode,'c-2');assert.equal(buyerStatistics(customers,orders,'2026-10-02').repeat,1);
  assert.equal(monthlySeries(orders,2026,'count')[9],2);assert.equal(financialSummary(orders).revenue,200);
  assert.ok(reportCSV(orders,customers).includes('"c-2"'));assert.equal(reportOrders({customers,orders},{query:'c-2'}).length,1);

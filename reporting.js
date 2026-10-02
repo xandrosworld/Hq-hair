@@ -8,15 +8,7 @@ export function monthlySeries(orders,year,key){
  for(const order of orders){if(!isOfficialOrder(order)||!validDate(order.date)||order.date.slice(0,4)!==String(year))continue;const month=Number(order.date.slice(5,7))-1;values[month]+=key==='count'?1:totals(order)[key]||0}
  return values.map(round);
 }
-export function customerActivity(orders,year){
- const history=new Map(),months=Array.from({length:12},(_,i)=>({month:i+1,newCustomers:new Set(),returning:new Set(),orders:0}));
- for(const o of orders.filter(o=>isOfficialOrder(o)&&validDate(o.date)).sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id))){
-  const previous=history.get(o.customerId)||0;
-  if(o.date.slice(0,4)===String(year)){const m=months[Number(o.date.slice(5,7))-1];m.orders++;(previous?m.returning:m.newCustomers).add(o.customerId)}
-  history.set(o.customerId,previous+1);
- }
- return months.map(m=>({month:m.month,newCustomers:m.newCustomers.size,returning:m.returning.size,orders:m.orders}));
-}
+export {customerActivity} from './customer-statistics.js';
 export function reportOrders(data,{month='all',owner='all',query='',bucket='all',overdue=false,debtOnly=false}={}){
  const customers=new Map(data.customers.map(c=>[c.id,c]));const q=query.trim().toLocaleLowerCase('vi');
  return data.orders.filter(o=>isOfficialOrder(o)&&(month==='all'||o.date.startsWith(month))&&(owner==='all'||(o.ownerId||o.sale)===owner)&&(!q||`${orderLabel(o)} ${o.customerId} ${customers.get(o.customerId)?.name||''} ${o.sale}`.toLocaleLowerCase('vi').includes(q))&&(!debtOnly||totals(o).debt>0)&&(!overdue||aging(o).days>0)&&(bucket==='all'||aging(o).bucket===bucket));

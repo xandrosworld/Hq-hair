@@ -136,6 +136,21 @@ try{
  o=await current();await factory.call(`/orders/${id}/qc`,{version:o.version,qc:q},{status:400});
  assert.ok((await owner.call('/audit')).some(x=>x.action==='qc-save'));
  assert.ok((await owner.call('/audit')).some(x=>x.action==='accounting-decision'));
+ // Monthly customer statistics use approval dates, not the September order date.
+ const statsBrowser=await chromium.launch({headless:true,channel:'msedge'});
+ try{
+  const ctx=await statsBrowser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'}),page=await ctx.newPage();
+  await ctx.request.post(base+'/login',{data:{email:'sale-a@example.com',password:'Personal-New-Password'}});
+  await page.goto(base.replace('/api/work','/workspace'));
+  await page.locator('nav').getByRole('button',{name:'Khách hàng',exact:true}).click();
+  const read=key=>page.getByTestId(key).locator('[aria-hidden="true"]').textContent();
+  await page.getByLabel('Tháng thống kê khách').fill('2026-09');
+  assert.equal(await read('buyers-total'),'0');assert.equal(await read('buyers-repeat'),'0');
+  const month=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).slice(0,7);
+  await page.getByLabel('Tháng thống kê khách').fill(month);
+  assert.equal(await read('buyers-total'),'1');assert.equal(await read('buyers-repeat'),'1');assert.equal(await read('buyers-new'),'1');
+  await page.screenshot({path:'screenshots/customer-monthly-statistics.png',fullPage:true,animations:'disabled'});
+ }finally{await statsBrowser.close()}
  await stop();await start();assert.equal((await current()).qc.note,'Sale reviewed');assert.equal((await current()).orderCode,c.id+'-1');
  console.log('PASS: Sale/Factory QC editing, Accounting view, authenticated media/ranges, required fields, stale versions, idempotent upload, payment validation, partial/full approval, cancellation, lock, audit and persistence.');
 }finally{if(server?.exitCode===null)await stop();if(!path.resolve(dir).startsWith(path.resolve(os.tmpdir())+path.sep))throw Error('Unsafe cleanup path');rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:200})}

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validDate,monthlySeries,customerActivity,reportOrders,financialSummary,reportCSV,csvCell} from '../reporting.js';
 import {validateOrder} from '../src/order-validation.js';
-const order=(id,date,customerId='c1',extra={})=>({id,orderCode:id,date,customerId,stage:3,ownerId:'a',sale:'Sale A',items:[{kind:'base',unit:'Gram',priceBasis:'100g',qty:800,price:98.5}],payments:[],...extra});
+const order=(id,date,customerId='c1',extra={})=>({id,orderCode:id,date,approvedAt:date,customerId,stage:3,ownerId:'a',sale:'Sale A',items:[{kind:'base',unit:'Gram',priceBasis:'100g',qty:800,price:98.5}],payments:[],...extra});
 test('strict calendar dates and fractional gram validation agree',()=>{
  for(const date of ['2026-02-30','2026-02-29','2026-13-01','2026-1-01','invalid',null])assert.equal(validDate(date),false);
  for(const date of ['2024-02-29','2026-12-31'])assert.equal(validDate(date),true);
@@ -18,7 +18,7 @@ test('monthly reports separate years and ignore drafts and invalid dates',()=>{
 });
 test('new and returning customers deduplicate within month and retain prior-year history',()=>{
  const rows=[order('d','2026-02-02'),order('a','2025-12-31'),order('c','2026-01-02','c2'),order('b','2026-01-01','c2'),order('e','2026-01-03','c2'),order('f','2026-01-01','draft',{stage:0})];
- const result=customerActivity(rows,2026);
+ const result=customerActivity(rows,2026,[{id:'c1',created:'2025-12-01'},{id:'c2',created:'2026-01-01'}],'2026-12-31');
  assert.deepEqual(result[0],{month:1,newCustomers:1,returning:1,orders:3});
  assert.deepEqual(result[1],{month:2,newCustomers:0,returning:1,orders:1});
 });
