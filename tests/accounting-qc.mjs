@@ -28,10 +28,11 @@ try{
  for(const [c,email] of [[factory,'factory@example.com'],[a,'sale-a@example.com'],[b,'sale-b@example.com'],[accountant,'accounting@example.com']]){await c.call('/login',{email,password:'Sale-Initial-Password'});await c.call('/password',{currentPassword:'Sale-Initial-Password',password:'Personal-New-Password'})}
  const state=await a.call('/customers',customer),c=state.customers[0];
  const draft={customerId:c.id,date:'2026-09-29',due:'2026-10-10',items:[{name:'Bulk Hair',origin:'Raw Hair',lengthCm:55,texture:'Straight',segment:'Super Double Drawn',color:'1A',productNote:'Product specification note',kind:'base',unit:'Gram',price:100,priceBasis:'100g',qty:100}],discount:0,shippingFee:0,paymentFee:0,payments:[],recipient:'Buyer',phone:'+12345678',email:'buyer@example.com',country:'United States',address:'Example St'};
- let saved=await a.call('/orders',draft),o=saved.state.orders[0];const id=o.id;
+ let saved=await a.call('/orders',{...draft,orderCode:'FORGED',accountingApproval:{status:'full'}}),o=saved.state.orders[0];const id=o.id;assert.equal(o.orderCode,null);assert.match(o.requestCode,/^YC-/);
  assert.equal((await accountant.call('/state')).orders.length,0);
  await factory.call(`/orders/${id}/qc`,{version:o.version,qc:{}},{status:404});
  saved=await a.call('/orders',{...o,submit:true});o=saved.state.orders[0];
+ assert.equal(o.orderCode,null);
  const current=async()=>((await a.call('/state')).orders.find(x=>x.id===id));
  const action=async(client,action,extra={},status=200)=>client.call(`/orders/${id}/action`,{version:(await current()).version,action,...extra},{status});
  assert.equal((await accountant.call('/state')).orders.length,1);
@@ -58,10 +59,10 @@ try{
  assert.equal((await current()).payments[0].confirmed,false);
  await action(accountant,'accounting-cancel',{text:'Cannot cancel paid receipt'},400);
  await action(accountant,'accounting-approve',{paymentStatus:'partial',receipts});
- o=await current();assert.equal(o.stage,3);assert.equal(o.accountingApproval.status,'partial');
+ o=await current();assert.equal(o.stage,3);assert.equal(o.accountingApproval.status,'partial');assert.equal(o.orderCode,c.id+'-1');assert.equal(o.id,id);
  await action(a,'payment',{payment:{sender:'Buyer',amount:70,method:'Wise',date:'2026-10-02',reference:'BALANCE'}});
  o=await current();await action(accountant,'accounting-approve',{paymentStatus:'full',receipts:[{id:o.payments[1].id,amount:70}]});
- assert.equal((await current()).accountingApproval.status,'full');
+ assert.equal((await current()).accountingApproval.status,'full');assert.equal((await current()).orderCode,c.id+'-1');
  // Exercise the built app with actual authenticated role sessions.
  const {chromium}=await import('@playwright/test');
  const browser=await chromium.launch({headless:true,channel:'msedge'});
@@ -85,7 +86,7 @@ try{
     await page.screenshot({path:'screenshots/product-standards-fixture.png',fullPage:true,animations:'disabled'});
     await page.locator('.nav-item').filter({hasText:'Đơn hàng'}).click();
    }
-   await page.getByRole('button',{name:id,exact:true}).first().click();
+   await page.getByRole('button',{name:(await current()).orderCode,exact:true}).first().click();
    for(const label of ['Sản phẩm','Thanh toán & giao hàng','Phiếu kiểm định'])assert.ok(await page.getByRole('button',{name:label,exact:true}).isVisible());
    if(who===a){const step=page.locator('.timeline-step').nth(2);assert.ok(await step.locator('svg').count());await page.getByText('Thanh toán đủ',{exact:true}).waitFor();}
    await page.getByRole('button',{name:'Phiếu kiểm định',exact:true}).click();
@@ -116,10 +117,25 @@ try{
  next=await accountant.call(`/orders/${cancelled.id}/action`,{version:cancelled.version,action:'accounting-cancel',text:'Customer cancelled before payment'});
  assert.equal(next.orders.find(x=>x.id===cancelled.id).stage,-1);
  await a.call(`/orders/${cancelled.id}/action`,{version:cancelled.version+1,action:'payment',payment:{}},{status:400});
+ assert.equal(next.orders.find(x=>x.id===cancelled.id).orderCode,null);
+ // A cancelled request consumes no number; concurrent approvals are unique and retry-safe.
+ const awaiting=[];
+ for(let n=0;n<2;n++){
+  const result=await a.call('/orders',{...draft,submit:true,payments:[{sender:'Buyer',amount:100,method:'Wise',date:'2026-10-02',reference:'NEXT-'+n}]});
+  awaiting.push(result.state.orders.find(x=>x.id===result.id));
+ }
+ assert.ok(awaiting.every(x=>x.orderCode===null));
+ const decisions=awaiting.map(x=>({version:x.version,action:'accounting-approve',paymentStatus:'full',receipts:[{id:x.payments[0].id,amount:100}]}));
+ const decisionKeys=awaiting.map(()=>randomUUID());
+ await Promise.all(awaiting.map((x,i)=>accountant.call(`/orders/${x.id}/action`,decisions[i],{key:decisionKeys[i]})));
+ const approved=(await a.call('/state')).orders.filter(x=>awaiting.some(y=>y.id===x.id));
+ assert.deepEqual(approved.map(x=>x.orderCode).sort(),[c.id+'-2',c.id+'-3']);
+ const retried=await accountant.call(`/orders/${awaiting[0].id}/action`,decisions[0],{key:decisionKeys[0]});
+ assert.equal(retried.orders.find(x=>x.id===awaiting[0].id).orderCode,approved.find(x=>x.id===awaiting[0].id).orderCode);
  await action(owner,'manager-stage',{stage:9,text:'Test locked inspection'});
  o=await current();await factory.call(`/orders/${id}/qc`,{version:o.version,qc:q},{status:400});
  assert.ok((await owner.call('/audit')).some(x=>x.action==='qc-save'));
  assert.ok((await owner.call('/audit')).some(x=>x.action==='accounting-decision'));
- await stop();await start();assert.equal((await current()).qc.note,'Sale reviewed');
+ await stop();await start();assert.equal((await current()).qc.note,'Sale reviewed');assert.equal((await current()).orderCode,c.id+'-1');
  console.log('PASS: Sale/Factory QC editing, Accounting view, authenticated media/ranges, required fields, stale versions, idempotent upload, payment validation, partial/full approval, cancellation, lock, audit and persistence.');
 }finally{if(server?.exitCode===null)await stop();if(!path.resolve(dir).startsWith(path.resolve(os.tmpdir())+path.sep))throw Error('Unsafe cleanup path');rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:200})}

@@ -1,3 +1,4 @@
+import {migrateOrderIdentity,assignOrderCode} from './order-identity.js';
 import {qcSignature} from './quality-control.js';
 import {applyAccounting} from './accounting.js';
 import {setupQC,qcRoutes} from './qc-server.js';
@@ -41,7 +42,7 @@ app.use('/api',(req,res,next)=>{
  let id=req.headers.cookie?.match(/(?:^|; )hq_demo=([a-f0-9-]{36})(?:;|$)/)?.[1];
  let row=id?db.prepare('SELECT data FROM sessions WHERE id=?').get(id):null;
  if(!row){id=randomUUID();row={data:JSON.stringify(seed())};db.prepare('INSERT INTO sessions VALUES (?,?,?)').run(id,row.data,Date.now());res.cookie('hq_demo',id,{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',maxAge:30*86400000})}
- req.imageDb=db;req.user={id:'demo',name:'Judy',code:'HQ-JD',role:'sale'};req.view=()=>req.data;req.canRead=()=>true;req.assertAccess=()=>{};req.assertVersion=()=>{};req.data=JSON.parse(row.data);req.save=()=>db.prepare('UPDATE sessions SET data=?,updated=? WHERE id=?').run(JSON.stringify(req.data),Date.now(),id);res.set('Cache-Control','no-store');next();
+ req.imageDb=db;req.user={id:'demo',name:'Judy',code:'HQ-JD',role:'sale'};req.view=()=>req.data;req.canRead=()=>true;req.assertAccess=()=>{};req.assertVersion=()=>{};req.data=JSON.parse(row.data);migrateOrderIdentity(req.data.orders);req.save=()=>db.prepare('UPDATE sessions SET data=?,updated=? WHERE id=?').run(JSON.stringify(req.data),Date.now(),id);res.set('Cache-Control','no-store');next();
 });
 const fail=(message)=>{const e=new Error(message);e.status=400;throw e};
 const text=(v,max=1000)=>typeof v==='string'?v.trim().slice(0,max):'';
@@ -94,9 +95,11 @@ business.post('/orders',(req,res)=>{
   const fields=validateOrder(o,{submit:true});if(Object.keys(fields).length){const error=new Error(Object.values(fields).join(' '));error.status=400;error.fields=fields;throw error;}
   o.stage=exception?old.stage:2;
  }
- o.id=old?.id||(req.work?`${c.id}-${req.nextCode('order:'+c.id)}`:`${c.id}-${Math.max(0,...req.data.orders.filter(o=>o.customerId===c.id).map(o=>Number(o.id.split('-').at(-1))))+1}`);
+ o.id=old?.id||randomUUID();
+ o.orderCode=old?.orderCode||null;
+ o.requestCode=old?.requestCode||`YC-${o.id.replaceAll('-','').slice(0,12).toUpperCase()}`;
  o.messages=old?.messages||[];o.history=old?.history||[];
- if(old)for(const key of ['accountingApproval','qc','qcMedia','contentLockedAt','inspection','shippedDate','saleReview','receivedAt','completedAt','editRequested'])if(old[key]!==undefined)o[key]=old[key];
+ if(old)for(const key of ['approvedAt','accountingApproval','qc','qcMedia','contentLockedAt','inspection','shippedDate','saleReview','receivedAt','completedAt','editRequested'])if(old[key]!==undefined)o[key]=old[key];
  if(o.qc&&o.qc.signature!==qcSignature(o.items))o.qc={...o.qc,stale:true};
  if(req.work&&old)o.history.push({title:'Lưu phiên bản trước chỉnh sửa',actor:req.user.name,actorId:req.user.id,time:new Date().toISOString(),snapshot:{...old,history:undefined,messages:undefined}});
  event(req,o,exception?'Quản trị chỉnh sửa ngoại lệ':old?'Cập nhật bản nháp':'Nhập đơn',reason);if(b.submit&&!exception)event(req,o,'Chờ duyệt','Đã chuyển yêu cầu đến Kế toán. Đơn được khóa chỉnh sửa.');
@@ -124,7 +127,7 @@ business.post('/orders/:id/action',(req,res)=>{
   payment.correctedBy=req.user.id;payment.correctedAt=new Date().toISOString();
   event(req,o,'Quản trị điều chỉnh thanh toán',`${reason} · ${before.amount} → ${amount} USD · ${before.confirmed?'đã xác nhận':'chờ xác nhận'} → ${payment.confirmed?'đã xác nhận':'chờ xác nhận'}`);
  }
- else if(applyAccounting(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){req.recordAudit?.('accounting-decision',o.id,{before:beforeAccounting,after:{payments:o.payments,approval:o.accountingApproval,cancelledAt:o.cancelledAt},reason:req.body.text,receipts:req.body.receipts})}
+ else if(applyAccounting(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){assignOrderCode(o,req.data.orders);req.recordAudit?.('accounting-decision',o.id,{before:beforeAccounting,after:{payments:o.payments,approval:o.accountingApproval,orderCode:o.orderCode,cancelledAt:o.cancelledAt},reason:req.body.text,receipts:req.body.receipts})}
  else if(applySaleWorkflow(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}
  else fail('Thao tác không được hỗ trợ.');if(beforeException)req.recordAudit('manager-order-action',o.id,{action,reason:text(req.body.reason||req.body.text),before:beforeException,after:o});o.version=(o.version||0)+1;req.save();res.json(req.view());
 });

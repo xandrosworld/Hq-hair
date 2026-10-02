@@ -1,3 +1,4 @@
+import {migrateOrderIdentity} from './order-identity.js';
 import {setupStandards} from './standards-server.js';
 import {setupQC} from './qc-server.js';
 import {setupPricing} from './pricing-server.js';
@@ -46,6 +47,15 @@ export async function createWorkspace(dir){
   db.exec('BEGIN IMMEDIATE');try{
    for(const u of db.prepare("SELECT id,factory_view FROM users WHERE role='factory' AND factory_view!='full'").all()){db.prepare("UPDATE users SET factory_view='full' WHERE id=?").run(u.id);audit({id:'system'},'factory-visibility',u.id,{before:u.factory_view,after:'full',reason:'Customer confirmation 2026-10-02'});}
    db.prepare('INSERT INTO app_migrations VALUES (?)').run('qc-full-factory-20261002');db.exec('COMMIT');
+  }catch(e){db.exec('ROLLBACK');throw e}
+ }
+ if(!db.prepare('SELECT id FROM app_migrations WHERE id=?').get('official-order-code-20261002')){
+  db.exec('BEGIN IMMEDIATE');try{
+   const data=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
+   migrateOrderIdentity(data.orders);
+   db.prepare('UPDATE workspace SET data=? WHERE id=1').run(JSON.stringify(data));
+   audit({id:'system'},'order-code-migration','',{approved:data.orders.filter(o=>o.orderCode).length,pending:data.orders.filter(o=>!o.orderCode).length});
+   db.prepare('INSERT INTO app_migrations VALUES (?)').run('official-order-code-20261002');db.exec('COMMIT');
   }catch(e){db.exec('ROLLBACK');throw e}
  }
  if(!db.prepare('SELECT id FROM users LIMIT 1').get()&&process.env.HQ_ADMIN_EMAIL&&process.env.HQ_ADMIN_PASSWORD){

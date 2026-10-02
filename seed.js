@@ -1,3 +1,4 @@
+import {migrateOrderIdentity} from './order-identity.js';
 import {catalog,newOrder,totals,steps} from './shared.js';
 export function seed(){
  const names=['Olivia Bennett','Amelia Wilson','Chloe Martin','Sophie Laurent','Isabella Brooks','Charlotte Evans','Mia Thompson','Grace Williams'];
@@ -23,5 +24,6 @@ export function seed(){
   orders.push(o);
  }
  customers.forEach((c,i)=>{c.created=`2026-${String(Math.min(i+1,7)).padStart(2,'0')}-01`});
+ migrateOrderIdentity(orders);
  return {customers,orders};
 }

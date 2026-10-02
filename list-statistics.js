@@ -1,3 +1,4 @@
+import {isOfficialOrder} from './order-identity.js';
 import {groups,today} from './shared.js';
 import {validDate} from './reporting.js';
 export const openStages=[2,3,4,5,6,7,8,9];
@@ -5,7 +6,7 @@ export const compareOpenOrders=(a,b)=>a.stage-b.stage||(a.createdAt||a.date||'')
 export const growth=(value,previous)=>previous?Math.round((value-previous)/previous*100):null;
 export function buyerStatistics(customers,orders,asOf=today()){
  const ids=new Set(customers.map(c=>c.id)),history=new Map();
- for(const o of orders){if(o.stage<=0||!ids.has(o.customerId)||!validDate(o.date)||o.date>asOf)continue;const list=history.get(o.customerId)||[];list.push(o.date);history.set(o.customerId,list)}
+ for(const o of orders){if(!isOfficialOrder(o)||!ids.has(o.customerId)||!validDate(o.date)||o.date>asOf)continue;const list=history.get(o.customerId)||[];list.push(o.date);history.set(o.customerId,list)}
  const month=asOf.slice(0,7);let repeat=0,newCustomers=0,previous=0;
  for(const dates of history.values()){dates.sort();if(dates.length>1)repeat++;if(dates[0].startsWith(month))newCustomers++;if(dates[0].slice(0,7)<month)previous++}
  return {total:history.size,repeat,newCustomers,rate:history.size?Math.round(repeat/history.size*100):0,growth:growth(history.size,previous)};

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validDate,monthlySeries,customerActivity,reportOrders,financialSummary,reportCSV,csvCell} from '../reporting.js';
 import {validateOrder} from '../src/order-validation.js';
-const order=(id,date,customerId='c1',extra={})=>({id,date,customerId,stage:2,ownerId:'a',sale:'Sale A',items:[{kind:'base',unit:'Gram',priceBasis:'100g',qty:800,price:98.5}],payments:[],...extra});
+const order=(id,date,customerId='c1',extra={})=>({id,orderCode:id,date,customerId,stage:3,ownerId:'a',sale:'Sale A',items:[{kind:'base',unit:'Gram',priceBasis:'100g',qty:800,price:98.5}],payments:[],...extra});
 test('strict calendar dates and fractional gram validation agree',()=>{
  for(const date of ['2026-02-30','2026-02-29','2026-13-01','2026-1-01','invalid',null])assert.equal(validDate(date),false);
  for(const date of ['2024-02-29','2026-12-31'])assert.equal(validDate(date),true);

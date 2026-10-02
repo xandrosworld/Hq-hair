@@ -23,7 +23,7 @@ try{
  let state=await sale.call('/customers',{name:'Workflow Buyer',company:'Salon',phone:'+12345',country:'United States',group:'Salon',address:'123 Road',recipient:'Buyer',recipientPhone:'+12345',social:'WhatsApp',source:'Website',purchase:'First'});
  assert.equal(state.customers[0].id,'HQ-JD-1');
  const draft={customerId:'HQ-JD-1',date:'2026-01-01',due:'2026-02-01',paymentDue:'2026-03-01',recipient:'Buyer',phone:'+12345',address:'123 Road',country:'United States',discount:0,shippingFee:0,paymentFee:0,items:[{name:'Bulk',kind:'base',qty:100,price:10,unit:'Gram',priceBasis:'100g'}],payments:[],submit:true};
- let result=await sale.call('/orders',draft),id=result.id,order=result.state.orders[0];assert.equal(id,'HQ-JD-1-1');
+ let result=await sale.call('/orders',draft),id=result.id,order=result.state.orders[0];assert.equal(order.orderCode,null);assert.match(id,/^[a-f0-9-]{36}$/);
  const action=async(c,action,extra={},status=200,key)=>{const body={action,version:order.version,...extra};const v=await c.call(`/orders/${id}/action`,body,status,key);if(status===200)order=v.orders.find(o=>o.id===id);return body};
  await action(other,'message',{text:'Access denied'},404);await action(factory,'received',{},403);
  await action(sale,'manager-stage',{stage:8,text:'Cannot skip'},400);await action(sale,'inspection',{checked:true},400);
