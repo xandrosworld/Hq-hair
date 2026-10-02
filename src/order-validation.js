@@ -9,6 +9,7 @@ export function validateOrder(order,{submit=false}={}){
   }
   if(totals(order).revenue<0)errors.discount='Giảm giá không được vượt tổng giá sản phẩm.';
   (order.items||[]).forEach((item,i)=>{
+    if(submit&&!String(item.name||'').trim())errors[`name-${i}`]=`Dòng sản phẩm ${i+1}: nhập loại tóc nối / tên sản phẩm hoặc xóa dòng không dùng.`;
     if(!Number.isFinite(Number(item.qty))||(submit?Number(item.qty)<=0:Number(item.qty)<0)||Number(item.qty)>100000)errors[`qty-${i}`]='Số lượng phải '+(submit?'lớn hơn 0':'từ 0')+' và không vượt 100.000.';
     if(!Number.isFinite(Number(item.price))||Number(item.price)<0||Number(item.price)>100000)errors[`price-${i}`]='Đơn giá phải từ 0 đến 100.000 USD.';
   });
@@ -25,3 +26,5 @@ export function validateOrder(order,{submit=false}={}){
   }
   return errors;
 }
+
+export const validationStep=key=>/^(customerId|date|due|items|name-|qty-|price-)/.test(key)?1:2;

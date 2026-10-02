@@ -1,3 +1,4 @@
+import {validateOrder} from './src/order-validation.js';
 import {validDate} from './reporting.js';
 import express from 'express';
 import {contentLocked,exceptionReason,assertContentAction,applySaleWorkflow} from './order-workflow.js';
@@ -86,7 +87,7 @@ business.post('/orders',(req,res)=>{
  if(totals(o).revenue<0)fail('Giảm giá không được vượt tổng giá sản phẩm.');
  if(o.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email))fail('Email chưa đúng định dạng.');
  if(b.submit||exception){
-  if(!validDate(o.date)||!validDate(o.due)||o.due<o.date||!o.recipient||!o.phone||!o.address||!o.country||!o.items.some(i=>i.kind==='base'&&i.qty>0)||o.items.some(i=>!i.name||i.qty<=0))fail('Kiểm tra sản phẩm, ngày giao và thông tin người nhận trước khi gửi duyệt.');
+  const fields=validateOrder(o,{submit:true});if(Object.keys(fields).length){const error=new Error(Object.values(fields).join(' '));error.status=400;error.fields=fields;throw error;}
   o.stage=exception?old.stage:2;
  }
  o.id=old?.id||(req.work?`${c.id}-${req.nextCode('order:'+c.id)}`:`${c.id}-${Math.max(0,...req.data.orders.filter(o=>o.customerId===c.id).map(o=>Number(o.id.split('-').at(-1))))+1}`);
@@ -127,5 +128,5 @@ app.use('/api',business);
 app.use('/api',(req,res)=>res.status(404).json({error:'Không tìm thấy chức năng.'}));
 app.use(express.static(path.join(root,'dist')));
 app.get('/{*path}',(req,res)=>res.sendFile(path.join(root,'dist/index.html')));
-app.use((err,req,res,next)=>{if(!err.status)console.error('Request failed:',err.message);res.status(err.status||500).json({error:err.status===413?'Tổng dung lượng yêu cầu quá lớn. Giảm số tệp đính kèm.':err.status?err.message:'Không thể lưu dữ liệu lúc này. Vui lòng thử lại.'})});
+app.use((err,req,res,next)=>{if(!err.status)console.error('Request failed:',err.message);res.status(err.status||500).json({...(err.fields?{fields:err.fields}:{}),error:err.status===413?'Tổng dung lượng yêu cầu quá lớn. Giảm số tệp đính kèm.':err.status?err.message:'Không thể lưu dữ liệu lúc này. Vui lòng thử lại.'})});
 app.listen(process.env.PORT||3000,'0.0.0.0',()=>console.log('HQ Hair demo ready'));

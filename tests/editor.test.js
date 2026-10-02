@@ -19,3 +19,9 @@ test('Submissions check date order and recipient details',()=>{
  order.due='2026-10-20';assert.deepEqual(validateOrder(order,{submit:true}),{});
  order.email='broken';assert(validateOrder(order,{submit:true}).email);
 });
+
+test('Submission identifies unnamed lines including gifts; incomplete draft remains saveable',()=>{
+ const order=newOrder({id:'c1',recipient:'Buyer',recipientPhone:'123',address:'Road'});order.due='2027-01-01';
+ order.items=[{kind:'base',name:'  ',qty:100,price:10},{kind:'gift',name:'',qty:1,price:0}];
+ const errors=validateOrder(order,{submit:true});assert.match(errors['name-0'],/1/);assert.match(errors['name-1'],/2/);assert.equal(validateOrder(order)['name-0'],undefined);
+});

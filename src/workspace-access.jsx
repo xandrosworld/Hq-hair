@@ -19,7 +19,7 @@ export async function workspaceAPI(path,body){
  }
  const data=await response.json();
  if(businessWrite&&response.status<500)pendingWrites.delete(signature);
- if(!response.ok){if(response.status===401&&!['/login','/me'].includes(path))window.dispatchEvent(new Event('hq-session-ended'));throw Error(data.error||'Không thể kết nối.')}
+ if(!response.ok){if(response.status===401&&!['/login','/me'].includes(path))window.dispatchEvent(new Event('hq-session-ended'));throw Object.assign(Error(data.error||'Không thể kết nối.'),{fields:data.fields,status:response.status})}
  if(data.csrf)csrf=data.csrf;
  if(['/login','/logout','/password'].includes(path))pendingWrites.clear();
  return data;
