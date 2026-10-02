@@ -24,7 +24,7 @@ try{
  users=await owner.call('/users',{name:'Accountant',email:'accounting@example.com',role:'accounting',password:'Sale-Initial-Password'});
  users=await owner.call('/users',{name:'Factory',email:'factory@example.com',role:'factory',password:'Sale-Initial-Password'});
  for(const [c,email] of [[factory,'factory@example.com'],[a,'sale-a@example.com'],[b,'sale-b@example.com'],[accountant,'accounting@example.com']]){await c.call('/login',{email,password:'Sale-Initial-Password'});await c.call('/password',{currentPassword:'Sale-Initial-Password',password:'Personal-New-Password'})}
- await accountant.call('/state',undefined,{status:403});
+ assert.deepEqual((await accountant.call('/state')).orders,[]);
  await a.call('/users',undefined,{status:403});
  await a.call('/reset',{}, {status:403});
  await a.call('/customers',customer,{status:403,csrf:'bad'});

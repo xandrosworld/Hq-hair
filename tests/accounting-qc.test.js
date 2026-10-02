@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {applyAccounting} from '../accounting.js';
+import {saveQC,qcMedia} from '../quality-control.js';
+import {today} from '../shared.js';
+const accountant={id:'a',name:'Accountant',role:'accounting'};
+const order=()=>({stage:2,date:today(),items:[{name:'Hair',kind:'base',qty:1,price:100}],payments:[{id:'p',amount:30,confirmed:false}]});
+test('Accounting decisions enforce real confirmed money, roles and atomic validation',()=>{
+ const o=order(),body={paymentStatus:'full',receipts:[{id:'p',amount:30}]};
+ assert.throws(()=>applyAccounting(o,accountant,'accounting-approve',body,()=>{}),{status:400});
+ assert.equal(o.payments[0].confirmed,false);
+ assert.throws(()=>applyAccounting(o,{role:'sale'},'accounting-approve',body,()=>{}),{status:403});
+ applyAccounting(o,accountant,'accounting-approve',{...body,paymentStatus:'partial'},()=>{});
+ assert.equal(o.stage,3);assert.equal(o.accountingApproval.status,'partial');
+ assert.throws(()=>applyAccounting(o,accountant,'accounting-cancel',{text:'Cancel'},()=>{}),{status:400});
+ o.payments.push({id:'p2',amount:70,confirmed:false});
+ applyAccounting(o,accountant,'accounting-approve',{paymentStatus:'full',receipts:[{id:'p2',amount:70}]},()=>{});
+ assert.equal(o.accountingApproval.status,'full');assert.equal(o.accountingApproval.paid,100);
+});
+test('QC completion requires every product note and attachment; Factory can edit, Accountant cannot',()=>{
+ const o={...order(),qcMedia:[{id:'m'}]},q={date:today(),rows:[{index:0,note:'',mediaIds:[]}],special:[]};
+ assert.equal(saveQC(o,{role:'factory'},{qc:q}).completedAt,null);
+ assert.throws(()=>saveQC(o,{role:'factory'},{qc:q,complete:true}),{status:400});
+ q.rows[0]={index:0,note:'Checked',mediaIds:['m']};
+ assert.ok(saveQC(o,{role:'factory'},{qc:q,complete:true}).completedAt);
+ assert.throws(()=>saveQC(o,accountant,{qc:q}),{status:403});
+ assert.throws(()=>saveQC({...o,contentLockedAt:'locked'},{role:'factory'},{qc:q}),{status:400});
+ assert.throws(()=>saveQC(o,{role:'sale'},{qc:{...q,rows:[{...q.rows[0],mediaIds:['other-order']}]}}),{status:400});
+ assert.throws(()=>qcMedia({data:'data:video/mp4;base64,ZmFrZQ=='}),{status:400});
+});

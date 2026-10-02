@@ -59,3 +59,11 @@ Nguồn kỹ thuật: [Node SQLite](https://nodejs.org/docs/latest-v22.x/api/sql
 - Điều kiện: máy bật, đúng người dùng đăng nhập, có mạng, Python/paramiko/python-dotenv và thư mục dự án còn nguyên. Đây là bản sao vận hành bổ sung, chưa thay kho sao lưu độc lập luôn hoạt động do khách quản lý.
 - Kiểm tra `Get-ScheduledTaskInfo -TaskName HQHair-OutsideVPS-Backup`, `data/offsite-backups/status.json` (lần thành công gần nhất) và `last-error.json` nếu có. Giữ một bản thành công/ngày trong 14 ngày; thời gian ngừng máy không tạo được bản mới.
 - Thử khôi phục từ bản ngoài VPS vào thư mục mới bằng `scripts/restore-workspace.mjs`; không khôi phục đè dữ liệu live khi kiểm tra.
+
+
+## Accounting and QC release (2026-10-02)
+
+- QC media is stored as BLOBs in `qc_media` in the existing SQLite databases, included in normal backups. Metadata only is returned in order state. Images: 5 MiB; MP4/WebM: 12 MiB; 4 files per row; 200 files/200 MiB per order. Unused uploads are retained for history and count toward the order quota.
+- `app_migrations` records the one-time customer-authorized full Factory visibility update; later permission changes survive restarts.
+- Cancelled orders retain data at stage -1, excluded from financial reports. Accounting actions require the accounting role and a current order version. QC editing requires assigned Sale, Factory, or manager, subject to content lock.
+- Verification: `npm test`, `node tests/security.mjs`, and after build `node tests/accounting-qc.mjs` (includes isolated API tests and Edge UI tests for all three roles). Tests create their own temporary databases and never change live orders.

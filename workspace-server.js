@@ -1,3 +1,4 @@
+import {setupQC} from './qc-server.js';
 import {setupPricing} from './pricing-server.js';
 import express from 'express';
 import {canReadRecord,factoryOrder,factoryView} from './permissions.js';
@@ -37,11 +38,20 @@ export async function createWorkspace(dir){
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='factory_view'))db.exec("ALTER TABLE users ADD COLUMN factory_view TEXT NOT NULL DEFAULT 'full'");
  db.prepare('INSERT OR IGNORE INTO workspace VALUES (1,?)').run(JSON.stringify({customers:[],orders:[],catalog:[]}));
  const audit=(user,action,target='',details={})=>db.prepare('INSERT INTO audit(actor,time,action,target,details) VALUES (?,?,?,?,?)').run(user.id,new Date().toISOString(),action,target,JSON.stringify(details));
+ // Customer confirmation 2026-10-02: all departments see all three tabs now.
+ // Run once; later manager visibility changes remain in force.
+ db.exec('CREATE TABLE IF NOT EXISTS app_migrations(id TEXT PRIMARY KEY)');
+ if(!db.prepare('SELECT id FROM app_migrations WHERE id=?').get('qc-full-factory-20261002')){
+  db.exec('BEGIN IMMEDIATE');try{
+   for(const u of db.prepare("SELECT id,factory_view FROM users WHERE role='factory' AND factory_view!='full'").all()){db.prepare("UPDATE users SET factory_view='full' WHERE id=?").run(u.id);audit({id:'system'},'factory-visibility',u.id,{before:u.factory_view,after:'full',reason:'Customer confirmation 2026-10-02'});}
+   db.prepare('INSERT INTO app_migrations VALUES (?)').run('qc-full-factory-20261002');db.exec('COMMIT');
+  }catch(e){db.exec('ROLLBACK');throw e}
+ }
  if(!db.prepare('SELECT id FROM users LIMIT 1').get()&&process.env.HQ_ADMIN_EMAIL&&process.env.HQ_ADMIN_PASSWORD){
   db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(randomUUID(),process.env.HQ_ADMIN_EMAIL.toLowerCase(),process.env.HQ_ADMIN_NAME||'Quản lý HQ Hair','HQ-ADMIN','manager',await hashPassword(process.env.HQ_ADMIN_PASSWORD));
  }
  for(const column of ['lead_edit','lead_assign'])if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name===column))db.exec(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 0`);
- setupChatImages(db);
+ setupChatImages(db);setupQC(db);
  const dummy=await hashPassword(randomBytes(24).toString('hex'));
  const router=express.Router();
  router.use((req,res,next)=>{res.set('Cache-Control','no-store');next()});
@@ -154,7 +164,7 @@ export async function createWorkspace(dir){
  });
  await makeBackup();const timer=setInterval(makeBackup,86400000);timer.unref();
  router.use((req,res,next)=>{
-  if(!['sale','manager','sales_lead','factory'].includes(req.user.role))return res.status(403).json({error:'Phân hệ này dành cho Sale và quản lý. Phân hệ của bạn sẽ được mở ở giai đoạn tương ứng.'});
+  if(!['sale','manager','sales_lead','factory','accounting'].includes(req.user.role))return res.status(403).json({error:'Phân hệ này dành cho Sale và quản lý. Phân hệ của bạn sẽ được mở ở giai đoạn tương ứng.'});
   req.imageDb=db;req.data=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
   const beforeCustomers=new Map(req.data.customers.map(c=>[c.id,JSON.stringify(c)]));
   const beforeCatalog=JSON.stringify(req.data.catalog);
@@ -163,15 +173,16 @@ export async function createWorkspace(dir){
   req.assertAccess=record=>{if(!req.canRead(record))reject(404,'Không tìm thấy dữ liệu trong phạm vi được giao.')};
   req.assertVersion=record=>{if(record&&req.body.version!==record.version)reject(409,'Dữ liệu đã được cập nhật ở nơi khác. Tải lại trang trước khi sửa tiếp.')};
   req.nextCode=key=>db.prepare('INSERT INTO sequences VALUES (?,1) ON CONFLICT(key) DO UPDATE SET value=value+1 RETURNING value').get(key).value;
-  req.view=()=>{const orders=req.data.orders.filter(req.canRead);if(req.user.role==='factory')return {orders:factoryView(req.user)==='products'?orders.map(factoryOrder):orders,customers:factoryView(req.user)==='products'?[]:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};return {...req.data,customers:req.data.customers.filter(req.canRead),orders,user:safeUser(req.user),mode:'workspace'}};
+  req.view=()=>{const orders=req.data.orders.filter(req.canRead);if(req.user.role==='accounting')return {orders,customers:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};if(req.user.role==='factory')return {orders:factoryView(req.user)==='products'?orders.map(factoryOrder):orders,customers:factoryView(req.user)==='products'?[]:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};return {...req.data,customers:req.data.customers.filter(req.canRead),orders,user:safeUser(req.user),mode:'workspace'}};
   req.save=()=>{
    for(const c of req.data.customers){const before=beforeCustomers.get(c.id);if(before!==JSON.stringify(c))audit(req.user,before?'customer-update':'customer-create',c.id,{before:before?JSON.parse(before):null,after:c})}
    if(beforeCatalog!==JSON.stringify(req.data.catalog))audit(req.user,'catalog-update','catalog',{before:JSON.parse(beforeCatalog),after:req.data.catalog});
    return db.prepare('UPDATE workspace SET data=? WHERE id=1').run(JSON.stringify(req.data));
   };
   if(req.method==='GET')return next();
+  if(req.user.role==='accounting'&&!( /^\/orders\/[^/]+\/action$/.test(req.path)&&['accounting-approve','accounting-cancel'].includes(req.body.action)))return res.status(403).json({error:'Kế toán chỉ được duyệt thanh toán hoặc hủy đơn tại bước 3.'});
   if(req.user.role==='sales_lead'&&!req.user.lead_edit&&!(req.path==='/assign'&&req.user.lead_assign))return res.status(403).json({error:'Trưởng nhóm đang ở quyền chỉ xem. Quản trị có thể cấp thêm quyền.'});
-  if(req.user.role==='factory'&&!( /^\/orders\/[^/]+\/action$/.test(req.path)&&req.body.action==='message'))return res.status(403).json({error:'Tài khoản Xưởng hiện được xem đơn và trao đổi; không được sửa nội dung hoặc thanh toán.'});
+  if(req.user.role==='factory'&&!( /^\/orders\/[^/]+\/action$/.test(req.path)&&req.body.action==='message')&&!/^\/orders\/[^/]+\/(qc|qc-upload)$/.test(req.path))return res.status(403).json({error:'Tài khoản Xưởng hiện được xem đơn và trao đổi; không được sửa nội dung hoặc thanh toán.'});
   if(req.path==='/reset')return res.status(403).json({error:'Không gian làm việc không hỗ trợ khôi phục dữ liệu mẫu.'});
   const key=req.get('Idempotency-Key');if(!key||!/^[\w-]{16,100}$/.test(key))return res.status(400).json({error:'Thiếu mã thao tác. Vui lòng tải lại trang.'});
   const hash=digest(req.path+JSON.stringify(req.body));

@@ -4,7 +4,7 @@ import {aging,agingLabels} from './receivables.js';
 export const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
 export function monthlySeries(orders,year,key){
  const values=Array(12).fill(0);
- for(const order of orders){if(!order.stage||!validDate(order.date)||order.date.slice(0,4)!==String(year))continue;const month=Number(order.date.slice(5,7))-1;values[month]+=key==='count'?1:totals(order)[key]||0}
+ for(const order of orders){if(order.stage<=0||!validDate(order.date)||order.date.slice(0,4)!==String(year))continue;const month=Number(order.date.slice(5,7))-1;values[month]+=key==='count'?1:totals(order)[key]||0}
  return values.map(round);
 }
 export function customerActivity(orders,year){

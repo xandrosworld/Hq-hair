@@ -7,7 +7,7 @@ export function SalesTeamSummary({orders,customers}){
  for(const c of customers)get(c.ownerId||c.sale,c.sale).customers.add(c.id);
  for(const order of orders){
   const row=get(order.ownerId||order.sale,order.sale);row.orders++;
-  if(!order.stage)continue;
+  if(order.stage<=0)continue;
   const total=totals(order);row.revenue+=total.revenue;row.paid+=total.paid;row.debt+=total.debt;
   if(order.stage<10)row.active++;
  }

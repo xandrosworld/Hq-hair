@@ -1,5 +1,15 @@
 # Phân quyền — phản hồi HQ Hair ngày 30/09/2026
 
+## Xác nhận 02/10/2026, 16:26–16:27 — đã triển khai
+
+- Sale phụ trách và Xưởng đều nhập/lưu/hoàn tất phiếu kiểm định ở tab thứ ba. Kế toán chỉ xem phiếu.
+- Cả ba bộ phận xem ba tab: sản phẩm, thanh toán & giao hàng, phiếu kiểm định. Sale vẫn theo đơn được giao; bản nháp chưa chia sẻ cho hai bộ phận còn lại.
+- Tài khoản Xưởng hiện có chuyển sang `full` một lần, có audit. Quản trị vẫn đổi phạm vi về sau được; khởi động lại không ghi đè thay đổi quyền sau đó.
+- Kế toán xử lý bước 3: hủy khi chưa có chứng từ/thanh toán; hoặc đối soát chứng từ, nhập thực nhận rồi xác nhận thanh toán một phần/đủ. Hai loại xác nhận đều hiện dấu tích và nhãn phụ ở bước 3, có người thực hiện/thời gian.
+- Đơn hủy giữ lịch sử, không tính vào doanh thu/công nợ; không cho sửa hoặc bổ sung thanh toán.
+- QC lưu nháp được; hoàn tất yêu cầu ghi chú và ảnh/video cho từng dòng, kể cả dòng lưu ý đã thêm. Sau khóa bước 8, chỉ quản trị sửa ngoại lệ kèm lý do theo quy tắc đã xác nhận trước đó.
+- QC và thao tác Kế toán kiểm tra phiên bản, chống hai người ghi đè. Ảnh/video kiểm tra quyền trên đơn ở mỗi lần tải. Phần lịch sử bên dưới không thay thế xác nhận mới này.
+
 Nguồn: file “mô tả phân quyền.docx” và tin nhắn Xuân Hải lúc 14:00:32 do chủ dự án cung cấp. Phân biệt yêu cầu đã xác nhận với phương án đang trao đổi. Tài liệu này chưa có nghĩa các chức năng đã được triển khai.
 
 ## Đã xác nhận trong tin nhắn

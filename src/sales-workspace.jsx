@@ -42,7 +42,7 @@ export function HomeBoard({data,onCreate,onOrders,onOpen,onGuide,Table}) {
 }
 
 export function OrderBoard({orders,data,onOpen}) {
-  return <div className="order-board" aria-label="Bảng tiến độ đơn hàng">{lanes.map(({id,label,stages,tone,Icon})=>{
+  return <div className="order-board" aria-label="Bảng tiến độ đơn hàng">{[...lanes,...(orders.some(o=>o.cancelledAt)?[{id:'cancelled',label:'Đã hủy',stages:[-1],tone:'slate',Icon:Package}]:[])].map(({id,label,stages,tone,Icon})=>{
     const rows=orders.filter(o=>stages.includes(o.stage)).sort((a,b)=>b.date.localeCompare(a.date));
     return <section className={`board-lane ${tone}`} key={id}><div className="board-heading"><Icon size={18}/><h3>{label}</h3><span>{rows.length}</span></div><div className="board-cards">{rows.map(o=>{const c=data.customers.find(c=>c.id===o.customerId);return <button className="board-card" key={o.id} onClick={()=>onOpen(o)}><span className="board-id">{o.id}<ArrowUpRight size={15}/></span><strong>{c?.name}</strong><small>{c?.company}</small><div className="board-product"><Package size={15}/>{o.items[0]?.name||'Chưa có sản phẩm'}{o.items.length>1&&<span>+{o.items.length-1}</span>}</div><div className="board-value">{money(totals(o).receive)}<small>USD</small></div><div className="board-meta"><span className={o.stage>0&&o.stage<9&&o.due<today()?'late':''}><CalendarBlank size={13}/>{dateText(o.due)}</span><span>{displayLabel(status(o))}</span></div></button>})}{!rows.length&&<p className="board-empty">Chưa có đơn trong nhóm này</p>}</div></section>;
   })}</div>;
@@ -50,7 +50,7 @@ export function OrderBoard({orders,data,onOpen}) {
 
 export function OrderSnapshot({order}) {
   const t=totals(order);
-  return <div className="order-snapshot">{[[Receipt,'Tổng gửi khách',t.total,''],[Wallet,'Tiền đã xác nhận',t.paid,'green'],[Clock,'Công nợ còn lại',t.debt,'amber']].map(([Icon,label,value,tone])=><div key={label} className={tone}><span className="snapshot-icon"><Icon size={22}/></span><span><small>{label}</small><strong><AnimatedNumber value={value} format="money"/></strong></span></div>)}<div className="snapshot-delivery"><CalendarBlank size={22}/><span><small>Dự kiến giao hàng</small><strong>{dateText(order.due)}</strong></span></div></div>;
+  return <div className="order-snapshot">{[[Receipt,'Tổng gửi khách',t.total,''],[Wallet,'Tiền đã xác nhận',t.paid,'green'],[Clock,'Công nợ còn lại',order.cancelledAt?0:t.debt,'amber']].map(([Icon,label,value,tone])=><div key={label} className={tone}><span className="snapshot-icon"><Icon size={22}/></span><span><small>{label}</small><strong><AnimatedNumber value={value} format="money"/></strong></span></div>)}<div className="snapshot-delivery"><CalendarBlank size={22}/><span><small>Dự kiến giao hàng</small><strong>{dateText(order.due)}</strong></span></div></div>;
 }
 
 export function DemoGuide({data,onCreate,onOpen,onRevenue,onCustomers,onReset}) {
