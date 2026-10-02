@@ -67,3 +67,11 @@ Nguồn kỹ thuật: [Node SQLite](https://nodejs.org/docs/latest-v22.x/api/sql
 - `app_migrations` records the one-time customer-authorized full Factory visibility update; later permission changes survive restarts.
 - Cancelled orders retain data at stage -1, excluded from financial reports. Accounting actions require the accounting role and a current order version. QC editing requires assigned Sale, Factory, or manager, subject to content lock.
 - Verification: `npm test`, `node tests/security.mjs`, and after build `node tests/accounting-qc.mjs` (includes isolated API tests and Edge UI tests for all three roles). Tests create their own temporary databases and never change live orders.
+
+
+## Product standards reference (2026-10-02)
+
+- Sale/lead/manager have a Product standards navigation entry. The 14-page customer PDF and WebP previews are served only through authenticated `/api/work/product-standards/:file` routes. Factory/Accounting cannot access this Sale reference.
+- Files live in `DATA_DIR/product-standards` (override: `HQ_STANDARDS_DIR`), outside the public web root and Git. Deploying code preserves this directory. Keep an independent copy of these immutable files: the SQLite backup does not include them. The operator copy is `data/product-standards`, with the original customer PDF also retained in Downloads.
+- Original SHA-256: `bfcd6f789895d11af7888d27d06d8734c2365defbd24d0123cdaae2a38e9af5f`. Previews are 2160x1215 WebP; 7 categories, Vietnamese/English paired pages. Do not silently revise source specifications.
+- API/UI tests generate synthetic document fixtures and do not need the private customer file.

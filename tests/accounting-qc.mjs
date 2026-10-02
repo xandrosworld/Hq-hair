@@ -1,3 +1,4 @@
+import {standardsFixture} from './standards-fixture.mjs';
 import assert from 'node:assert/strict';
 import {spawn,spawnSync} from 'node:child_process';
 import {mkdtempSync,rmSync,readdirSync} from 'node:fs';
@@ -6,8 +7,9 @@ import path from 'node:path';
 import {DatabaseSync,backup} from 'node:sqlite';
 import {randomUUID} from 'node:crypto';
 const dir=mkdtempSync(path.join(os.tmpdir(),'hq-qc-')),port=3193,base=`http://127.0.0.1:${port}/api/work`;
+const standardsDir=await standardsFixture(dir);
 let server,logs='';
-async function start(){server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:String(port),DATA_DIR:dir,NODE_ENV:'test',HQ_ADMIN_EMAIL:'owner@example.com',HQ_ADMIN_PASSWORD:'Initial-Password-2026'},stdio:['ignore','pipe','pipe']});server.stdout.on('data',s=>logs+=s);server.stderr.on('data',s=>logs+=s);for(let i=0;i<100;i++){try{if((await fetch(base.replace('/work','/health'))).ok)return}catch{}await new Promise(r=>setTimeout(r,100))}throw Error(logs)}
+async function start(){server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:String(port),DATA_DIR:dir,HQ_STANDARDS_DIR:standardsDir,NODE_ENV:'test',HQ_ADMIN_EMAIL:'owner@example.com',HQ_ADMIN_PASSWORD:'Initial-Password-2026'},stdio:['ignore','pipe','pipe']});server.stdout.on('data',s=>logs+=s);server.stderr.on('data',s=>logs+=s);for(let i=0;i<100;i++){try{if((await fetch(base.replace('/work','/health'))).ok)return}catch{}await new Promise(r=>setTimeout(r,100))}throw Error(logs)}
 async function stop(){const done=new Promise(r=>server.once('exit',r));server.kill();await done}
 function client(){return {cookie:'',csrf:'',async call(url,body,{status=200,key=randomUUID(),csrf=this.csrf}={}){const r=await fetch(base+url,{method:body?'POST':'GET',headers:{Cookie:this.cookie,...(body?{'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':key}:{})},body:body?JSON.stringify(body):undefined});const v=await r.json();assert.equal(r.status,status,`${url}: ${JSON.stringify(v)}`);const c=r.headers.get('set-cookie');if(c)this.cookie=c.split(';')[0];if(v.csrf)this.csrf=v.csrf;return v}}}
 const owner=client(),a=client(),b=client(),accountant=client(),factory=client(),anonymous=client();
@@ -71,7 +73,18 @@ try{
    await ctx.request.post(base+'/login',{data:{email,password:'Personal-New-Password'}});
    await page.goto(base.replace('/api/work','/workspace'));
    if(who===accountant)await page.getByRole('combobox').selectOption('all');
-   if(who===a)await page.locator('.nav-item').filter({hasText:'Đơn hàng'}).click();
+   if(who===a){
+    await page.getByRole('button',{name:'Quy chuẩn sản phẩm',exact:true}).click();
+    await page.getByRole('heading',{name:'Quy chuẩn sản phẩm',exact:true}).waitFor();
+    await page.getByLabel('Nhóm quy chuẩn').selectOption('6');
+    await page.getByLabel('Ngôn ngữ quy chuẩn').selectOption('en');
+    await page.waitForFunction(()=>{const i=document.querySelector('.standards-page img');return i?.complete&&i.naturalWidth>0&&i.src.endsWith('page-14.webp')});
+    await page.getByRole('button',{name:'Phóng to',exact:true}).click();
+    assert.ok(await page.locator('.standards-page.zoomed').count());
+    await page.getByRole('button',{name:'Vừa khung',exact:true}).click();
+    await page.screenshot({path:'screenshots/product-standards-fixture.png',fullPage:true,animations:'disabled'});
+    await page.locator('.nav-item').filter({hasText:'Đơn hàng'}).click();
+   }
    await page.getByRole('button',{name:id,exact:true}).first().click();
    for(const label of ['Sản phẩm','Thanh toán & giao hàng','Phiếu kiểm định'])assert.ok(await page.getByRole('button',{name:label,exact:true}).isVisible());
    if(who===a){const step=page.locator('.timeline-step').nth(2);assert.ok(await step.locator('svg').count());await page.getByText('Thanh toán đủ',{exact:true}).waitFor();}

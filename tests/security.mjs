@@ -1,3 +1,4 @@
+import {standardsFixture} from './standards-fixture.mjs';
 import assert from 'node:assert/strict';
 import {spawn,spawnSync} from 'node:child_process';
 import {mkdtempSync,rmSync,readdirSync} from 'node:fs';
@@ -6,8 +7,9 @@ import path from 'node:path';
 import {DatabaseSync,backup} from 'node:sqlite';
 import {randomUUID} from 'node:crypto';
 const dir=mkdtempSync(path.join(os.tmpdir(),'hq-security-')),port=3197,base=`http://127.0.0.1:${port}/api/work`;
+const standardsDir=await standardsFixture(dir);
 let server,logs='';
-async function start(){server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:String(port),DATA_DIR:dir,NODE_ENV:'test',HQ_ADMIN_EMAIL:'owner@example.com',HQ_ADMIN_PASSWORD:'Initial-Password-2026'},stdio:['ignore','pipe','pipe']});server.stdout.on('data',s=>logs+=s);server.stderr.on('data',s=>logs+=s);for(let i=0;i<100;i++){try{if((await fetch(base.replace('/work','/health'))).ok)return}catch{}await new Promise(r=>setTimeout(r,100))}throw Error(logs)}
+async function start(){server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:String(port),DATA_DIR:dir,HQ_STANDARDS_DIR:standardsDir,NODE_ENV:'test',HQ_ADMIN_EMAIL:'owner@example.com',HQ_ADMIN_PASSWORD:'Initial-Password-2026'},stdio:['ignore','pipe','pipe']});server.stdout.on('data',s=>logs+=s);server.stderr.on('data',s=>logs+=s);for(let i=0;i<100;i++){try{if((await fetch(base.replace('/work','/health'))).ok)return}catch{}await new Promise(r=>setTimeout(r,100))}throw Error(logs)}
 async function stop(){const done=new Promise(r=>server.once('exit',r));server.kill();await done}
 function client(){return {cookie:'',csrf:'',async call(url,body,{status=200,key=randomUUID(),csrf=this.csrf}={}){const r=await fetch(base+url,{method:body?'POST':'GET',headers:{Cookie:this.cookie,...(body?{'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':key}:{})},body:body?JSON.stringify(body):undefined});const v=await r.json();assert.equal(r.status,status,`${url}: ${JSON.stringify(v)}`);const c=r.headers.get('set-cookie');if(c)this.cookie=c.split(';')[0];if(v.csrf)this.csrf=v.csrf;return v}}}
 const owner=client(),a=client(),b=client(),accountant=client(),factory=client(),anonymous=client();
@@ -25,6 +27,17 @@ try{
  users=await owner.call('/users',{name:'Factory',email:'factory@example.com',role:'factory',password:'Sale-Initial-Password'});
  for(const [c,email] of [[factory,'factory@example.com'],[a,'sale-a@example.com'],[b,'sale-b@example.com'],[accountant,'accounting@example.com']]){await c.call('/login',{email,password:'Sale-Initial-Password'});await c.call('/password',{currentPassword:'Sale-Initial-Password',password:'Personal-New-Password'})}
  assert.deepEqual((await accountant.call('/state')).orders,[]);
+ await anonymous.call('/product-standards/page-1.webp',undefined,{status:401});
+ await factory.call('/product-standards/page-1.webp',undefined,{status:403});
+ await accountant.call('/product-standards/original.pdf',undefined,{status:403});
+ await a.call('/product-standards/page-15.webp',undefined,{status:404});
+ for(let page=1;page<=14;page++){
+  const r=await fetch(base+`/product-standards/page-${page}.webp`,{headers:{Cookie:a.cookie}});
+  assert.equal(r.status,200);assert.match(r.headers.get('content-type'),/image\/webp/);assert.match(r.headers.get('cache-control'),/no-store/);
+  assert.ok((await r.arrayBuffer()).byteLength>1000);
+ }
+ const pdf=await fetch(base+'/product-standards/original.pdf?download=1',{headers:{Cookie:a.cookie,Range:'bytes=0-7'}});
+ assert.equal(pdf.status,206);assert.match(pdf.headers.get('content-type'),/application\/pdf/);assert.match(pdf.headers.get('content-disposition'),/attachment/);assert.match(await pdf.text(),/^%PDF-/);
  await a.call('/users',undefined,{status:403});
  await a.call('/reset',{}, {status:403});
  await a.call('/customers',customer,{status:403,csrf:'bad'});

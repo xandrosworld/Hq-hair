@@ -1,3 +1,4 @@
+import {setupStandards} from './standards-server.js';
 import {setupQC} from './qc-server.js';
 import {setupPricing} from './pricing-server.js';
 import express from 'express';
@@ -100,6 +101,7 @@ export async function createWorkspace(dir){
  });
  const manager=(req,res,next)=>req.user.role==='manager'?next():res.status(403).json({error:'Chỉ quản lý được thực hiện thao tác này.'});
  setupPricing(router,db,audit);
+ setupStandards(router);
  router.get('/sales-roster',(req,res)=>{if(req.user.role!=='manager'&&!(req.user.role==='sales_lead'&&req.user.lead_assign))return res.status(403).json({error:'Chưa được cấp quyền phân công.'});res.json(db.prepare("SELECT id,name,code,role,active FROM users WHERE role IN ('sale','manager')").all())});
  router.post('/users/:id/lead-permissions',manager,(req,res)=>{
   const u=db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
