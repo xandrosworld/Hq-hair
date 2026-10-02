@@ -27,7 +27,7 @@ try{
  users=await owner.call('/users',{name:'Factory',email:'factory@example.com',role:'factory',password:'Sale-Initial-Password'});
  for(const [c,email] of [[factory,'factory@example.com'],[a,'sale-a@example.com'],[b,'sale-b@example.com'],[accountant,'accounting@example.com']]){await c.call('/login',{email,password:'Sale-Initial-Password'});await c.call('/password',{currentPassword:'Sale-Initial-Password',password:'Personal-New-Password'})}
  const state=await a.call('/customers',customer),c=state.customers[0];
- const draft={customerId:c.id,date:'2026-09-29',due:'2026-10-10',items:[{name:'Bulk Hair',kind:'base',unit:'Gram',price:100,priceBasis:'100g',qty:100}],discount:0,shippingFee:0,paymentFee:0,payments:[],recipient:'Buyer',phone:'+12345678',email:'buyer@example.com',country:'United States',address:'Example St'};
+ const draft={customerId:c.id,date:'2026-09-29',due:'2026-10-10',items:[{name:'Bulk Hair',origin:'Raw Hair',lengthCm:55,texture:'Straight',segment:'Super Double Drawn',color:'1A',productNote:'Product specification note',kind:'base',unit:'Gram',price:100,priceBasis:'100g',qty:100}],discount:0,shippingFee:0,paymentFee:0,payments:[],recipient:'Buyer',phone:'+12345678',email:'buyer@example.com',country:'United States',address:'Example St'};
  let saved=await a.call('/orders',draft),o=saved.state.orders[0];const id=o.id;
  assert.equal((await accountant.call('/state')).orders.length,0);
  await factory.call(`/orders/${id}/qc`,{version:o.version,qc:{}},{status:404});
@@ -90,6 +90,8 @@ try{
    if(who===a){const step=page.locator('.timeline-step').nth(2);assert.ok(await step.locator('svg').count());await page.getByText('Thanh toán đủ',{exact:true}).waitFor();}
    await page.getByRole('button',{name:'Phiếu kiểm định',exact:true}).click();
    await page.getByRole('heading',{name:'KIỂM ĐỊNH ĐƠN HÀNG (QC)'}).waitFor();
+   assert.deepEqual(await page.locator('.qc-product-row').first().locator('td').allTextContents(),['1','Bulk Hair','Raw Hair','55','Straight','Super Double Drawn','1A','Product specification note','100Gam']);
+   assert.equal(await page.locator('.qc-table thead th').count(),9);
    if(who===factory){
     await page.getByLabel('Đánh giá sản phẩm 1',{exact:true}).fill('Factory UI checked');
     await page.getByRole('button',{name:'Hoàn tất QC',exact:true}).click();
