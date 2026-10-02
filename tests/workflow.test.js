@@ -19,13 +19,13 @@ test('Completion of inspection locks every content action while chat and deliver
  for(const action of ['message','received','complete'])assert.doesNotThrow(()=>assertContentAction(o,{role:'sale'},action,{}));
  assert.throws(()=>assertContentAction(o,{role:'manager'},'payment',{}));
  assert.doesNotThrow(()=>assertContentAction(o,{role:'manager'},'payment',{reason:'Correct receipt'}));
- applySaleWorkflow(o,{role:'sale'},'received',{},()=>{});assert.equal(o.stage,9);
+ applySaleWorkflow(o,{role:'sale'},'received',{feedback:'very_satisfied'},()=>{});assert.equal(o.stage,9);
  applySaleWorkflow(o,{role:'sale'},'complete',{},()=>{});assert.equal(o.stage,10);
 });
-test('Manager stage corrections retain lock and do not fabricate confirmed receipts',()=>{
+test('Manager cannot skip workflow stages or remove lock',()=>{
  const o={stage:9,contentLockedAt:'2026-01-01',payments:[{amount:100,confirmed:false}]};
- applySaleWorkflow(o,{role:'manager'},'manager-stage',{stage:2,text:'Correct mistaken transition'},()=>{});
- assert.equal(o.stage,2);assert.equal(contentLocked(o),true);assert.equal(o.payments[0].confirmed,false);
+ assert.throws(()=>applySaleWorkflow(o,{role:'manager'},'manager-stage',{stage:2,text:'Correct mistaken transition'},()=>{}));
+ assert.equal(o.stage,9);assert.equal(contentLocked(o),true);assert.equal(o.payments[0].confirmed,false);
 });
 test('Debt stays visible after manager exceptional closure; Sale cannot silently close unpaid order',()=>{
  const o={stage:9,items:[{kind:'base',qty:1,price:100}],payments:[]};

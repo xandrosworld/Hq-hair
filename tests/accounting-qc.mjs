@@ -109,10 +109,24 @@ try{
     await page.setViewportSize({width:1280,height:1000});
    }
    await page.screenshot({path:`screenshots/qc-${who===factory?'factory':who===accountant?'accounting':'sale'}.png`,fullPage:true,animations:'disabled'});
+   if(who===factory){
+    await page.getByRole('button',{name:'Đang sản xuất',exact:true}).click();
+    await page.getByRole('button',{name:'Xác nhận trạng thái Xưởng',exact:true}).click();
+    await page.locator('.timeline-step').nth(3).locator('.workflow-substatus').filter({hasText:'Đang sản xuất'}).waitFor();
+    assert.equal(await page.locator('.timeline-step').nth(3).locator('.step-dot svg').count(),1);
+   }
    await ctx.close();
   }
   assert.deepEqual(errors,[]);
  }finally{await browser.close()}
+ await action(a,'factory-status',{status:'paused'},403);
+ await action(factory,'factory-status',{status:'paused'});assert.equal((await current()).production.status,'paused');
+ await action(factory,'factory-status',{status:'sale_check'});assert.equal((await current()).stage,5);
+ await action(a,'rework',{text:'Check colour again'});assert.equal((await current()).saleReview.result,'rework');
+ await action(factory,'factory-office',{},400);
+ await action(factory,'factory-status',{status:'sale_check'});
+ await action(a,'accept');
+ await action(factory,'factory-office');assert.equal((await current()).stage,6);
  saved=await a.call('/orders',{...draft,submit:true});const cancelled=saved.state.orders.find(x=>x.id===saved.id);
  next=await accountant.call(`/orders/${cancelled.id}/action`,{version:cancelled.version,action:'accounting-cancel',text:'Customer cancelled before payment'});
  assert.equal(next.orders.find(x=>x.id===cancelled.id).stage,-1);
@@ -132,7 +146,23 @@ try{
  assert.deepEqual(approved.map(x=>x.orderCode).sort(),[c.id+'-2',c.id+'-3']);
  const retried=await accountant.call(`/orders/${awaiting[0].id}/action`,decisions[0],{key:decisionKeys[0]});
  assert.equal(retried.orders.find(x=>x.id===awaiting[0].id).orderCode,approved.find(x=>x.id===awaiting[0].id).orderCode);
- await action(owner,'manager-stage',{stage:9,text:'Test locked inspection'});
+ await action(owner,'manager-stage',{stage:9,text:'Cannot skip'},400);
+ const finalBrowser=await chromium.launch({headless:true,channel:'msedge'});
+ try{
+  const ctx=await finalBrowser.newContext(),page=await ctx.newPage();
+  await ctx.request.post(base+'/login',{data:{email:'accounting@example.com',password:'Personal-New-Password'}});
+  await page.goto(base.replace('/api/work','/workspace'));
+  await page.getByRole('button',{name:(await current()).orderCode,exact:true}).click();
+  await page.getByRole('button',{name:'Xác nhận đủ',exact:true}).click();
+  await page.getByRole('button',{name:'Xác nhận duyệt',exact:true}).click();
+  await page.locator('.timeline-step').nth(6).locator('.workflow-substatus').filter({hasText:'Xác nhận đủ'}).waitFor();
+  assert.equal(await page.locator('.timeline-step').nth(6).locator('.step-dot svg').count(),1);
+  await page.screenshot({path:'screenshots/final-accounting.png',fullPage:true});
+ }finally{await finalBrowser.close()}
+ assert.equal((await current()).stage,8);
+ await action(a,'inspection',{checked:true,carrier:'DHL',tracking:'QC-TRACK',shippedDate:'2026-10-03'});
+ await action(a,'received',{feedback:'satisfied_feedback'});
+ await action(a,'complete');
  o=await current();await factory.call(`/orders/${id}/qc`,{version:o.version,qc:q},{status:400});
  assert.ok((await owner.call('/audit')).some(x=>x.action==='qc-save'));
  assert.ok((await owner.call('/audit')).some(x=>x.action==='accounting-decision'));

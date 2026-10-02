@@ -1,3 +1,4 @@
+import {applyFactoryWorkflow} from './factory-workflow.js';
 import {migrateOrderIdentity,assignOrderCode} from './order-identity.js';
 import {qcSignature} from './quality-control.js';
 import {applyAccounting} from './accounting.js';
@@ -99,7 +100,7 @@ business.post('/orders',(req,res)=>{
  o.orderCode=old?.orderCode||null;
  o.requestCode=old?.requestCode||`YC-${o.id.replaceAll('-','').slice(0,12).toUpperCase()}`;
  o.messages=old?.messages||[];o.history=old?.history||[];
- if(old)for(const key of ['approvedAt','accountingApproval','qc','qcMedia','contentLockedAt','inspection','shippedDate','saleReview','receivedAt','completedAt','editRequested'])if(old[key]!==undefined)o[key]=old[key];
+ if(old)for(const key of ['production','officeDispatch','finalPaymentCheck','customerFeedback','approvedAt','accountingApproval','qc','qcMedia','contentLockedAt','inspection','shippedDate','saleReview','receivedAt','completedAt','editRequested'])if(old[key]!==undefined)o[key]=old[key];
  if(o.qc&&o.qc.signature!==qcSignature(o.items))o.qc={...o.qc,stale:true};
  if(req.work&&old)o.history.push({title:'Lưu phiên bản trước chỉnh sửa',actor:req.user.name,actorId:req.user.id,time:new Date().toISOString(),snapshot:{...old,history:undefined,messages:undefined}});
  event(req,o,exception?'Quản trị chỉnh sửa ngoại lệ':old?'Cập nhật bản nháp':'Nhập đơn',reason);if(b.submit&&!exception)event(req,o,'Chờ duyệt','Đã chuyển yêu cầu đến Kế toán. Đơn được khóa chỉnh sửa.');
@@ -108,7 +109,7 @@ business.post('/orders',(req,res)=>{
 });
 business.post('/orders/:id/action',(req,res)=>{
  const o=req.data.orders.find(o=>o.id===req.params.id);req.assertAccess(o);req.assertVersion(o);if(!o)fail('Không tìm thấy đơn hàng.');const {action}=req.body;
- const beforeAccounting=typeof action==='string'&&action.startsWith('accounting-')?{payments:structuredClone(o.payments),approval:o.accountingApproval||null}:null;
+ const beforeAccounting=typeof action==='string'&&action.startsWith('accounting-')?{payments:structuredClone(o.payments),approval:o.accountingApproval||null,finalPaymentCheck:o.finalPaymentCheck||null,cancelType:o.cancelType||null,stage:o.stage}:null;
  const beforeException=req.work&&req.user.role==='manager'&&action!=='message'?structuredClone(o):null;
  if(o.cancelledAt&&action!=='message')fail('Đơn đã hủy, không thể thay đổi.');
  assertContentAction(o,req.user,action,req.body);
@@ -127,7 +128,8 @@ business.post('/orders/:id/action',(req,res)=>{
   payment.correctedBy=req.user.id;payment.correctedAt=new Date().toISOString();
   event(req,o,'Quản trị điều chỉnh thanh toán',`${reason} · ${before.amount} → ${amount} USD · ${before.confirmed?'đã xác nhận':'chờ xác nhận'} → ${payment.confirmed?'đã xác nhận':'chờ xác nhận'}`);
  }
- else if(applyAccounting(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){assignOrderCode(o,req.data.orders);req.recordAudit?.('accounting-decision',o.id,{before:beforeAccounting,after:{payments:o.payments,approval:o.accountingApproval,orderCode:o.orderCode,cancelledAt:o.cancelledAt},reason:req.body.text,receipts:req.body.receipts})}
+ else if(applyAccounting(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){assignOrderCode(o,req.data.orders);req.recordAudit?.('accounting-decision',o.id,{before:beforeAccounting,after:{payments:o.payments,approval:o.accountingApproval,orderCode:o.orderCode,cancelledAt:o.cancelledAt,finalPaymentCheck:o.finalPaymentCheck,cancelType:o.cancelType,stage:o.stage},reason:req.body.text,receipts:req.body.receipts})}
+ else if(applyFactoryWorkflow(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}
  else if(applySaleWorkflow(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}
  else fail('Thao tác không được hỗ trợ.');if(beforeException)req.recordAudit('manager-order-action',o.id,{action,reason:text(req.body.reason||req.body.text),before:beforeException,after:o});o.version=(o.version||0)+1;req.save();res.json(req.view());
 });

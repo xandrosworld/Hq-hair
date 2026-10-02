@@ -1,5 +1,5 @@
 import {rawProductAmount} from './product-fields.js';
-export const steps = ['Nhập đơn','Chờ duyệt','Kế toán duyệt','Sản xuất','Sale tiếp nhận','Gửi đến văn phòng','Kiểm tra thanh toán','Kiểm định & đặt ship','Đã nhận','Hoàn thành'];
+export const steps = ['Nhập đơn','Chờ duyệt','Kế toán duyệt','Xưởng ghi nhận','Sale tiếp nhận','Đã gửi đến văn phòng','Kiểm tra thanh toán lần cuối','Phiếu kiểm định và đặt ship','Đã nhận','Hoàn thành'];
 export const groups = ['Khách lẻ','Start Business','Salon','Wholesale'];
 export const countries = ['United States','United Kingdom','France','Germany','Australia','Canada','Nigeria','South Africa','Vietnam'];
 export const catalog = [
@@ -24,7 +24,7 @@ export function totals(o) {
  const pending=round((o.payments||[]).filter(p=>!p.confirmed).reduce((s,p)=>s+(+p.amount||0),0));
  return {base,extra,revenue,receive,total,paid,pending,debt:round(Math.max(0,receive-paid))};
 }
-export function status(o){return o.cancelledAt?'Đã hủy':o.stage===0?'Bản nháp':o.stage===4?'Đang sản xuất':steps[o.stage-1]}
+export function status(o){return o.cancelledAt?'Đã hủy':o.stage===0?'Bản nháp':steps[o.stage-1]}
 export function dateText(d){return d?new Date(d).toLocaleDateString('vi-VN'):'—'}
 export const today=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Ho_Chi_Minh'});
 export function newOrder(customer){return {customerId:customer?.id||'',date:today(),due:'',sale:'Judy',stage:0,items:[{...catalog[0],qty:100,kind:'base'}],discount:0,shippingFee:0,paymentFee:0,payments:[],recipient:customer?.recipient||customer?.name||'',phone:customer?.recipientPhone||customer?.phone||'',email:customer?.email||'',address:customer?.address||'',country:customer?.country||'United States',carrier:'DHL',service:'Express',tracking:'',note:'',messages:[],history:[]}}

@@ -1,3 +1,4 @@
+import {feedbackLabels,saleReviewLabels} from './workflow-state.js';
 import {totals,today} from './shared.js';
 
 const fail=message=>{throw Object.assign(new Error(message),{status:400})};
@@ -17,8 +18,8 @@ export function applySaleWorkflow(order,user,action,body,event){
   if(order.stage!==5)fail('Đơn chưa đến bước Sale tiếp nhận.');
   const note=text(body.text);
   if(action==='rework'&&!note)fail('Nhập yêu cầu sửa lại.');
-  order.stage=4;order.saleReview={result:action==='accept'?'accepted':'rework',by:user.id,time:now,note};
-  event(action==='accept'?'Sale xác nhận tiếp tục sản xuất':'Yêu cầu xưởng sửa lại',note||'Xưởng tiếp tục xử lý và tự xác nhận gửi văn phòng.');
+  order.stage=4;order.saleReview={result:action==='accept'?'accepted':'rework',by:user.id,name:user.name,time:now,note};
+  event('Sale tiếp nhận',saleReviewLabels[order.saleReview.result]+(note?' · '+note:''));
  }else if(action==='inspection'){
   if(order.stage!==8||contentLocked(order))fail('Chỉ hoàn tất kiểm định khi đang ở bước 8 và chưa khóa nội dung.');
   const carrier=text(body.carrier,100),tracking=text(body.tracking,200),date=text(body.shippedDate,10);
@@ -29,8 +30,10 @@ export function applySaleWorkflow(order,user,action,body,event){
   order.contentLockedAt=now;order.editRequested=false;
   event('Kiểm định & đặt ship',`Đã kiểm định · ${carrier} · ${tracking}. Nội dung đơn được khóa.`);
  }else if(action==='received'){
-  if(order.stage!==8||!contentLocked(order))fail('Cần hoàn tất kiểm định và đặt ship trước khi xác nhận khách đã nhận.');
-  order.stage=9;order.receivedAt=now;event('Đã nhận',text(body.text));
+  if(![8,9].includes(order.stage)||!contentLocked(order))fail('Cần hoàn tất kiểm định và đặt ship trước khi xác nhận khách đã nhận.');
+  if(!Object.hasOwn(feedbackLabels,body.feedback))fail('Chọn trạng thái phản hồi của khách.');
+  order.customerFeedback={status:body.feedback,by:user.id,name:user.name,time:now,note:text(body.text)};
+  order.stage=9;order.receivedAt=order.receivedAt||now;event('Đã nhận',feedbackLabels[body.feedback]+(body.text?' · '+text(body.text):''));
  }else if(action==='complete'){
   if(order.stage!==9)fail('Chỉ đóng đơn sau khi đã xác nhận khách nhận hàng.');
   const debt=totals(order).debt;
@@ -38,12 +41,7 @@ export function applySaleWorkflow(order,user,action,body,event){
   const note=debt>0?exceptionReason(body.text):text(body.text);
   order.stage=10;order.completedAt=now;event('Hoàn thành',note+(debt>0?` · Ngoại lệ quản trị: còn nợ ${debt} USD, tiếp tục theo dõi công nợ.`:''));
  }else{
-  if(user.role!=='manager')fail('Chỉ quản trị được điều chỉnh trạng thái ngoại lệ.');
-  const note=exceptionReason(body.text),stage=body.stage;
-  if(!Number.isInteger(stage)||stage<2||stage>10||!order.stage||stage===order.stage)fail('Chọn trạng thái mới từ bước 2 đến bước 10 cho đơn đã gửi.');
-  const before=order.stage;order.stage=stage;
-  if(stage>=9&&!order.contentLockedAt)order.contentLockedAt=now;
-  event('Quản trị điều chỉnh trạng thái',`Bước ${before} → ${stage}. ${note}. Không thay đổi xác nhận thanh toán.`);
+  fail('Phải thao tác tuần tự từng bước, không được chuyển trạng thái tắt.');
  }
  return true;
 }
