@@ -1,8 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buyerStatistics,customerActivity} from '../customer-statistics.js';
+import {buyerStatistics,customerActivity,customerRatio} from '../customer-statistics.js';
 import {approvalDate} from '../order-identity.js';
 const order=(id,customerId,approvedAt)=>({id,orderCode:id,customerId,approvedAt,date:'2025-12-01',stage:3});
+test('new versus not-returned ratio matches 4/10 and follows selected month',()=>{
+ const customers=Array.from({length:12},(_,i)=>({id:String(i),created:i<4?'2026-02-01':'2026-01-01'}));
+ const orders=customers.map((c,i)=>order('first-'+i,c.id,i<4?'2026-02-02':'2026-01-02'));
+ orders.push(order('again-4','4','2026-02-03'),order('again-5','5','2026-02-03'),order('third-5','5','2026-02-04'));
+ const feb=buyerStatistics(customers,orders,'2026-03-31','2026-02');
+ assert.equal(feb.newCustomers,4);assert.equal(feb.repeat,2);
+ assert.deepEqual(customerRatio(feb),{notReturned:10,ratio:0.4});
+ assert.deepEqual(customerRatio(buyerStatistics(customers,orders,'2026-03-31','2026-03')),{notReturned:12,ratio:0});
+ assert.deepEqual(customerRatio(buyerStatistics(customers,orders,'2026-03-31','2026-01')),{notReturned:8,ratio:1});
+ // Filters apply to both parts of the same comparison.
+ assert.deepEqual(customerRatio(buyerStatistics(customers.slice(0,4),orders,'2026-02-28')),{notReturned:4,ratio:1});
+});
+test('zero denominator is undefined, including when every new customer already bought twice',()=>{
+ assert.deepEqual(customerRatio(buyerStatistics([],[])),{notReturned:0,ratio:null});
+ const customers=[{id:'a',created:'2026-02-01'}],orders=[order('1','a','2026-02-02'),order('2','a','2026-02-03')];
+ assert.deepEqual(customerRatio(buyerStatistics(customers,orders,'2026-02-28')),{notReturned:0,ratio:null});
+});
 test('customer example: Jan first purchase, Feb repeat, March absent, April return',()=>{
  const customers=[{id:'a',created:'2026-01-01'}],orders=[order('1','a','2026-01-04'),order('2','a','2026-02-02'),order('3','a','2026-02-09'),order('4','a','2026-04-02')];
  const stats=month=>buyerStatistics(customers,orders,'2026-04-30',month);

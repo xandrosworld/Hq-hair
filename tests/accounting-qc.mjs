@@ -149,6 +149,13 @@ try{
   const month=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).slice(0,7);
   await page.getByLabel('Tháng thống kê khách').fill(month);
   assert.equal(await read('buyers-total'),'1');assert.equal(await read('buyers-repeat'),'1');assert.equal(await read('buyers-new'),'1');
+  assert.equal(await page.getByTestId('buyers-not-returned').textContent(),'0');
+  assert.equal(await page.getByTestId('buyers-new-ratio').textContent(),'—');
+  assert.ok((await page.getByTestId('buyers-ratio-explanation').textContent()).includes('Không có'));
+  for(const width of [1120,1440]){
+   await page.setViewportSize({width,height:1000});
+   assert.ok(await page.locator('.buyer-comparison').evaluate(el=>el.scrollWidth<=el.clientWidth));
+  }
   await page.screenshot({path:'screenshots/customer-monthly-statistics.png',fullPage:true,animations:'disabled'});
  }finally{await statsBrowser.close()}
  await stop();await start();assert.equal((await current()).qc.note,'Sale reviewed');assert.equal((await current()).orderCode,c.id+'-1');

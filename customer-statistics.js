@@ -2,6 +2,10 @@ import {approvalDate,isOfficialOrder} from './order-identity.js';
 import {today} from './shared.js';
 
 const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
+export function customerRatio({total,repeat,newCustomers}){
+ const notReturned=Math.max(0,total-repeat);
+ return {notReturned,ratio:notReturned?newCustomers/notReturned:null};
+}
 export function buyerStatistics(customers,orders,asOf=today(),month=asOf.slice(0,7)){
  const empty={total:0,repeat:0,newCustomers:0,rate:0,growth:null};
  if(!validDate(asOf)||!validDate(month+'-01')||month>asOf.slice(0,7))return empty;
