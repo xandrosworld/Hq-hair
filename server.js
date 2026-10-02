@@ -59,8 +59,8 @@ business.post('/customers',(req,res)=>{
 });
 function cleanPayment(p){
  if(!p||typeof p!=='object'||Array.isArray(p))fail('Chứng từ thanh toán không hợp lệ.');
- const result={id:randomUUID(),sender:text(p.sender),method:text(p.method),date:text(p.date),reference:text(p.reference),amount:num(p.amount),confirmed:false};
- if(result.amount<=0||!result.sender||!result.method||!validDate(result.date))fail('Lần thanh toán cần người gửi, ngày gửi và số tiền lớn hơn 0.');
+ const result={id:randomUUID(),sender:text(p.sender),method:text(p.method),date:text(p.date),reference:text(p.reference),amount:p.amount===undefined||p.amount===null||p.amount===''?0:num(p.amount),confirmed:false};
+ if(!result.sender||!result.method||!validDate(result.date))fail('Chứng từ cần tên người gửi, phương thức và ngày gửi hợp lệ.');
  if(p.file){if(!/^data:(image\/(png|jpeg|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/.test(p.file)||p.file.length>1500000)fail('Chứng từ chỉ nhận PNG, JPG, WebP hoặc PDF tối đa 1 MB.');const bytes=Buffer.from(p.file.split(',')[1],'base64');const mime=p.file.slice(5,p.file.indexOf(';'));const valid=mime==='application/pdf'?bytes.subarray(0,5).toString()==='%PDF-':mime==='image/png'?bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])):mime==='image/jpeg'?bytes[0]===255&&bytes[1]===216&&bytes[2]===255:bytes.subarray(0,4).toString()==='RIFF'&&bytes.subarray(8,12).toString()==='WEBP';if(!valid||bytes.length>1048576)fail('Nội dung tệp không khớp định dạng chứng từ.');result.file=p.file;result.fileName=text(p.fileName,120)}
  return result;
 }

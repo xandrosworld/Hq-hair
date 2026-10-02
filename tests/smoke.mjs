@@ -41,7 +41,7 @@ try{
  await page.getByRole('button',{name:'Xin quyền chỉnh sửa'}).waitFor();
  await page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true}).click();
  await page.getByRole('button',{name:'Bổ sung',exact:true}).click();
- await page.getByLabel('Số tiền thực nhận theo bill (USD)').fill('500');
+ await page.getByLabel('Số tiền dự kiến (USD) · không bắt buộc').fill('500');
  await page.getByLabel('Mã giao dịch').fill('DEMO-TEST');
  await page.getByRole('button',{name:'Thêm thanh toán',exact:true}).click();
  await page.getByRole('dialog').waitFor({state:'hidden'});
