@@ -19,6 +19,12 @@ try{
  await page.locator('.order-subnav button').first().click();
  await page.locator('.outcomes').getByRole('heading',{name:'Tổng đơn hàng',exact:true}).waitFor();
  assert.equal(await page.locator('.outcomes .outcome-row').count()>=8,true);
+ assert.equal(await page.locator('.outcome-columns').count(),3);
+ await page.getByLabel('Kỳ thống kê đơn hàng',{exact:true}).selectOption('month');
+ await page.getByLabel('Tháng thống kê đơn hàng',{exact:true}).selectOption('01');
+ await page.getByLabel('Kỳ thống kê đơn hàng',{exact:true}).selectOption('year');
+ await page.getByLabel('Năm thống kê đơn hàng',{exact:true}).waitFor();
+ await page.getByLabel('Kỳ thống kê đơn hàng',{exact:true}).selectOption('all');
  await page.screenshot({path:'screenshots/audit-outcomes.png',fullPage:true});
  await nav('Khách hàng');
  await page.getByRole('columnheader',{name:'Sale phụ trách',exact:true}).waitFor();

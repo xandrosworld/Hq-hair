@@ -6,4 +6,8 @@ test('Outcomes include completed and forfeited approvals, exclude pending and fu
  const rows=[{...o,stage:10,officeDispatch:{time:'2026-01-09',dueDate:o.due},receivedAt:'2026-01-15',customerFeedback:{status:'very_satisfied'}},{...o,officeDispatch:{time:'2026-01-11'},receivedAt:'2026-01-16',customerFeedback:{status:'claim'}},{...o,officeDispatch:{time:'2026-01-10'}},{...o,officeDispatch:{}},{...o,stage:-1,cancelledAt:'2026-01-20',finalPaymentCheck:{status:'forfeited'}},{stage:2},{...o,approvedAt:'2027-01-01'}];
  const s=orderOutcomes(rows,'2026-10-04');assert.equal(s.total,5);assert.equal(s.delivered,4);assert.equal(s.onTime,2);assert.equal(s.late,1);assert.equal(s.deliveryUnknown,1);assert.equal(s.received,2);assert.equal(s.feedback.claim,1);assert.equal(s.forfeited,1);
  assert.equal(orderOutcomes([]).total,0);
+ assert.equal(orderOutcomes(rows,'2026-10-04','2026-01').total,5);
+ assert.equal(orderOutcomes(rows,'2026-10-04','2026-02').total,0);
+ assert.equal(orderOutcomes(rows,'2026-10-04','2026').total,5);
+ assert.equal(orderOutcomes(rows,'2026-10-04','2027').total,0);
 });
