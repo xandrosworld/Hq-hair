@@ -39,6 +39,13 @@ try{
  await page.locator('.queue-expand[aria-expanded=true]').click();
  await page.locator('.queue-total').click();await page.getByText(`${total} đơn phù hợp`,{exact:true}).waitFor();
  await overview();
+ const columns=await page.locator('.activity-bar span').allTextContents();assert.equal(columns.length,12);assert.ok(columns.every(v=>/^\d+$/.test(v)));
+ const sum=columns.reduce((n,v)=>n+Number(v),0);
+ assert.equal(await page.locator('.approved-history tbody tr').count(),Math.min(sum,20));
+ await page.getByLabel('Tháng lịch sử đơn').selectOption('09');
+ assert.equal(await page.locator('.approved-history tbody tr').count(),Math.min(Number(columns[8]),20));
+ await page.getByLabel('Tháng lịch sử đơn').selectOption('all');
+ if(sum){await page.locator('.approved-history .order-link').first().click();await page.locator('.back-link').click();await page.locator('.approved-history').waitFor()}
  await page.screenshot({path:'screenshots/order-queues.png',fullPage:true,animations:'disabled'});
  assert.deepEqual(errors,[]);
  console.log(`PASS: 11 queue filters match their counts, total ${total}, no browser errors (${base}).`);
