@@ -28,7 +28,8 @@ try{
  await action(other,'message',{text:'Access denied'},404);await action(factory,'received',{},403);
  await action(sale,'manager-stage',{stage:8,text:'Cannot skip'},400);await action(sale,'inspection',{checked:true},400);
  await action(admin,'manager-stage',{stage:5,text:'Cannot skip'},400);
- await action(sale,'payment',{payment:{sender:'Buyer',method:'Wise',date:'2026-01-01',amount:10,reference:'INITIAL'}});
+ await action(sale,'payment',{payment:{sender:'Buyer',contact:'buyer@example.com',method:'Wise',date:'2026-01-01',amount:10,reference:'INITIAL'}});
+ assert.equal((await sale.call('/state')).orders.find(o=>o.id===id)?.payments[0]?.contact,'buyer@example.com');
  await action(accountant,'accounting-approve',{paymentStatus:'full',receipts:[{id:order.payments[0].id,amount:10}]});
  await action(factory,'factory-status',{status:'sale_check'});
  await action(sale,'accept');assert.equal(order.stage,4);

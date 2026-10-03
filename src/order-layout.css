@@ -1,6 +1,7 @@
 /* Keep navigation readable while giving order specifications more room. */
 @media screen and (min-width: 1001px) {
-  .sidebar { width: 196px; padding: 22px 10px 0; }
+  .sidebar { width: 196px; padding: 22px 10px 0; overflow-y: auto; }
+  .sidebar > * { flex-shrink: 0; }
   .shell { margin-left: 196px; }
   .sidebar .brand { gap: 8px; padding: 0 4px 20px; font-size: 15px; }
   .sidebar .brand-mark { min-width: 38px; font-size: 25px; padding: 8px 3px; }

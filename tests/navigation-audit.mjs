@@ -16,6 +16,7 @@ try{
  page.on('pageerror',e=>errors.push(e.message));
  const nav=label=>page.locator('nav').getByRole('button',{name:label,exact:true}).click();
  await page.goto(base+'/demo');await nav('Khách hàng');
+ await page.getByRole('columnheader',{name:'Sale phụ trách',exact:true}).waitFor();
  assert.ok(await page.getByLabel('Tìm khách hàng').isVisible());assert.equal(await page.locator('.customer-overview').count(),0);
  await page.getByLabel('Tìm khách hàng').fill('nobodymatches');await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();assert.equal(await page.getByLabel('Tìm khách hàng').inputValue(),'');
  await page.getByRole('button',{name:'Thống kê khách hàng',exact:true}).click();await page.getByTestId('buyers-total').waitFor();
@@ -24,6 +25,11 @@ try{
  await nav('Doanh thu & công nợ');await page.getByRole('button',{name:'Công nợ cần thu',exact:true}).click();
  assert.equal(await page.locator('.overview-grid').count(),0);await page.locator('.order-link').first().click();await page.locator('.back-link').click();
  await page.getByRole('heading',{name:'Danh sách đơn còn công nợ',exact:true}).waitFor();
+ assert.match(await page.locator('.pagination').innerText(),/khách đang nợ/);
+ await page.getByRole('button',{name:'Việc cần chú ý',exact:true}).click();
+ await page.getByRole('dialog',{name:'Việc cần chú ý'}).waitFor();
+ assert.equal(await page.getByRole('dialog').getByText('Đơn hàng đang chờ duyệt',{exact:true}).count(),0);
+ await page.getByRole('button',{name:'Đóng',exact:true}).click();
  await page.screenshot({path:'screenshots/audit-revenue.png',fullPage:true});
  if(!process.env.AUDIT_URL){
   const login=await(await ctx.request.post(base+'/api/work/login',{data:{email:'owner@example.com',password:'Initial-Password-2026'}})).json();

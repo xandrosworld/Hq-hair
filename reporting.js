@@ -14,7 +14,7 @@ export function reportOrders(data,{month='all',owner='all',query='',bucket='all'
  return data.orders.filter(o=>isOfficialOrder(o)&&(month==='all'||o.date.startsWith(month))&&(owner==='all'||(o.ownerId||o.sale)===owner)&&(!q||`${orderLabel(o)} ${o.customerId} ${customers.get(o.customerId)?.name||''} ${o.sale}`.toLocaleLowerCase('vi').includes(q))&&(!debtOnly||totals(o).debt>0)&&(!overdue||aging(o).days>0)&&(bucket==='all'||aging(o).bucket===bucket));
 }
 export function financialSummary(orders){
- const result={revenue:0,receive:0,total:0,paid:0,pending:0,debt:0,overdue:0,unscheduled:0};
+ const result={revenue:0,receive:0,total:0,paid:0,pending:0,debt:0,overdue:0,unscheduled:0,debtCustomers:new Set(orders.filter(o=>isOfficialOrder(o)&&totals(o).debt>0).map(o=>o.customerId)).size};
  for(const o of orders.filter(o=>isOfficialOrder(o))){const t=totals(o);for(const key of ['revenue','receive','total','paid','pending','debt'])result[key]+=t[key];if(aging(o).days>0)result.overdue+=t.debt;if(aging(o).days===null)result.unscheduled+=t.debt}
  return Object.fromEntries(Object.entries(result).map(([k,v])=>[k,round(v)]));
 }
