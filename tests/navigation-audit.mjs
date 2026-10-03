@@ -5,6 +5,7 @@ import {mkdtempSync,rmSync} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {standardsFixture} from './standards-fixture.mjs';
+import {orderListTabs} from '../order-list-tabs.js';
 const dir=mkdtempSync(path.join(os.tmpdir(),'hq-nav-')),base=process.env.AUDIT_URL||'http://127.0.0.1:3196';
 const standards=await standardsFixture(dir);
 const server=process.env.AUDIT_URL?null:spawn(process.execPath,['server.js'],{env:{...process.env,PORT:'3196',DATA_DIR:dir,HQ_STANDARDS_DIR:standards,NODE_ENV:'test',HQ_ADMIN_EMAIL:'owner@example.com',HQ_ADMIN_PASSWORD:'Initial-Password-2026'},stdio:'ignore'});
@@ -30,6 +31,16 @@ try{
  await page.locator('.order-subnav button').nth(1).click();
  await page.getByText('Tổng đơn hàng chưa hoàn thành:',{exact:false}).waitFor();
  assert.equal(await page.locator('main .tabs').getByRole('button',{name:'Bản nháp',exact:true}).count(),0);
+ assert.equal(await page.locator('.order-stage-tabs button').count(),9);
+ for(const tab of orderListTabs){
+  await page.locator('.order-stage-tabs').getByRole('button',{name:tab.label,exact:true}).click();
+  if(tab.options){
+   assert.equal(await page.locator('.order-substate-tabs button').count(),Object.keys(tab.options).length+1);
+   for(const label of Object.values(tab.options))await page.locator('.order-substate-tabs').getByRole('button',{name:label,exact:true}).click();
+  }else assert.equal(await page.locator('.order-substate-tabs').count(),0);
+ }
+ await page.locator('.order-stage-tabs button').first().click();
+ await page.screenshot({path:'screenshots/audit-order-tabs.png',fullPage:true});
  await page.locator('.order-subnav button').first().click();
  await page.screenshot({path:'screenshots/audit-outcomes.png',fullPage:true});
  await nav('Khách hàng');
