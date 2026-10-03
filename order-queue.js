@@ -1,4 +1,9 @@
 // Each open order belongs to exactly one queue: the next action still needed.
+export const queueGroups=[
+ {key:'accounting',label:'Kế toán',queues:['approval','payment']},
+ {key:'factory',label:'Xưởng',queues:['factory','producing','paused','rework','office']},
+ {key:'sale',label:'Kinh doanh',queues:['sale','inspection','delivery','complete']},
+];
 export const orderQueues=[
  {key:'approval',label:'Chờ Kế toán duyệt',stage:2},
  {key:'factory',label:'Chờ Xưởng ghi nhận',stage:3},
@@ -27,6 +32,7 @@ export function orderQueue(order){
  return orderQueues.find(q=>q.key===key)||null;
 }
 export function matchesOrderFilter(order,filter){
+ if(filter.startsWith('group:'))return !!queueGroups.find(g=>g.key===filter.slice(6))?.queues.includes(orderQueue(order)?.key);
  return filter==='all'||(filter.startsWith('queue:')?orderQueue(order)?.key===filter.slice(6):order.stage===Number(filter));
 }
 export function queueStatistics(orders){
