@@ -45,12 +45,13 @@ try{
  assert.equal(details,11);
  await page.locator('.queue-expand[aria-expanded=true]').click();
  await page.locator('.queue-total').click();await page.getByText(`${total} đơn phù hợp`,{exact:true}).waitFor();
- assert.equal(await page.locator('.unfinished-orders th').count(),8);
+ assert.equal(await page.locator('.unfinished-orders th').count(),9);
  const dates=()=>page.locator('.unfinished-orders tbody tr').evaluateAll(rows=>rows.map(r=>r.cells[3].textContent.split('/').reverse().map(v=>v.padStart(2,'0')).join('-')));
  const ascending=await dates();assert.deepEqual(ascending,[...ascending].sort());
  await page.locator('.table-sort').click();const descending=await dates();assert.deepEqual(descending,[...descending].sort().reverse());
  assert.equal(await page.locator('.unfinished-orders tbody tr').first().locator('td').first().textContent(),'1');
  await page.screenshot({path:'screenshots/unfinished-orders.png',fullPage:true,animations:'disabled'});
+ await page.locator('.order-view').first().click();await page.locator('.back-link').waitFor();await page.locator('.back-link').click();
  await overview();
  const columns=await page.locator('.activity-bar span').allTextContents();assert.equal(columns.length,12);assert.ok(columns.every(v=>/^\d+$/.test(v)));
  const sum=columns.reduce((n,v)=>n+Number(v),0);
