@@ -21,6 +21,8 @@ try{
   const c=sales[i],email=`sale${i}@example.com`;
   users=await call(admin,'/users',{name:'Sale '+i,email,code:'HQ-S'+i,role:'sale',password:'Initial-Password-2026'});
   await call(c,'/login',{email,password:'Initial-Password-2026'});await call(c,'/password',{currentPassword:'Initial-Password-2026',password:'Personal-Password-2026'});
+  await call(c,'/profile-contact',{phone:'+84 90000000'+i});
+  assert.equal((await call(c,'/me')).user.phone,'+84 90000000'+i);
   const s=await call(c,'/customers',{name:'Buyer '+i,company:'Salon',phone:'+123',country:'United States',group:'Salon',address:'123 Road',recipient:'Buyer',recipientPhone:'+123',social:'WhatsApp',source:'Website',purchase:'First'});
   const o=await call(c,'/orders',{customerId:s.customers[0].id,date:'2026-01-01',due:'2026-02-01',recipient:'Buyer',phone:'+123',address:'123 Road',country:'United States',discount:0,shippingFee:0,paymentFee:0,items:[{name:'Bulk',kind:'base',qty:100,price:10,unit:'Gram',priceBasis:'100g'}],payments:[],submit:true});orders.push(o.state.orders[0]);
  }
@@ -37,7 +39,12 @@ try{
  assert.equal(await page.locator('nav').getByRole('button',{name:'Tổng quan',exact:true}).count(),0);await page.locator('nav').getByRole('button',{name:'Đơn hàng chưa hoàn thành',exact:true}).click();await page.getByRole('heading',{name:'Danh sách đơn hàng chưa hoàn thành',exact:true}).waitFor();
  await page.getByLabel('Lọc người phụ trách').selectOption(orders[1].ownerId);await page.getByRole('button',{name:orderLabel(orders[1]),exact:true}).click();
  for(const name of ['Xin quyền chỉnh sửa','Bổ sung chứng từ','Hoàn tất kiểm định & đặt ship','Gửi'])assert.equal(await page.getByRole('button',{name,exact:true}).count(),0);
- await page.getByRole('button',{name:'In hóa đơn'}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng',exact:true}).click();
+ await page.getByRole('button',{name:'In hóa đơn'}).click();await page.getByRole('dialog').waitFor();
+ await page.locator('#invoice').getByText('HQ HAIR HOUSEHOLD BUSINESS',{exact:true}).waitFor();
+ await page.locator('#invoice').getByText('+84 900000001',{exact:true}).waitFor();
+ assert.equal(await page.locator('#invoice').getByText('BILL TO',{exact:true}).count(),0);
+ mkdirSync('screenshots/invoice',{recursive:true});await page.emulateMedia({media:'print'});await page.screenshot({path:'screenshots/invoice/print.png',fullPage:true});await page.emulateMedia({media:'screen'});
+ await page.getByRole('button',{name:'Đóng',exact:true}).click();
  await page.locator('nav').getByRole('button',{name:'Doanh thu & công nợ',exact:true}).click();await page.getByRole('heading',{name:'Tổng hợp theo người phụ trách',exact:true}).waitFor();const downloadEvent=page.waitForEvent('download');await page.getByRole('button',{name:'Xuất báo cáo CSV'}).click();await downloadEvent;
  await page.getByRole('button',{name:'Tài khoản & đội ngũ',exact:true}).first().click();assert.equal(await page.getByRole('button',{name:'Cấp tài khoản',exact:true}).count(),0);
  const adminPage=await admin.newPage();await adminPage.goto(base+'/workspace');await adminPage.getByRole('heading',{name:/^(Tổng quan kinh doanh|Tổng quan đơn hàng|Đơn hàng)$/}).waitFor();await adminPage.getByRole('button',{name:'Tài khoản & đội ngũ',exact:true}).first().click();await Promise.all([adminPage.waitForResponse(r=>r.url().endsWith('/api/work/users')&&r.request().method()==='GET'),adminPage.getByRole('checkbox',{name:'Phân công khách hàng',exact:true}).click()]);assert.equal(await adminPage.getByRole('checkbox',{name:'Phân công khách hàng',exact:true}).isChecked(),true);
