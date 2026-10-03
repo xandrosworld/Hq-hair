@@ -25,6 +25,12 @@ try{
  await page.getByLabel('Kỳ thống kê đơn hàng',{exact:true}).selectOption('year');
  await page.getByLabel('Năm thống kê đơn hàng',{exact:true}).waitFor();
  await page.getByLabel('Kỳ thống kê đơn hàng',{exact:true}).selectOption('all');
+ assert.equal(await page.locator('.outcomes').getByText(/^Tỷ lệ trên/).count(),0);
+ await page.locator('.approved-history').getByRole('columnheader',{name:'Thao tác',exact:true}).waitFor();
+ await page.locator('.order-subnav button').nth(1).click();
+ await page.getByText('Tổng đơn hàng chưa hoàn thành:',{exact:false}).waitFor();
+ assert.equal(await page.locator('main .tabs').getByRole('button',{name:'Bản nháp',exact:true}).count(),0);
+ await page.locator('.order-subnav button').first().click();
  await page.screenshot({path:'screenshots/audit-outcomes.png',fullPage:true});
  await nav('Khách hàng');
  await page.getByRole('columnheader',{name:'Sale phụ trách',exact:true}).waitFor();

@@ -1,3 +1,4 @@
+import {freezeDraftCodes} from './draft-orders.js';
 import {migrateOrderIdentity} from './order-identity.js';
 import {setupStandards} from './standards-server.js';
 import {setupQC} from './qc-server.js';
@@ -59,6 +60,8 @@ export async function createWorkspace(dir){
    db.prepare('INSERT INTO app_migrations VALUES (?)').run('official-order-code-20261002');db.exec('COMMIT');
   }catch(e){db.exec('ROLLBACK');throw e}
  }
+ const draftData=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
+ if(freezeDraftCodes(draftData.orders))db.prepare('UPDATE workspace SET data=? WHERE id=1').run(JSON.stringify(draftData));
  if(!db.prepare('SELECT id FROM users LIMIT 1').get()&&process.env.HQ_ADMIN_EMAIL&&process.env.HQ_ADMIN_PASSWORD){
   db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(randomUUID(),process.env.HQ_ADMIN_EMAIL.toLowerCase(),process.env.HQ_ADMIN_NAME||'Quản lý HQ Hair','HQ-ADMIN','manager',await hashPassword(process.env.HQ_ADMIN_PASSWORD));
  }

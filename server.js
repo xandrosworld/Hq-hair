@@ -1,4 +1,5 @@
 import {cleanCustomer,purchaseHistory} from './customer-fields.js';
+import {assertDraftSlot,fixedDraftCode} from './draft-orders.js';
 import {applyFactoryWorkflow} from './factory-workflow.js';
 import {migrateOrderIdentity,assignOrderCode} from './order-identity.js';
 import {qcSignature} from './quality-control.js';
@@ -74,10 +75,12 @@ business.post('/orders',(req,res)=>{
  if(b.id){req.assertAccess(old);req.assertVersion(old);if(old?.cancelledAt)fail('Đơn đã hủy, không thể sửa.');}
  if(b.id&&!old)fail('Không tìm thấy đơn hàng.');
  const exception=!!(old&&(old.stage||contentLocked(old))&&req.work&&req.user.role==='manager');
+ if(b.autosave&&(b.submit||exception||old?.stage>0))fail('Chỉ tự lưu bản nháp chưa gửi duyệt.');
  if(old&&(old.stage||contentLocked(old))&&!exception)fail('Đơn đã gửi duyệt đã bị khóa. Vui lòng gửi yêu cầu chỉnh sửa.');
  const reason=exception?exceptionReason(b.reason):'';
  const c=req.data.customers.find(c=>c.id===b.customerId);req.assertAccess(c);if(!c)fail('Vui lòng chọn khách hàng.');
  if(old&&old.customerId!==c.id)fail('Không thể đổi khách hàng của đơn đã lưu.');
+ if(!old||b.submit&&!exception)assertDraftSlot(req.data.orders,c.id,old?.id);
  const o={customerId:c.id,sale:c.sale,ownerId:c.ownerId||req.user.id,version:(old?.version||0)+1,stage:0};
  for(const k of ['date','due','paymentDue','recipient','phone','email','address','country','carrier','service','tracking','note'])o[k]=text(b[k]);
  if((o.date&&!validDate(o.date))||(o.due&&!validDate(o.due)))fail('Ngày đặt và ngày giao phải là ngày hợp lệ.');
@@ -97,12 +100,13 @@ business.post('/orders',(req,res)=>{
  }
  o.id=old?.id||randomUUID();
  o.orderCode=old?.orderCode||null;
+ o.draftCode=fixedDraftCode(old||o,req.data.orders);
  o.requestCode=old?.requestCode||`YC-${o.id.replaceAll('-','').slice(0,12).toUpperCase()}`;
  o.messages=old?.messages||[];o.history=old?.history||[];
  if(old)for(const key of ['production','officeDispatch','finalPaymentCheck','customerFeedback','approvedAt','accountingApproval','qc','qcMedia','contentLockedAt','inspection','shippedDate','saleReview','receivedAt','completedAt','editRequested'])if(old[key]!==undefined)o[key]=old[key];
  if(o.qc&&o.qc.signature!==qcSignature(o.items))o.qc={...o.qc,stale:true};
- if(req.work&&old)o.history.push({title:'Lưu phiên bản trước chỉnh sửa',actor:req.user.name,actorId:req.user.id,time:new Date().toISOString(),snapshot:{...old,history:undefined,messages:undefined}});
- event(req,o,exception?'Quản trị chỉnh sửa ngoại lệ':old?'Cập nhật bản nháp':'Nhập đơn',reason);if(b.submit&&!exception)event(req,o,'Chờ duyệt','Đã chuyển yêu cầu đến Kế toán. Đơn được khóa chỉnh sửa.');
+ if(req.work&&old&&!b.autosave)o.history.push({title:'Lưu phiên bản trước chỉnh sửa',actor:req.user.name,actorId:req.user.id,time:new Date().toISOString(),snapshot:{...old,history:undefined,messages:undefined}});
+ if(!b.autosave||!old)event(req,o,exception?'Quản trị chỉnh sửa ngoại lệ':old?'Cập nhật bản nháp':'Nhập đơn',reason);if(b.submit&&!exception)event(req,o,'Chờ duyệt','Đã chuyển yêu cầu đến Kế toán. Đơn được khóa chỉnh sửa.');
  if(old)Object.assign(old,o);else {if(req.data.orders.length>=(req.work?30000:300))fail('Bản demo hỗ trợ tối đa 300 đơn.');req.data.orders.unshift(o)}
  req.save();res.json({state:req.view(),id:o.id});
 });

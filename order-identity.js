@@ -1,10 +1,11 @@
 // Internal IDs never change: attachments, URLs and retries continue to use them.
 export const isOfficialOrder = order => !!order.orderCode && !order.cancelledAt && order.stage > 0;
-export const orderLabel = order => order.orderCode || order.requestCode || `YC-${order.id || 'mới'}`;
+export const orderLabel = order => order.orderCode || order.draftCode || order.requestCode || `YC-${order.id || 'mới'}`;
 
 // Preview only: reserving official numbers remains an accounting approval action.
 export function invoiceOrderLabel(order, orders = []) {
  if (order.orderCode) return order.orderCode;
+ if (order.draftCode) return order.draftCode;
  const prefix = `${order.customerId}-`;
  const numbers = orders.map(o => o.orderCode).filter(code => code?.startsWith(prefix))
   .map(code => code.slice(prefix.length)).filter(suffix => /^\d+$/.test(suffix)).map(Number);
