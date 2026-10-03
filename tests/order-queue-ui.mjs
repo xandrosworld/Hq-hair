@@ -17,10 +17,9 @@ try{
  await overview();
  for(let i=0;i<2;i++){
   await page.locator('.order-subnav button').nth(i).click();
-  await page.locator('main .quick-create').getByRole('button',{name:'Tạo khách hàng',exact:true}).click();
-  await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng',exact:true}).click();
-  await page.locator('main .quick-create').getByRole('button',{name:'Tạo đơn hàng',exact:true}).click();
-  await page.getByRole('button',{name:'Lưu bản nháp',exact:true}).first().waitFor();
+  assert.equal(await page.getByRole('button',{name:i===0?'Tạo khách hàng':'Tạo đơn hàng',exact:true}).count(),0);
+  if(i===1){await page.getByRole('button',{name:'Tạo khách hàng',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng',exact:true}).click()}
+  else{await page.getByRole('button',{name:'Tạo đơn hàng',exact:true}).click();await page.getByRole('button',{name:'Lưu bản nháp',exact:true}).first().waitFor()}
  }
  await overview();
  await page.locator('.queue-group-filter').first().waitFor();
