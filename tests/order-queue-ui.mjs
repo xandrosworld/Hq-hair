@@ -15,6 +15,14 @@ try{
  await page.goto(base+'/demo');
  const overview=async()=>{await page.locator('.order-subnav button').first().click();await page.locator('.queue-group-filter').first().waitFor()};
  await overview();
+ for(let i=0;i<2;i++){
+  await page.locator('.order-subnav button').nth(i).click();
+  await page.locator('main .quick-create').getByRole('button',{name:'Tạo khách hàng',exact:true}).click();
+  await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng',exact:true}).click();
+  await page.locator('main .quick-create').getByRole('button',{name:'Tạo đơn hàng',exact:true}).click();
+  await page.getByRole('button',{name:'Lưu bản nháp',exact:true}).first().waitFor();
+ }
+ await overview();
  await page.locator('.queue-group-filter').first().waitFor();
  assert.equal(await page.locator('.queue-details').count(),0);
  let total=0,details=0;
