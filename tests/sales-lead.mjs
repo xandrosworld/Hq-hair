@@ -41,6 +41,7 @@ try{
  for(const name of ['Xin quyền chỉnh sửa','Bổ sung chứng từ','Hoàn tất kiểm định & đặt ship','Gửi'])assert.equal(await page.getByRole('button',{name,exact:true}).count(),0);
  await page.getByRole('button',{name:'In hóa đơn'}).click();await page.getByRole('dialog').waitFor();
  await page.locator('#invoice').getByText('HQ HAIR HOUSEHOLD BUSINESS',{exact:true}).waitFor();
+ assert.ok(await page.locator('#invoice .hair-table-scroll').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
  await page.locator('#invoice').getByText('Draft-'+orders[1].customerId+'-1',{exact:true}).waitFor();
  await page.locator('#invoice').getByText('+84 900000001',{exact:true}).waitFor();
  assert.equal(await page.locator('#invoice').getByText('BILL TO',{exact:true}).count(),0);
