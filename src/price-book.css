@@ -13,3 +13,4 @@
  body:has(.price-book:not(.price-book-compact)) footer{margin:0;padding:16px;flex-wrap:wrap;gap:12px}
  .price-color-tools .search{min-width:0;width:100%}.price-color-tools input{min-width:0}.price-tabs button{padding:10px;font-size:11px}.price-metrics>div{padding:16px}.color-card-copy{padding:12px}.color-card-copy h3{overflow-wrap:anywhere}.color-card .actions{flex-wrap:wrap}.price-management .panel-body{padding:16px}
 }
+.price-book>.table-scroll{max-height:62vh;overflow:auto}.price-book .price-table thead th{position:sticky;top:0;z-index:1;background:#f3f7fb}.price-book>.pagination{margin-top:12px}
