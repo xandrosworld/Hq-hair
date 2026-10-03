@@ -15,7 +15,12 @@ try{
  const ctx=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'}),page=await ctx.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  const nav=label=>page.locator('nav').getByRole('button',{name:label,exact:true}).click();
- await page.goto(base+'/demo');await nav('Khách hàng');
+ await page.goto(base+'/demo');
+ await page.locator('.order-subnav button').first().click();
+ await page.locator('.outcomes').getByRole('heading',{name:'Tổng đơn hàng',exact:true}).waitFor();
+ assert.equal(await page.locator('.outcomes .outcome-row').count()>=8,true);
+ await page.screenshot({path:'screenshots/audit-outcomes.png',fullPage:true});
+ await nav('Khách hàng');
  await page.getByRole('columnheader',{name:'Sale phụ trách',exact:true}).waitFor();
  await page.getByRole('button',{name:'Tạo khách hàng',exact:true}).click();
  const form=page.getByRole('dialog');
