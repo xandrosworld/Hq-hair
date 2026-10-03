@@ -23,7 +23,10 @@ try{
   await call(c,'/login',{email,password:'Initial-Password-2026'});await call(c,'/password',{currentPassword:'Initial-Password-2026',password:'Personal-Password-2026'});
   await call(c,'/profile-contact',{phone:'+84 90000000'+i});
   assert.equal((await call(c,'/me')).user.phone,'+84 90000000'+i);
-  const s=await call(c,'/customers',{name:'Buyer '+i,company:'Salon',phone:'+123',country:'United States',group:'Salon',address:'123 Road',recipient:'Buyer',recipientPhone:'+123',social:'WhatsApp',source:'Website',purchase:'First'});
+  const s=await call(c,'/customers',{name:i?'':'Buyer '+i,company:'Salon',phone:'+123',country:'United States',shippingCountry:'France',group:'Salon',address:'123 Road',recipient:'Buyer',recipientPhone:'+123',recipientEmail:'shipping@example.com',social:'',website:'https://example.com',source:'Website',purchase:'First'});
+  assert.equal(s.customers[0].recipientEmail,'shipping@example.com');
+  assert.equal(s.customers[0].shippingCountry,'France');
+  if(i)assert.equal(s.customers[0].name,'');
   const o=await call(c,'/orders',{customerId:s.customers[0].id,date:'2026-01-01',due:'2026-02-01',recipient:'Buyer',phone:'+123',address:'123 Road',country:'United States',discount:0,shippingFee:0,paymentFee:0,items:[{name:'Bulk',kind:'base',qty:100,price:10,unit:'Gram',priceBasis:'100g'}],payments:[],submit:true});orders.push(o.state.orders[0]);
  }
  const page=await lead.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));

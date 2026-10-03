@@ -20,7 +20,7 @@ try{
  }
  await admin.call('/users',{name:'Duplicate',email:'duplicate@example.com',code:'hq-jd',role:'sale',password:'Initial-Password-2026'},409);
  await admin.call('/users',{name:'Wrong',email:'wrong@example.com',code:'KT-XX',role:'sale',password:'Initial-Password-2026'},400);
- let state=await sale.call('/customers',{name:'Workflow Buyer',company:'Salon',phone:'+12345',country:'United States',group:'Salon',address:'123 Road',recipient:'Buyer',recipientPhone:'+12345',social:'WhatsApp',source:'Website',purchase:'First'});
+ let state=await sale.call('/customers',{name:'Workflow Buyer',company:'Salon',phone:'+12345',country:'United States',group:'Salon',address:'123 Road',recipient:'Buyer',recipientPhone:'+12345',social:'https://wa.me/12345',source:'Website',purchase:'First'});
  assert.equal(state.customers[0].id,'HQ-JD-1');
  const draft={customerId:'HQ-JD-1',date:'2026-01-01',due:'2026-02-01',paymentDue:'2026-03-01',recipient:'Buyer',phone:'+12345',address:'123 Road',country:'United States',discount:0,shippingFee:0,paymentFee:0,items:[{name:'Bulk',kind:'base',qty:100,price:10,unit:'Gram',priceBasis:'100g'}],payments:[],submit:true};
  let result=await sale.call('/orders',draft),id=result.id,order=result.state.orders[0];assert.equal(order.orderCode,null);assert.match(id,/^[a-f0-9-]{36}$/);

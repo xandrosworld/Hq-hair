@@ -1,3 +1,4 @@
+import {cleanCustomer,purchaseHistory} from './customer-fields.js';
 import {applyFactoryWorkflow} from './factory-workflow.js';
 import {migrateOrderIdentity,assignOrderCode} from './order-identity.js';
 import {qcSignature} from './quality-control.js';
@@ -54,9 +55,7 @@ qcRoutes(business);
 business.get('/state',(req,res)=>res.json(req.view()));
 business.post('/reset',(req,res)=>{req.data=seed();req.save();res.json(req.view())});
 business.post('/customers',(req,res)=>{
- const b=req.body;const c={};for(const k of ['name','company','phone','email','country','group','address','recipient','recipientPhone','social','source','purchase'])c[k]=text(b[k]);
- if(!c.name||!c.phone||!c.address||!c.recipient||!c.recipientPhone||!c.social||!c.source||!c.purchase||!groups.includes(c.group)||!countries.includes(c.country))fail('Vui lòng điền đủ thông tin khách hàng và giao hàng bắt buộc.');
- if(c.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email))fail('Email chưa đúng định dạng.');
+ const b=req.body;const c=cleanCustomer(b,req.data.customers.find(x=>x.id===b.id));c.purchase=purchaseHistory(b.id,req.data.orders);
  if(!b.id&&req.data.customers.length>=(req.work?10000:200))fail('Bản demo hỗ trợ tối đa 200 khách hàng.');
  const existing=req.data.customers.find(x=>x.id===b.id);
  if(b.id){req.assertAccess(existing);req.assertVersion(existing)}

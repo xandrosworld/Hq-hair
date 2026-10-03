@@ -17,6 +17,14 @@ try{
  const nav=label=>page.locator('nav').getByRole('button',{name:label,exact:true}).click();
  await page.goto(base+'/demo');await nav('Khách hàng');
  await page.getByRole('columnheader',{name:'Sale phụ trách',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Tạo khách hàng',exact:true}).click();
+ const form=page.getByRole('dialog');
+ await form.getByLabel('Công ty / Salon',{exact:false}).fill('Company Only QA');
+ assert.equal(await form.getByLabel('Tên khách hàng',{exact:true}).getAttribute('required'),null);
+ await form.getByLabel('Email người nhận',{exact:true}).waitFor();
+ await form.getByLabel('Trang web',{exact:true}).waitFor();
+ assert.equal(await form.getByLabel('Lịch sử mua hàng · tự động').getAttribute('readonly'),'');
+ await page.getByRole('button',{name:'Đóng',exact:true}).click();
  assert.ok(await page.getByLabel('Tìm khách hàng').isVisible());assert.equal(await page.locator('.customer-overview').count(),0);
  await page.getByLabel('Tìm khách hàng').fill('nobodymatches');await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();assert.equal(await page.getByLabel('Tìm khách hàng').inputValue(),'');
  await page.getByRole('button',{name:'Thống kê khách hàng',exact:true}).click();await page.getByTestId('buyers-total').waitFor();
