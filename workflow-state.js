@@ -1,6 +1,6 @@
 export const productionLabels={producing:'Đang sản xuất',paused:'Tạm dừng',sale_check:'Gửi Sale Check'};
 export const saleReviewLabels={accepted:'Đã gửi lại - không sửa',rework:'Đã gửi lại - sửa'};
-export const feedbackLabels={very_satisfied:'Hoàn toàn hài lòng',satisfied_feedback:'Hài lòng kèm góp ý',neutral:'Bình thường - Không góp ý',claim:'Claim',claim_compensation:'Claim - Bồi Thường'};
+export const feedbackLabels={very_satisfied:'Hoàn toàn hài lòng',satisfied_feedback:'Hài lòng kèm góp ý',neutral:'Bình thường - Không góp ý',claim:'Claim- Bình Thường',claim_compensation:'Claim - Bồi Thường'};
 export function workflowStep(order,step){
  const aliases={1:['Nhập đơn'],2:['Chờ duyệt'],3:['Kế toán duyệt'],4:['Xưởng ghi nhận','Sản xuất'],5:['Sale tiếp nhận','Sale xác nhận tiếp tục sản xuất','Yêu cầu xưởng sửa lại'],6:['Đã gửi đến văn phòng','Gửi đến văn phòng'],7:['Kiểm tra thanh toán lần cuối','Kiểm tra thanh toán'],8:['Phiếu kiểm định và đặt ship','Kiểm định & đặt ship'],9:['Đã nhận'],10:['Hoàn thành']};
  const event=order.history?.findLast(h=>aliases[step]?.includes(h.title));
