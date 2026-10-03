@@ -14,7 +14,7 @@ export function applyFactoryWorkflow(order,user,action,body,event){
   event('Xưởng ghi nhận',productionLabels[body.status]+(note?' · '+note:''));
  }else{
   if(order.stage!==4||order.saleReview?.result!=='accepted'||order.production?.status==='paused')fail(400,'Cần Sale gửi lại không sửa và Xưởng không tạm dừng trước khi gửi văn phòng.');
-  order.officeDispatch={by:user.id,name:user.name,time,note};order.stage=6;
+  order.officeDispatch={by:user.id,name:user.name,time,note,dueDate:order.due||''};order.stage=6;
   event('Đã gửi đến văn phòng',note);
  }
  return true;

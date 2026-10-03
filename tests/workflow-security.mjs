@@ -33,6 +33,9 @@ try{
  await action(factory,'factory-status',{status:'sale_check'});
  await action(sale,'accept');assert.equal(order.stage,4);
  await action(factory,'factory-office');
+ assert.equal(order.officeDispatch.dueDate,draft.due);
+ const dispatchTime=order.officeDispatch.time;
+ await action(factory,'factory-office',{},400);assert.equal(order.officeDispatch.time,dispatchTime);
  await action(accountant,'accounting-final');assert.equal(order.stage,8);
  const inspection={checked:true,carrier:'DHL',service:'Express',tracking:'TRACK-123',shippedDate:'2026-01-02',reference:'QC-123'};
  const key=randomUUID(),body=await action(sale,'inspection',inspection,200,key),version=order.version;

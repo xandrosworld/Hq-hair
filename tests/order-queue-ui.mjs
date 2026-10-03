@@ -51,7 +51,10 @@ try{
  await page.locator('.table-sort').click();const descending=await dates();assert.deepEqual(descending,[...descending].sort().reverse());
  assert.equal(await page.locator('.unfinished-orders tbody tr').first().locator('td').first().textContent(),'1');
  await page.screenshot({path:'screenshots/unfinished-orders.png',fullPage:true,animations:'disabled'});
- await page.locator('.order-view').first().click();await page.locator('.back-link').waitFor();await page.locator('.back-link').click();
+ const delivery=await page.locator('.unfinished-orders tbody tr').first().locator('.delivery-timing').innerText();
+ await page.locator('.order-view').first().click();await page.locator('.back-link').waitFor();
+ const stepDelivery=await page.locator('.timeline-step').nth(5).locator('.delivery-timing').innerText();assert.ok(stepDelivery.startsWith(delivery));
+ await page.locator('.back-link').click();
  await overview();
  const columns=await page.locator('.activity-bar span').allTextContents();assert.equal(columns.length,12);assert.ok(columns.every(v=>/^\d+$/.test(v)));
  const sum=columns.reduce((n,v)=>n+Number(v),0);
