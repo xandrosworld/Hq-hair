@@ -18,7 +18,7 @@ try{
  for(let i=0;i<2;i++){
   await page.locator('.order-subnav button').nth(i).click();
   assert.equal(await page.getByRole('button',{name:i===0?'Tạo khách hàng':'Tạo đơn hàng',exact:true}).count(),0);
-  if(i===1){await page.getByRole('button',{name:'Tạo khách hàng',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng',exact:true}).click()}
+  if(i===1){assert.equal(await page.getByRole('button',{name:'Tạo khách hàng',exact:true}).count(),0);await page.locator('nav').getByRole('button',{name:'Khách hàng',exact:true}).click();await page.getByRole('button',{name:'Tạo khách hàng',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng',exact:true}).click()}
   else{await page.getByRole('button',{name:'Tạo đơn hàng',exact:true}).click();await page.getByRole('button',{name:'Lưu bản nháp',exact:true}).first().waitFor()}
  }
  await overview();
