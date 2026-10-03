@@ -2,6 +2,15 @@
 export const isOfficialOrder = order => !!order.orderCode && !order.cancelledAt && order.stage > 0;
 export const orderLabel = order => order.orderCode || order.requestCode || `YC-${order.id || 'mới'}`;
 
+// Preview only: reserving official numbers remains an accounting approval action.
+export function invoiceOrderLabel(order, orders = []) {
+ if (order.orderCode) return order.orderCode;
+ const prefix = `${order.customerId}-`;
+ const numbers = orders.map(o => o.orderCode).filter(code => code?.startsWith(prefix))
+  .map(code => code.slice(prefix.length)).filter(suffix => /^\d+$/.test(suffix)).map(Number);
+ return `Draft-${prefix}${Math.max(0, ...numbers) + 1}`;
+}
+
 // Reports use the first accounting approval, not order entry or later balance payments.
 const approvalDateFormat=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'});
 export function approvalDate(order) {

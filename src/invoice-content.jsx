@@ -1,13 +1,13 @@
 import React from 'react';
 import {totals,money,dateText} from '../shared.js';
-import {orderLabel} from '../order-identity.js';
+import {invoiceOrderLabel} from '../order-identity.js';
 import {ProductReadTable} from './product-table.jsx';
 import './invoice.css';
 
 const Facts=({rows})=><dl className="invoice-facts">{rows.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value||'—'}</dd></div>)}</dl>;
-export function InvoiceContent({order:o,customer:c,demo=false}){
+export function InvoiceContent({order:o,customer:c,orders=[],demo=false}){
  const t=totals(o);
- return <article className="invoice" id="invoice"><div className="invoice-top"><div><h1>HQ HAIR</h1><p>Vietnamese Hair · Global Beauty</p></div><div><h2>COMMERCIAL INVOICE</h2><p>{orderLabel(o)}</p><p>{dateText(o.date)}</p></div></div>
+ return <article className="invoice" id="invoice"><div className="invoice-top"><div><h1>HQ HAIR</h1><p>Vietnamese Hair · Global Beauty</p></div><div><h2>COMMERCIAL INVOICE</h2><p>{invoiceOrderLabel(o,orders)}</p><p>{dateText(o.date)}</p></div></div>
  <div className="invoice-parties"><section><h3>BÊN BÁN / SELLER</h3><Facts rows={[
  ['Bên bán / Seller','HQ HAIR HOUSEHOLD BUSINESS'],['Website','hqhair.com.vn'],['Hotline','+84 389023690'],['Đại diện / Representative',o.sale],['Điện thoại / Direct phone',o.salePhone]
  ]}/></section><section><h3>BÊN MUA / BUYER</h3><Facts rows={[
