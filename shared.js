@@ -1,6 +1,6 @@
 import {orderQueue} from './order-queue.js';
 import {rawProductAmount} from './product-fields.js';
-export const steps = ['Nhập đơn','Chờ duyệt','Kế toán duyệt','Xưởng ghi nhận','Sale tiếp nhận','Đã gửi đến văn phòng','Kiểm tra thanh toán lần cuối','Phiếu kiểm định và đặt ship','Đã nhận','Hoàn thành'];
+export const steps = ['Nhập đơn','Chờ duyệt','Đã duyệt','Xưởng ghi nhận','Sale tiếp nhận','Đã gửi đến văn phòng','Kiểm tra thanh toán lần cuối','Phiếu kiểm định và đặt ship','Đã nhận','Hoàn thành'];
 export const groups = ['Khách lẻ','Start Business','Salon','Wholesale'];
 export const countries = ['United States','United Kingdom','France','Germany','Australia','Canada','Nigeria','South Africa','Vietnam'];
 export const catalog = [

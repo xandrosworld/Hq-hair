@@ -15,7 +15,7 @@ export function invoiceOrderLabel(order, orders = []) {
 // Reports use the first accounting approval, not order entry or later balance payments.
 const approvalDateFormat=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'});
 export function approvalDate(order) {
- const dates=[order.approvedAt,...(order.history||[]).filter(h=>h.title==='Kế toán duyệt').map(h=>h.time),order.accountingApproval?.time]
+ const dates=[order.approvedAt,...(order.history||[]).filter(h=>['Kế toán duyệt','Đã duyệt'].includes(h.title)).map(h=>h.time),order.accountingApproval?.time]
   .filter(v=>typeof v==='string').map(v=>{
    if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
    const date=new Date(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(v)?v:v+'+07:00');
@@ -29,7 +29,7 @@ export function approvalDate(order) {
 export function migrateOrderIdentity(orders) {
  for (const order of orders) {
   if (Object.hasOwn(order, 'orderCode')) continue;
-  const approved = order.accountingApproval || order.history?.some(h => h.title === 'Kế toán duyệt');
+  const approved = order.accountingApproval || order.history?.some(h => ['Kế toán duyệt','Đã duyệt'].includes(h.title));
   order.orderCode = approved ? order.id : null;
   order.requestCode = `YC-${order.id}`;
  }

@@ -32,5 +32,5 @@ test('feedback is required, all five choices mark receipt complete, updates pres
  }
 });
 test('payment indicator stays yellow for partial and green for full, independently of current stage',()=>{
- for(const [status,tone] of [['partial','amber'],['full','green']])assert.deepEqual(workflowStep({stage:3,accountingApproval:{status}},3),{done:true,label:status==='partial'?'Thanh toán một phần':'Thanh toán đủ',tone,actor:undefined,time:undefined});
+ for(const [status,tone] of [['partial','amber'],['full','green']])assert.deepEqual(workflowStep({stage:3,accountingApproval:{status}},3),{done:true,label:status==='partial'?'Thanh toán 1 phần':'Thanh toán đủ',tone,actor:undefined,time:undefined});
 });

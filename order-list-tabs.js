@@ -2,7 +2,7 @@ import {productionLabels,saleReviewLabels,feedbackLabels} from './workflow-state
 export const orderListTabs=[
  {key:'active',label:'Danh sách chưa hoàn thành'},
  {key:'approval',label:'Đợi kế toán duyệt'},
- {key:'accounting',label:'Kế toán duyệt',options:{full:'Thanh toán đủ',partial:'Thanh toán 1 phần'}},
+ {key:'accounting',label:'Đã duyệt',options:{full:'Thanh toán đủ',partial:'Thanh toán 1 phần'}},
  {key:'factory',label:'Xưởng ghi nhận',options:productionLabels},
  {key:'sale',label:'Sale tiếp nhận',options:saleReviewLabels},
  {key:'office',label:'Đã gửi đến văn phòng'},
