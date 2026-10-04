@@ -34,7 +34,11 @@ test('Debt stays visible after manager exceptional closure; Sale cannot silently
  applySaleWorkflow(o,{role:'manager'},'complete',{text:'Customer credit exception'},()=>{});
  assert.equal(o.stage,10);assert.deepEqual(o.payments,[]);
 });
-test('Receivable aging uses explicit payment deadline, never shipment deadline',()=>{
- assert.deepEqual(aging({due:'2020-01-01'},'2026-09-30'),{due:'',days:null,bucket:'unscheduled'});
- for(const [due,days,bucket] of [['2026-10-01',0,'current'],['2026-09-30',0,'current'],['2026-09-29',1,'1-30'],['2026-08-31',30,'1-30'],['2026-08-30',31,'31-60'],['2026-07-31',61,'61-90'],['2026-07-01',91,'91+']])assert.deepEqual(aging({paymentDue:due},'2026-09-30'),{due,days,bucket});
+test('Receivable aging shares delivery deadline and freezes at office handoff',()=>{
+ assert.deepEqual(aging({due:'2026-09-29',paymentDue:'2027-01-01'},'2026-09-30'),{due:'2026-09-29',days:1,bucket:'overdue'});
+ assert.equal(aging({due:'2026-09-30'},'2026-09-30').bucket,'current');
+ assert.equal(aging({due:'2026-10-01'},'2026-09-30').bucket,'current');
+ assert.equal(aging({due:'2026-09-30',officeDispatch:{time:'2026-09-29',dueDate:'2026-09-30'}},'2026-10-10').bucket,'current');
+ assert.equal(aging({due:'2026-09-30',officeDispatch:{time:'2026-10-02',dueDate:'2026-09-30'}},'2026-10-10').days,2);
+ assert.equal(aging({},'2026-10-10').bucket,'current');
 });

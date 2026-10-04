@@ -25,7 +25,7 @@ export function csvCell(value){
 }
 export function reportCSV(orders,customers){
  const byId=new Map(customers.map(c=>[c.id,c]));
- const rows=[['Ma don','Ma khach','Khach hang','Nguoi phu trach','Ngay dat','Han thanh toan','Doanh thu USD','Phai nhan USD','Da nhan USD','Cho xac nhan USD','Con no USD','So ngay qua han','Nhom tuoi no'],...orders.filter(o=>isOfficialOrder(o)).map(o=>{const t=totals(o),a=aging(o);return [orderLabel(o),o.customerId,byId.get(o.customerId)?.name||byId.get(o.customerId)?.company,o.sale,o.date,o.paymentDue,t.revenue,t.receive,t.paid,t.pending,t.debt,a.days??'',agingLabels[a.bucket]]})];
+ const rows=[['Ma don','Ma khach','Khach hang','Nguoi phu trach','Ngay dat','Han giao hang','Doanh thu USD','Phai nhan USD','Da nhan USD','Cho xac nhan USD','Con no USD','So ngay qua han','Nhom tuoi no'],...orders.filter(o=>isOfficialOrder(o)).map(o=>{const t=totals(o),a=aging(o);return [orderLabel(o),o.customerId,byId.get(o.customerId)?.name||byId.get(o.customerId)?.company,o.sale,o.date,a.due,t.revenue,t.receive,t.paid,t.pending,t.debt,a.days??'',agingLabels[a.bucket]]})];
  return '\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
 }
 export const availableYears=orders=>[...new Set([today().slice(0,4),...orders.filter(o=>validDate(o.date)).map(o=>o.date.slice(0,4))])].sort().reverse();
