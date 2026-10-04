@@ -26,6 +26,12 @@ try{
  let result=await sale.call('/orders',draft),id=result.id,order=result.state.orders[0];assert.equal(order.orderCode,null);assert.match(id,/^[a-f0-9-]{36}$/);
  const action=async(c,action,extra={},status=200,key)=>{const body={action,version:order.version,...extra};const v=await c.call(`/orders/${id}/action`,body,status,key);if(status===200)order=v.orders.find(o=>o.id===id);return body};
  await action(other,'message',{text:'Access denied'},404);await action(factory,'received',{},403);
+ const video=Buffer.alloc(24);video.write('ftyp',4);video.write('isom',8);
+ await action(sale,'message',{text:'a'.repeat(5000),images:Array.from({length:20},(_,i)=>({name:`clip-${i}.mp4`,data:'data:video/mp4;base64,'+video.toString('base64')}))});
+ const sent=order.messages.at(-1);assert.equal(sent.text.length,5000);assert.equal(sent.images.length,20);
+ const mediaPath=base+`/orders/${id}/images/${sent.images[0].id}`;
+ const media=await fetch(mediaPath,{headers:{Cookie:sale.cookie,Range:'bytes=4-7'}});assert.equal(media.status,206);assert.equal(await media.text(),'ftyp');
+ assert.equal((await fetch(mediaPath,{headers:{Cookie:other.cookie}})).status,404);
  await action(sale,'manager-stage',{stage:8,text:'Cannot skip'},400);await action(sale,'inspection',{checked:true},400);
  await action(admin,'manager-stage',{stage:5,text:'Cannot skip'},400);
  await action(sale,'payment',{payment:{sender:'Buyer',contact:'buyer@example.com',method:'Wise',date:'2026-01-01',amount:10,reference:'INITIAL'}});
