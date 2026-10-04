@@ -30,3 +30,8 @@ export function matchesOrderTab(o,tab='active',sub='all'){
  if(tab==='active')return !o.cancelledAt&&o.stage>0&&o.stage<10;
  const position=orderListPosition(o);return position?.key===tab&&(sub==='all'||position.sub===sub);
 }
+export function orderListStatus(o){
+ const position=orderListPosition(o),tab=orderListTabs.find(t=>t.key===position?.key);
+ if(!tab)return {label:o.cancelledAt?'Đã hủy':o.stage===0?'Bản nháp':o.stage>=10?'Hoàn thành':'Nhập đơn'};
+ return {label:tab.key==='approval'?'Chờ duyệt':tab.label,detail:tab.options?.[position.sub]};
+}
