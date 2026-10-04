@@ -40,6 +40,15 @@ try{
   }else assert.equal(await page.locator('.order-substate-tabs').count(),0);
  }
  await page.locator('.order-stage-tabs button[aria-pressed=true]').click();
+ const statusFilter=page.getByLabel('Trạng thái đơn',{exact:true});
+ for(const tab of orderListTabs.filter(t=>t.key!=='active')){
+  await statusFilter.selectOption(tab.key+':all');
+  assert.equal(await page.locator('.order-stage-tabs button[aria-pressed=true]').innerText(),tab.label);
+  for(const key of Object.keys(tab.options||{}))await statusFilter.selectOption(tab.key+':'+key);
+ }
+ await statusFilter.selectOption('completed:all');
+ await statusFilter.selectOption('cancelled:all');
+ await statusFilter.selectOption('all');
  await page.screenshot({path:'screenshots/audit-order-tabs.png',fullPage:true});
  await page.locator('.order-subnav button').first().click();
  await page.screenshot({path:'screenshots/audit-outcomes.png',fullPage:true});

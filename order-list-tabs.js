@@ -1,7 +1,7 @@
 import {productionLabels,saleReviewLabels,feedbackLabels} from './workflow-state.js';
 export const orderListTabs=[
  {key:'active',label:'Danh sách chưa hoàn thành'},
- {key:'approval',label:'Đợi kế toán duyệt'},
+ {key:'approval',label:'Chờ duyệt'},
  {key:'accounting',label:'Đã duyệt',options:{full:'Thanh toán đủ',partial:'Thanh toán 1 phần'}},
  {key:'factory',label:'Xưởng ghi nhận',options:productionLabels},
  {key:'sale',label:'Sale tiếp nhận',options:saleReviewLabels},
@@ -27,6 +27,8 @@ export function orderListPosition(o){
  return null;
 }
 export function matchesOrderTab(o,tab='active',sub='all'){
+ if(tab==='completed')return !o.cancelledAt&&o.stage===10;
+ if(tab==='cancelled')return !!o.cancelledAt&&o.finalPaymentCheck?.status!=='forfeited';
  if(tab==='active')return !o.cancelledAt&&o.stage>0&&o.stage<10;
  const position=orderListPosition(o);return position?.key===tab&&(sub==='all'||position.sub===sub);
 }
