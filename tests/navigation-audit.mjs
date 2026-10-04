@@ -31,15 +31,15 @@ try{
  await page.locator('.order-subnav button').nth(1).click();
  await page.getByText('Tổng đơn hàng chưa hoàn thành:',{exact:false}).waitFor();
  assert.equal(await page.locator('main .tabs').getByRole('button',{name:'Bản nháp',exact:true}).count(),0);
- assert.equal(await page.locator('.order-stage-tabs button').count(),9);
- for(const tab of orderListTabs){
+ assert.equal(await page.locator('.order-stage-tabs button').count(),8);
+ for(const tab of orderListTabs.filter(t=>t.key!=='active')){
   await page.locator('.order-stage-tabs').getByRole('button',{name:tab.label,exact:true}).click();
   if(tab.options){
    assert.equal(await page.locator('.order-substate-tabs button').count(),Object.keys(tab.options).length+1);
    for(const label of Object.values(tab.options))await page.locator('.order-substate-tabs').getByRole('button',{name:label,exact:true}).click();
   }else assert.equal(await page.locator('.order-substate-tabs').count(),0);
  }
- await page.locator('.order-stage-tabs button').first().click();
+ await page.locator('.order-stage-tabs button[aria-pressed=true]').click();
  await page.screenshot({path:'screenshots/audit-order-tabs.png',fullPage:true});
  await page.locator('.order-subnav button').first().click();
  await page.screenshot({path:'screenshots/audit-outcomes.png',fullPage:true});
