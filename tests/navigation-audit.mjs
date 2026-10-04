@@ -64,7 +64,7 @@ try{
  await page.getByRole('button',{name:'Đóng',exact:true}).click();
  assert.ok(await page.getByLabel('Tìm khách hàng').isVisible());assert.equal(await page.locator('.customer-overview').count(),0);
  await page.getByLabel('Tìm khách hàng').fill('nobodymatches');await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();assert.equal(await page.getByLabel('Tìm khách hàng').inputValue(),'');
- await page.getByRole('button',{name:'Thống kê khách hàng',exact:true}).click();await page.getByTestId('buyers-total').waitFor();
+ await page.getByRole('button',{name:'Thống kê khách hàng',exact:true}).click();await page.getByTestId('buyers-total').waitFor();await page.screenshot({path:'screenshots/audit-customer-summary.png',fullPage:true});
  await page.getByRole('button',{name:'Danh sách khách hàng',exact:true}).click();
  await page.screenshot({path:'screenshots/audit-customers.png',fullPage:true});
  await nav('Doanh thu & công nợ');await page.getByRole('button',{name:'Công nợ cần thu',exact:true}).click();

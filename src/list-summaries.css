@@ -10,3 +10,22 @@
 .section-switch{background:#fff;border:1px solid #e2eaf2;border-radius:10px;margin-bottom:20px;padding:0 12px;display:flex;flex-wrap:wrap}.section-switch button{font-size:13px}.price-filter-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;color:#63788c;font-size:12px}.standards-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-top:1px solid #e4ebf2;font-size:12px;color:#63788c}.standards-pagination span{text-align:center}@media(max-width:600px){.standards-pagination{flex-wrap:wrap}.standards-pagination span{order:-1;width:100%}}
 .approved-history .panel-head p{font-size:11px;color:#71869a;margin:6px 0 0}.approved-history .panel-head>b{white-space:nowrap;font-size:13px}.approved-history .filters label{font-size:12px;color:#526b83}.monthly-activity .activity-chart{height:215px}.monthly-activity .activity-bars{height:155px}.monthly-activity .month-growth{margin-bottom:12px}
 .unfinished-orders th,.unfinished-orders td{padding:11px 12px;font-size:12px}.unfinished-orders th{white-space:nowrap;background:#eff5fb;color:#344f6b}.unfinished-orders td{vertical-align:middle}.unfinished-orders .table-sort{font:inherit;font-weight:600;color:inherit;background:none;border:0;padding:0;cursor:pointer}.unfinished-orders th:first-child{width:44px}.unfinished-orders .order-link{font-size:12px;font-weight:600}.unfinished-orders .badge{font-size:11px;border-radius:4px;padding:5px 8px;white-space:normal;line-height:1.4}.queue-approval{background:#fff4d8;color:#986f19}.queue-factory,.queue-payment{background:#fff0df;color:#ab661c}.queue-producing,.queue-paused,.queue-rework{background:#fde9eb;color:#b44b58}.queue-sale{background:#e5efff;color:#3865a1}.queue-office{background:#e4f4ee;color:#377e65}.queue-inspection{background:#fae9f3;color:#a05082}.queue-delivery,.queue-complete{background:#ece8fa;color:#74609f}.delivery-days{white-space:nowrap;color:#61788f}.delivery-days.overdue{color:#b5444f;font-weight:600}.unfinished-orders tbody tr:hover{background:#f6f9fd;cursor:pointer}.table-sort:focus-visible{outline:2px solid #497cbd;outline-offset:4px}
+
+/* Give the customer chart most of the workspace; keep the metrics compact. */
+.customer-overview{grid-template-columns:minmax(0,1fr) 300px;align-items:start}
+.customer-overview .group-chart-bars{height:300px}
+.customer-overview .group-chart-body{padding:16px 24px 24px}
+.customer-overview .buyer-period{padding:14px 16px}
+.customer-overview .buyer-period label{gap:8px;flex-wrap:wrap}
+.customer-overview .buyer-period input{min-width:0;width:155px;padding:8px;font-size:12px}
+.customer-overview .buyer-total{padding:16px;gap:12px}
+.customer-overview .summary-icon{width:40px;height:40px;border-radius:12px}
+.customer-overview .summary-icon svg{width:24px;height:24px}
+.customer-overview .buyer-total h3{font-size:13px;line-height:1.5;margin-bottom:5px}
+.customer-overview .buyer-total strong{font-size:30px}
+.customer-overview .buyer-breakdown{padding:14px 8px}
+.customer-overview .buyer-breakdown strong,.customer-overview .buyer-comparison strong{font-size:22px}
+.customer-overview .buyer-comparison{padding:14px 16px;gap:10px}
+.customer-overview .summary-note{padding:12px 16px}
+@media(min-width:1600px){.customer-overview{grid-template-columns:minmax(0,1fr) 330px}.customer-overview .group-chart-bars{height:340px}}
+@media(max-width:1100px){.customer-overview{grid-template-columns:1fr}.customer-overview .buyer-summary{width:100%}.customer-overview .group-chart-bars{height:260px}}
