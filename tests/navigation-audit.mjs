@@ -72,7 +72,13 @@ try{
  await page.locator('.buyer-period select').first().selectOption('all');await page.screenshot({path:'screenshots/audit-customer-summary.png',fullPage:true});
  await page.getByRole('button',{name:'Danh sách khách hàng',exact:true}).click();
  await page.screenshot({path:'screenshots/audit-customers.png',fullPage:true});
- await nav('Doanh thu & công nợ');await page.getByRole('button',{name:'Công nợ cần thu',exact:true}).click();
+ await nav('Doanh thu & công nợ');
+ await page.getByLabel('Kỳ báo cáo',{exact:true}).selectOption('month');
+ await page.getByLabel('Tháng báo cáo',{exact:true}).waitFor();
+ await page.getByLabel('Kỳ báo cáo',{exact:true}).selectOption('year');
+ await page.getByLabel('Năm báo cáo',{exact:true}).waitFor();
+ await page.getByLabel('Kỳ báo cáo',{exact:true}).selectOption('all');
+ await page.screenshot({path:'screenshots/audit-revenue-period.png',fullPage:true});await page.getByRole('button',{name:'Công nợ cần thu',exact:true}).click();
  assert.equal(await page.locator('.overview-grid').count(),0);await page.locator('.order-link').first().click();await page.locator('.back-link').click();
  await page.getByRole('heading',{name:'Danh sách đơn còn công nợ',exact:true}).waitFor();
  assert.match(await page.locator('.pagination').innerText(),/khách đang nợ/);
