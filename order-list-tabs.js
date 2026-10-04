@@ -8,7 +8,7 @@ export const orderListTabs=[
  {key:'office',label:'Đã gửi đến văn phòng'},
  {key:'final',label:'Kiểm tra thanh toán lần cuối',options:{full:'Xác nhận đủ',forfeited:'Hủy đơn mất cọc'}},
  {key:'inspection',label:'Phiếu kiểm định và đặt ship'},
- {key:'received',label:'9. Đã nhận',options:feedbackLabels},
+ {key:'received',label:'Đã nhận',options:feedbackLabels},
 ];
 export function orderListPosition(o){
  if(o.finalPaymentCheck?.status==='forfeited')return {key:'final',sub:'forfeited'};
