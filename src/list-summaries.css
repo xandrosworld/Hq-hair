@@ -31,3 +31,14 @@
 @media(max-width:1100px){.customer-overview{grid-template-columns:1fr}.customer-overview .buyer-summary{width:100%}.customer-overview .group-chart-bars{height:260px}}
 
 .customer-overview .buyer-period select{max-width:100%;width:100%;font-size:12px;padding:9px}.customer-overview .buyer-period label{display:grid;gap:8px}
+
+.order-overview{grid-template-columns:minmax(0,1fr) 330px;align-items:start}
+.order-overview .monthly-activity .activity-chart{height:350px}
+.order-overview .monthly-activity .activity-bars{height:290px}
+.order-overview .outcomes{padding:16px}
+.order-overview .outcomes header>strong{font-size:28px}
+.order-overview .outcomes section{margin-top:12px;padding-top:12px}
+.order-overview .outcome-row{grid-template-columns:minmax(0,1fr) 40px 45px;gap:6px;font-size:11px;padding:5px 0}
+.order-overview .outcomes footer{margin:12px 0 0;padding:10px 0 0}
+@media(min-width:1600px){.order-overview{grid-template-columns:minmax(0,1fr) 350px}.order-overview .monthly-activity .activity-chart{height:390px}.order-overview .monthly-activity .activity-bars{height:330px}}
+@media(max-width:1100px){.order-overview{grid-template-columns:1fr}.order-overview .monthly-activity .activity-chart{height:310px}.order-overview .monthly-activity .activity-bars{height:250px}}
