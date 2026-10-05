@@ -24,3 +24,21 @@
 .hair-editor .hair-segment-select span{position:relative;display:block;pointer-events:none;padding:9px 25px 9px 8px;min-height:54px;text-align:left;white-space:normal;overflow-wrap:anywhere;line-height:1.5;font-size:11px;color:#233e50}
 .hair-editor td textarea{width:100%;min-width:0;min-height:54px;resize:vertical;margin:2px 0;padding:8px;font-size:11px;line-height:1.5;border-radius:5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .hair-editor .hair-segment-select::after{content:'\25BE';position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;color:#52697d;font-size:12px}
+/* Adapt to the available panel width, including browser zoom and sidebars. */
+.hair-table-scroll:has(.hair-editor){container-type:inline-size}
+.hair-editor input,.hair-editor select,.hair-editor td input[type=number]{height:54px}
+.hair-editor .hair-inline-value{min-height:54px}
+.hair-editor .hair-inline-price select{height:52px}
+@container (max-width:1179px){
+ .hair-table.hair-editor{min-width:0;display:block}
+ .hair-editor thead{display:none}
+ .hair-editor tbody{display:grid;gap:12px;padding:10px}
+ .hair-editor tr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;border:1px solid #dce5ec;border-radius:8px}
+ .hair-editor td{display:block;padding:0;border:0;max-width:none;text-align:left}
+ .hair-editor td::before{content:attr(data-label);display:block;font-size:11px;line-height:1.4;margin-bottom:6px;min-height:30px;color:#52697d}
+ .hair-editor td:first-child{grid-column:1/-1;font-weight:600}
+ .hair-editor td:first-child::before{display:inline;margin-right:8px}
+ .hair-editor .hair-weight,.hair-editor .hair-amount{background:transparent}
+ .hair-editor td.hair-amount{font-size:16px}
+}
+@container (max-width:650px){.hair-editor tr{grid-template-columns:repeat(2,minmax(0,1fr))}}
