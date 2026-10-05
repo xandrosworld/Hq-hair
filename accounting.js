@@ -13,27 +13,28 @@ function confirmReceipts(order,user,receipts,now){
  }
  return payments;
 }
+export const canForfeitPaused=order=>order.stage===4&&order.production?.status==='paused'&&!!order.orderCode&&!order.cancelledAt&&!order.contentLockedAt;
 export function applyAccounting(order,user,action,body,event){
  if(!['accounting-approve','accounting-cancel','accounting-final','accounting-forfeit'].includes(action))return false;
  if(user.role!=='accounting')fail(403,'Chỉ Kế toán được xử lý bước duyệt thanh toán.');
  if(order.cancelledAt||order.contentLockedAt)fail(400,'Đơn đã hủy hoặc đã khóa nội dung.');
  const now=new Date().toISOString(),note=typeof body.text==='string'?body.text.trim().slice(0,1000):'';
  if(['accounting-final','accounting-forfeit'].includes(action)){
-  if(![6,7].includes(order.stage)||!order.orderCode||(!order.officeDispatch&&!order.history?.some(h=>['Đã gửi đến văn phòng','Gửi đến văn phòng'].includes(h.title))))fail(400,'Xưởng phải xác nhận gửi đến văn phòng trước bước kiểm tra thanh toán lần cuối.');
+  if(!(action==='accounting-forfeit'&&canForfeitPaused(order))&&(![6,7].includes(order.stage)||!order.orderCode||(!order.officeDispatch&&!order.history?.some(h=>['Đã gửi đến văn phòng','Gửi đến văn phòng'].includes(h.title)))))fail(400,'Xưởng phải xác nhận gửi đến văn phòng trước bước kiểm tra thanh toán lần cuối.');
   if(action==='accounting-forfeit'){
    const total=totals(order);
    if(total.paid<=0||total.debt<=0)fail(400,'Hủy mất cọc chỉ áp dụng khi đã nhận cọc và còn khoản chưa thanh toán.');
    if(!note)fail(400,'Nhập lý do hủy đơn mất cọc.');
    order.finalPaymentCheck={status:'forfeited',by:user.id,name:user.name,time:now,note,deposit:total.paid};
-   order.cancelledAt=now;order.closedAt=now;order.cancelledBy=user.id;order.cancelReason=note;order.cancelType='deposit_forfeited';order.stage=-1;
-   event('Kiểm tra thanh toán lần cuối',`Hủy đơn mất cọc · ${total.paid} USD · ${note}`);return true;
+   order.cancelledAt=now;order.closedAt=now;order.cancelledBy=user.id;order.cancelReason=note;order.cancelType='deposit_forfeited';order.stage=10;order.completedAt=now;order.contentLockedAt=now;
+   event('Kiểm tra thanh toán lần cuối',`Hủy đơn mất cọc · ${total.paid} USD · ${note}`);event('Hoàn thành','Đóng đơn do hủy mất cọc.');return true;
   }
   const payments=confirmReceipts(order,user,body.receipts||[],now),total=totals({...order,payments});
   if(total.debt>0)fail(400,'Phải xác nhận đủ tiền trước khi chuyển sang phiếu kiểm định và đặt ship.');
   order.payments=payments;order.finalPaymentCheck={status:'full',by:user.id,name:user.name,time:now,note,paid:total.paid};order.stage=8;
   event('Kiểm tra thanh toán lần cuối','Xác nhận đủ'+(note?' · '+note:''));return true;
  }
- if(![2,3].includes(order.stage))fail(400,'Chỉ xử lý đơn đang chờ duyệt hoặc ở bước Kế toán duyệt.');
+ if(order.stage!==2)fail(400,'Chỉ duyệt khi đơn đang chờ duyệt; đơn đã duyệt phải chuyển sang Xưởng.');
  if(action==='accounting-cancel'){
   if(order.payments.length||totals(order).paid>0||order.accountingApproval)fail(400,'Đơn đã có thanh toán/chứng từ, không thể hủy tại bước này.');
   if(!note)fail(400,'Nhập lý do hủy đơn.');

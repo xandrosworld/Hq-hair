@@ -27,12 +27,13 @@ export function orderListPosition(o){
  return null;
 }
 export function matchesOrderTab(o,tab='active',sub='all'){
- if(tab==='completed')return !o.cancelledAt&&o.stage===10;
+ if(tab==='completed')return o.stage===10&&(!o.cancelledAt||o.cancelType==='deposit_forfeited');
  if(tab==='cancelled')return !!o.cancelledAt&&o.finalPaymentCheck?.status!=='forfeited';
  if(tab==='active')return !o.cancelledAt&&o.stage>0&&o.stage<10;
  const position=orderListPosition(o);return position?.key===tab&&(sub==='all'||position.sub===sub);
 }
 export function orderListStatus(o){
+ if(o.stage===10&&o.cancelType==='deposit_forfeited')return {label:'Hoàn thành',detail:'Hủy đơn mất cọc'};
  const position=orderListPosition(o),tab=orderListTabs.find(t=>t.key===position?.key);
  if(!tab)return {label:o.cancelledAt?'Đã hủy':o.stage===0?'Bản nháp':o.stage>=10?'Hoàn thành':'Nhập đơn'};
  return {label:tab.key==='approval'?'Chờ duyệt':tab.label,detail:tab.options?.[position.sub]};

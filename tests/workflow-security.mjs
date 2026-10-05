@@ -67,13 +67,13 @@ try{
  await cancelAction(sale,'payment',{payment:{sender:'Buyer',method:'Wise',date:'2026-01-01',amount:3,reference:'DEPOSIT'}});
  await cancelAction(accountant,'accounting-approve',{paymentStatus:'partial',receipts:[{id:cancelledOrder.payments[0].id,amount:3}]});
  await cancelAction(accountant,'accounting-forfeit',{text:'Too early'},400);
- await cancelAction(factory,'factory-status',{status:'sale_check'});
- await cancelAction(sale,'accept');await cancelAction(factory,'factory-office');
+ await cancelAction(factory,'factory-status',{status:'paused'});
+ await cancelAction(accountant,'accounting-final',{},400);
  await cancelAction(sale,'accounting-forfeit',{text:'Wrong role'},403);
  await cancelAction(admin,'accounting-forfeit',{text:'Wrong role'},403);
  const officialCode=cancelledOrder.orderCode;
  await cancelAction(accountant,'accounting-forfeit',{text:'Customer cancelled, deposit forfeited'});
- assert.equal(cancelledOrder.stage,-1);assert.ok(cancelledOrder.closedAt);assert.equal(cancelledOrder.orderCode,officialCode);assert.equal(totals(cancelledOrder).paid,3);
+ assert.equal(cancelledOrder.stage,10);assert.ok(cancelledOrder.closedAt);assert.equal(cancelledOrder.orderCode,officialCode);assert.equal(totals(cancelledOrder).paid,3);
  for(const action of ['inspection','received','complete'])await cancelAction(sale,action,{},400);
  await cancelAction(accountant,'accounting-final',{},400);
  const audit=await admin.call('/audit');assert.ok(audit.some(a=>a.action==='manager-order-action'&&JSON.parse(a.details).before));

@@ -9,7 +9,7 @@ const blank=order=>({date:today(),rows:order.items.map((_,index)=>({index,note:'
 export function QualityControl({order,user,onUpdate,draftStatus}){
  const [form,setForm]=useState(()=>order.qc&&!order.qc.stale?structuredClone(order.qc):blank(order)),[dirty,setDirty]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[reason,setReason]=useState('');
  const version=useRef(order.version),lock=useRef(false);
- const editable=isWorkspace&&['sale','manager','factory'].includes(user?.role)&&order.stage>0&&!order.cancelledAt&&(!contentLocked(order)||user.role==='manager');
+ const editable=isWorkspace&&(user?.role==='manager'||user?.role==='sale'&&order.stage===8)&&order.stage>0&&!order.cancelledAt&&(!contentLocked(order)||user.role==='manager');
  const media=order.qcMedia||[],url=id=>`/api${isWorkspace?'/work':''}/orders/${encodeURIComponent(order.id)}/qc-media/${id}`;
  useEffect(()=>{if(draftStatus)draftStatus.current=dirty||busy;const leave=e=>{e.preventDefault();e.returnValue=''};if(dirty||busy)window.addEventListener('beforeunload',leave);return()=>{window.removeEventListener('beforeunload',leave);if(draftStatus)draftStatus.current=false}},[dirty,busy,draftStatus]);
  useEffect(()=>{if(!dirty&&!busy){setForm(order.qc&&!order.qc.stale?structuredClone(order.qc):blank(order));version.current=order.version}},[order.version,dirty,busy]);

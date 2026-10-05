@@ -8,7 +8,8 @@ const fail=(status,message)=>{throw Object.assign(new Error(message),{status})};
 const clean=(value,max=1000)=>typeof value==='string'?value.trim().slice(0,max):'';
 export function qcSignature(items){return createHash('sha256').update(JSON.stringify(items)).digest('hex')}
 export function assertQCWrite(order,user,body){
- if(!['sale','manager','factory'].includes(user.role))fail(403,'Chỉ Sale phụ trách, Xưởng hoặc quản trị được lập phiếu kiểm định.');
+ if(!['sale','manager'].includes(user.role))fail(403,'Chỉ Sale phụ trách hoặc quản trị được lập phiếu kiểm định.');
+ if(user.role!=='manager'&&order.stage!==8)fail(400,'Chỉ lập phiếu kiểm định khi đơn đến bước 8.');
  if(order.stage<=0||order.cancelledAt)fail(400,'Chỉ lập phiếu cho đơn đã gửi duyệt và chưa hủy.');
  if(contentLocked(order)){
   if(user.role!=='manager')fail(400,'Đơn đã khóa sau bước 8, không thể sửa phiếu kiểm định.');

@@ -14,17 +14,19 @@ test('Accounting decisions enforce real confirmed money, roles and atomic valida
  assert.equal(o.stage,3);assert.equal(o.accountingApproval.status,'partial');
  assert.throws(()=>applyAccounting(o,accountant,'accounting-cancel',{text:'Cancel'},()=>{}),{status:400});
  o.payments.push({id:'p2',amount:70,confirmed:false});
- applyAccounting(o,accountant,'accounting-approve',{paymentStatus:'full',receipts:[{id:'p2',amount:70}]},()=>{});
- assert.equal(o.accountingApproval.status,'full');assert.equal(o.accountingApproval.paid,100);
+ assert.throws(()=>applyAccounting(o,accountant,'accounting-approve',{paymentStatus:'full',receipts:[{id:'p2',amount:70}]},()=>{}),{status:400});
+ assert.equal(o.accountingApproval.status,'partial');assert.equal(o.accountingApproval.paid,30);
 });
-test('QC completion requires every product note and attachment; Factory can edit, Accountant cannot',()=>{
- const o={...order(),qcMedia:[{id:'m'}]},q={date:today(),rows:[{index:0,note:'',mediaIds:[]}],special:[]};
- assert.equal(saveQC(o,{role:'factory'},{qc:q}).completedAt,null);
- assert.throws(()=>saveQC(o,{role:'factory'},{qc:q,complete:true}),{status:400});
+test('QC completion requires every product note and attachment; Sale at step 8 can edit, Factory and Accountant cannot',()=>{
+ const o={...order(),stage:8,qcMedia:[{id:'m'}]},q={date:today(),rows:[{index:0,note:'',mediaIds:[]}],special:[]};
+ assert.equal(saveQC(o,{role:'sale'},{qc:q}).completedAt,null);
+ assert.throws(()=>saveQC(o,{role:'sale'},{qc:q,complete:true}),{status:400});
  q.rows[0]={index:0,note:'Checked',mediaIds:['m']};
- assert.ok(saveQC(o,{role:'factory'},{qc:q,complete:true}).completedAt);
+ assert.ok(saveQC(o,{role:'sale'},{qc:q,complete:true}).completedAt);
+ assert.throws(()=>saveQC(o,{role:'factory'},{qc:q}),{status:403});
+ assert.throws(()=>saveQC({...o,stage:6},{role:'sale'},{qc:q}),{status:400});
  assert.throws(()=>saveQC(o,accountant,{qc:q}),{status:403});
- assert.throws(()=>saveQC({...o,contentLockedAt:'locked'},{role:'factory'},{qc:q}),{status:400});
+ assert.throws(()=>saveQC({...o,contentLockedAt:'locked'},{role:'sale'},{qc:q}),{status:400});
  assert.throws(()=>saveQC(o,{role:'sale'},{qc:{...q,rows:[{...q.rows[0],mediaIds:['other-order']}]}}),{status:400});
  assert.throws(()=>qcMedia({data:'data:video/mp4;base64,ZmFrZQ=='}),{status:400});
 });
