@@ -83,7 +83,7 @@ try{
  await page.getByRole('heading',{name:'Danh sách đơn còn công nợ',exact:true}).waitFor();
  assert.match(await page.locator('.pagination').innerText(),/khách đang nợ/);
  await page.getByRole('button',{name:'Việc cần chú ý',exact:true}).click();
- await page.getByRole('dialog',{name:'Việc cần chú ý'}).waitFor();
+ await page.getByRole('dialog',{name:'Thông báo đơn hàng'}).waitFor();
  assert.equal(await page.getByRole('dialog').getByText('Đơn hàng đang chờ duyệt',{exact:true}).count(),0);
  await page.getByRole('button',{name:'Đóng',exact:true}).click();
  await page.screenshot({path:'screenshots/audit-revenue.png',fullPage:true});
