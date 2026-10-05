@@ -27,3 +27,4 @@
  #invoice tr{break-inside:avoid;page-break-inside:avoid}
  #invoice .invoice-weight,#invoice .invoice-totals,#invoice .invoice-bottom{break-inside:avoid;page-break-inside:avoid}
 }
+@media print{#invoice .invoice-weight{display:none!important}}
