@@ -9,6 +9,7 @@ export function matchingOrderPrices(item,data){
  let rows=data.prices.filter(p=>p.tier===tier&&hairProductName(p.product).toLowerCase()===hairProductName(item.name).toLowerCase()&&Number(p.lengthCm)===Number(item.lengthCm)&&p.tone===color.tone);
  const exact=rows.filter(p=>p.segment===item.segment);
  if(exact.length)rows=exact;
+ else if(tier==='Basic')rows=rows.filter(p=>!p.segment);
  return rows;
 }
 export function matchedPriceFields(price,data){return {price:price.price,priceBasis:price.priceBasis,unit:price.priceBasis==='100g'?'Gram':'Piece',priceReference:{id:price.id,version:data.version,tier:price.tier,tone:price.tone,variant:price.variant||''}}}
