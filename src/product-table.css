@@ -3,7 +3,7 @@
 .hair-read td:last-child,.hair-read th:last-child{position:sticky;right:0;min-width:105px;box-shadow:-3px 0 8px #1b415512}.hair-read th:last-child{background:#d8e8e0}.hair-read td:last-child{background:#dff2e9}.hair-read td:first-child{min-width:38px}.hair-read td:nth-child(2){min-width:120px}.hair-read td:nth-child(6){min-width:155px}@media print{.hair-read td:last-child,.hair-read th:last-child{position:static;min-width:0;box-shadow:none}}
 
 /* Compact order entry while keeping all product fields visible. */
-.hair-table.hair-editor{width:100%;min-width:1180px;table-layout:fixed}
+.hair-table.hair-editor{width:100%;min-width:0;table-layout:fixed}
 .hair-editor th,.hair-editor td{padding:7px 5px;font-size:11px;line-height:1.4;min-width:0!important;max-width:none}
 .hair-editor th:nth-child(1){width:3%}.hair-editor th:nth-child(2){width:12%}.hair-editor th:nth-child(3){width:9%}.hair-editor th:nth-child(4){width:8%}.hair-editor th:nth-child(5){width:7%}.hair-editor th:nth-child(6){width:15%}.hair-editor th:nth-child(7){width:6%}.hair-editor th:nth-child(8){width:8%}.hair-editor th:nth-child(9){width:9%}.hair-editor th:nth-child(10){width:12%}.hair-editor th:nth-child(11){width:8%}.hair-editor th:nth-child(12){width:3%}
 .hair-editor input,.hair-editor select,.hair-editor td input[type=number]{width:100%;min-width:0;padding:7px 5px;margin:2px 0;font-size:11px;border-radius:5px;height:34px}
@@ -29,16 +29,11 @@
 .hair-editor input,.hair-editor select,.hair-editor td input[type=number]{height:54px}
 .hair-editor .hair-inline-value{min-height:54px}
 .hair-editor .hair-inline-price select{height:52px}
-@container (max-width:1179px){
- .hair-table.hair-editor{min-width:0;display:block}
- .hair-editor thead{display:none}
- .hair-editor tbody{display:grid;gap:12px;padding:10px}
- .hair-editor tr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;border:1px solid #dce5ec;border-radius:8px}
- .hair-editor td{display:block;padding:0;border:0;max-width:none;text-align:left}
- .hair-editor td::before{content:attr(data-label);display:block;font-size:11px;line-height:1.4;margin-bottom:6px;min-height:30px;color:#52697d}
- .hair-editor td:first-child{grid-column:1/-1;font-weight:600}
- .hair-editor td:first-child::before{display:inline;margin-right:8px}
- .hair-editor .hair-weight,.hair-editor .hair-amount{background:transparent}
- .hair-editor td.hair-amount{font-size:16px}
-}
-@container (max-width:650px){.hair-editor tr{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.hair-editor th,.hair-editor td{padding:5px 3px}
+.hair-editor input,.hair-editor select,.hair-editor td input[type=number]{font-size:10px;padding-left:3px;padding-right:3px}
+.hair-editor .hair-inline-price select{width:61px;flex-basis:61px;font-size:8px}
+.hair-editor .hair-segment-select span{font-size:10px;padding-left:4px;padding-right:17px}
+.hair-editor td textarea{font-size:10px;padding:5px}
+.hair-editor td:nth-child(4) select{padding-left:3px;padding-right:12px}
+.hair-editor .remove{width:20px;padding:1px}
