@@ -79,7 +79,7 @@ try{
  await page.getByLabel('Năm báo cáo',{exact:true}).waitFor();
  await page.getByLabel('Kỳ báo cáo',{exact:true}).selectOption('all');
  await page.screenshot({path:'screenshots/audit-revenue-period.png',fullPage:true});await page.getByRole('button',{name:'Công nợ cần thu',exact:true}).click();
- assert.equal(await page.locator('.overview-grid').count(),0);await page.locator('.order-link').first().click();await page.locator('.back-link').click();
+ assert.equal(await page.getByLabel('Kỳ báo cáo',{exact:true}).count(),0);assert.equal(await page.locator('.overview-grid').count(),0);await page.locator('.order-link').first().click();await page.locator('.back-link').click();
  await page.getByRole('heading',{name:'Danh sách đơn còn công nợ',exact:true}).waitFor();
  assert.match(await page.locator('.pagination').innerText(),/khách đang nợ/);
  await page.getByRole('button',{name:'Việc cần chú ý',exact:true}).click();
