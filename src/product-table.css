@@ -43,3 +43,7 @@
 .hair-color-options{max-height:150px;overflow:auto;border:1px solid #d4dfe5;border-radius:5px;background:white}
 .hair-color-options button{display:block;width:100%;padding:6px 4px;text-align:left;white-space:normal;overflow-wrap:anywhere;border:0;background:white;color:#233e50;font-size:10px;cursor:pointer}
 .hair-color-options button:hover,.hair-color-options button:focus{background:#eaf2fb}
+.hair-table .hair-totals td{font-weight:600;padding:12px 5px;border-top:2px solid #cddde5;background:#f0f6f9;white-space:normal;overflow-wrap:anywhere}
+.hair-table .hair-totals td:first-child{text-align:right;padding-right:12px}
+.hair-table.hair-read .hair-totals td{min-width:0}
+@media print{.hair-table .hair-totals{break-inside:avoid}.hair-table .hair-totals td{padding:6px 3px;font-size:8px}}
