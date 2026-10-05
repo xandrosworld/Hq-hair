@@ -3,6 +3,7 @@ import {totals,money,dateText} from '../shared.js';
 import {invoiceOrderLabel} from '../order-identity.js';
 import {ProductReadTable} from './product-table.jsx';
 import './invoice.css';
+import {totalGrams} from '../order-weight.js';
 
 const Facts=({rows})=><dl className="invoice-facts">{rows.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value||'—'}</dd></div>)}</dl>;
 export function InvoiceContent({order:o,customer:c,orders=[],demo=false}){
@@ -14,6 +15,7 @@ export function InvoiceContent({order:o,customer:c,orders=[],demo=false}){
  ['Company',c?.company],['Customer',c?.name],['Phone',c?.phone],['Email',c?.email]
  ]}/></section></div>
  <ProductReadTable items={o.items} language="en"/>
+ <div className="invoice-weight"><span>Total Weight (g)</span><strong>{totalGrams(o.items).toLocaleString('en-US',{maximumFractionDigits:3})}g</strong></div>
  <div className="invoice-settlement"><section className="invoice-shipping"><h3>SHIPPING DETAILS</h3><Facts rows={[
  ['Recipient',o.recipient],['Phone',o.phone],['Email',o.email],['Address',o.address],['Country',o.country],['Carrier',[o.carrier,o.service].filter(Boolean).join(' · ')],['Tracking',o.tracking],['Expected delivery',o.due?dateText(o.due):'']
  ]}/></section><div className="invoice-totals">{[['Subtotal',t.base+t.extra],['Discount',-o.discount],['Shipping',o.shippingFee],['Payment fee',o.paymentFee],['TOTAL USD',t.total]].map(([k,v])=><div key={k}><span>{k}</span><b>{money(v)}</b></div>)}</div></div>
