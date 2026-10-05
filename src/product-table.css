@@ -14,3 +14,10 @@
 .hair-editor input,.hair-editor select,.hair-editor td input[type=number]{width:100%;min-width:0;padding:7px 5px;margin:2px 0;font-size:11px;border-radius:5px;height:34px}
 .hair-editor th small{font-size:10px}.hair-editor .remove{width:26px;height:30px;padding:3px}
 .hair-editor .hair-amount{white-space:nowrap;font-size:11px}
+.hair-editor .hair-inline-value{display:flex;align-items:center;min-width:0;border:1px solid #d4dfe5;border-radius:5px;background:white;overflow:hidden}
+.hair-editor .hair-inline-value:focus-within{outline:2px solid #80b5d3;outline-offset:1px}
+.hair-editor .hair-inline-value input{border:0!important;box-shadow:none!important;outline:0!important;min-width:0;width:100%;margin:0;padding:7px 4px;flex:1}
+.hair-editor .hair-inline-value span{font-size:10px;white-space:nowrap;padding:0 5px;color:#52697d}
+.hair-editor .hair-inline-price select{border:0;box-shadow:none;outline:0;width:70px;flex:0 0 70px;font-size:9px;padding:0;margin:0;background:transparent}
+.hair-editor .hair-inline-value input[type=number]{appearance:textfield;-moz-appearance:textfield}
+.hair-editor .hair-inline-value input::-webkit-inner-spin-button{appearance:none;margin:0}
