@@ -6,7 +6,8 @@ const order=(id,date,customerId='c1',extra={})=>({id,orderCode:id,date,approvedA
 test('strict calendar dates and fractional gram validation agree',()=>{
  for(const date of ['2026-02-30','2026-02-29','2026-13-01','2026-1-01','invalid',null])assert.equal(validDate(date),false);
  for(const date of ['2024-02-29','2026-12-31'])assert.equal(validDate(date),true);
- const o={...order('a','2026-02-28'),due:'2026-03-01',discount:0,shippingFee:0,paymentFee:0,recipient:'Buyer',phone:'12345678',address:'Address',country:'Vietnam',items:[{name:'Bulk',kind:'base',unit:'Gram',qty:0.5,price:10}]};
+ const o={...order('a','2026-02-28'),due:'2026-03-01',discount:0,shippingFee:0,paymentFee:0,recipient:'Buyer',phone:'12345678',address:'Address',country:'Vietnam',items:[{name:'Bulk',kind:'base',unit:'Gram',qty:0.5,price:10,priceBasis:'100g',origin:'Raw Hair',lengthCm:50,texture:'Natural Straight',segment:'Premium',color:'1B'}]};
+ o.payments=[{sender:'Buyer',method:'Wise',date:'2026-02-28'}];
  assert.deepEqual(validateOrder(o,{submit:true}),{});
  assert.ok(validateOrder({...o,date:'2026-02-30'},{submit:true}).date);
  assert.ok(validateOrder({...o,paymentDue:'2026-02-27'}).paymentDue);
