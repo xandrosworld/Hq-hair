@@ -9,7 +9,7 @@ test('factory production, pause, check and sale rework keep checked statuses and
  const event=(title,note)=>o.history.push({title,note,time:new Date().toISOString()});
  const act=(status)=>applyFactoryWorkflow(o,factory,'factory-status',{status},event);
  assert.throws(()=>applyFactoryWorkflow(o,sale,'factory-status',{status:'producing'},event),{status:403});
- act('producing');assert.equal(o.stage,4);assert.equal(workflowStep(o,4).done,true);
+ act('producing');assert.equal(o.stage,4);assert.equal(workflowStep(o,4).done,true);const firstRecorded=o.production.recordedAt;
  act('paused');assert.equal(workflowStep(o,4).label,'Tạm dừng');
  assert.throws(()=>applyFactoryWorkflow(o,factory,'factory-office',{},event));
  assert.throws(()=>act('sale_check'));act('producing');act('sale_check');assert.equal(o.stage,5);
@@ -17,6 +17,7 @@ test('factory production, pause, check and sale rework keep checked statuses and
  applySaleWorkflow(o,sale,'rework',{text:'Fix colour'},event);assert.equal(o.stage,4);assert.equal(workflowStep(o,5).tone,'red');
  assert.throws(()=>applyFactoryWorkflow(o,factory,'factory-office',{},event));
  act('producing');act('sale_check');assert.equal(o.saleReview,null);
+ assert.equal(o.production.recordedAt,firstRecorded);assert.ok(o.production.checkAt);assert.ok(o.history.some(h=>h.note.includes('Fix colour')));
  applySaleWorkflow(o,sale,'accept',{},event);assert.equal(workflowStep(o,5).tone,'green');
  applyFactoryWorkflow(o,factory,'factory-office',{},event);assert.equal(o.stage,6);assert.equal(workflowStep(o,6).done,true);
  assert.throws(()=>applyFactoryWorkflow(o,factory,'factory-office',{},event));

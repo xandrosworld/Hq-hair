@@ -8,7 +8,17 @@ test('Factory queues exclude unapproved orders and retain rework and forfeiture'
  assert.equal(factoryState(order({stage:10,cancelledAt:'2026-10-01',cancelType:'deposit_forfeited'})),'forfeited');
  assert.equal(filterFactoryOrders([order()],{tab:'waiting',from:'2026-10-02'}).length,0);
  assert.equal(filterFactoryOrders([order()],{tab:'waiting',query:'HQ-1',dueTo:'2026-10-10'}).length,1);
- assert.equal(waitingDays(order({production:{checkAt:'2026-10-03T00:00:00Z'}}),'2026-10-08'),5);
+ assert.equal(waitingDays(order({stage:5,production:{checkAt:'2026-10-03T00:00:00Z'}}),'2026-10-08'),5);
+});
+test('Paused rework stays visible in production; reply freezes wait time and queue dates drive sorting',()=>{
+ const a=order({orderCode:'A',stage:4,date:'2026-10-07',production:{status:'paused',recordedAt:'2026-10-08',checkAt:'2026-10-03'},saleReview:{result:'rework',time:'2026-10-05'}});
+ const b=order({orderCode:'B',stage:4,date:'2026-10-01',production:{recordedAt:'2026-10-09'}});
+ assert.equal(factoryGroup(a),'production');assert.equal(factoryState(a),'paused');
+ assert.equal(waitingDays(a,'2026-10-20'),2);
+ assert.deepEqual(filterFactoryOrders([a,b],{tab:'production',sort:'newest'}).map(o=>o.orderCode),['B','A']);
+ const c=order({stage:6,customerId:'buyer',history:[{title:'Đã gửi đến văn phòng',time:'2025-12-31T18:00:00Z'}]});
+ assert.equal(filterFactoryOrders([c],{tab:'office',query:'Salon',customers:[{id:'buyer',name:'Salon Buyer'}],from:'2026-01-01',to:'2026-01-01'}).length,1);
+ assert.equal(factoryReport([c],2026)[0].total,1);
 });
 test('Factory reports freeze dispatch deadlines, separate units and exclude pending/cancelled orders',()=>{
  const o=order({stage:6,due:'2026-12-01',officeDispatch:{time:'2026-10-11T00:00:00Z',dueDate:'2026-10-10'}});

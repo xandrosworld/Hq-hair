@@ -22,6 +22,11 @@ try{
  const get=async()=> (await factory.call('/state')).orders.filter(o=>ids.includes(o.id));
  let orders=await get();const request={action:'factory-status',status:'producing',orders:orders.map(o=>({id:o.id,version:o.version}))};
  await sale.call('/factory/batch',request,403);
+ await accountant.call('/factory/batch',request,403);
+ await admin.call('/factory/batch',request,403);
+ await factory.call('/factory/batch',{...request,orders:[request.orders[0],request.orders[0]]},400);
+ await factory.call('/factory/batch',{...request,action:'accounting-final'},400);
+ await factory.call('/factory/batch',{...request,status:'sale_check'},400);
  await factory.call('/factory/batch',{...request,orders:request.orders.map((o,i)=>({...o,version:i===2?-1:o.version}))},409);
  assert.ok((await get()).every(o=>o.stage===3));
  const page=await factory.ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/workspace');
@@ -35,9 +40,19 @@ try{
  orders=await get();await factory.call('/factory/batch',{action:'factory-office',orders:orders.map(o=>({id:o.id,version:o.version}))},400);assert.ok((await get()).every(o=>o.stage===4));
  await factory.call('/factory/batch',{action:'factory-office',orders:orders.filter(o=>o.id!==ids[0]).map(o=>({id:o.id,version:o.version}))});
  await page.reload();await page.locator('.factory-navigation button').nth(3).click();await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(1);
+ await expect(page.locator('.factory-feedback')).toContainText('Checked by Sale');
+ const factoryUser=(await admin.call('/users')).find(u=>u.role==='factory');
+ await admin.call(`/users/${factoryUser.id}/visibility`,{factoryView:'products'});
+ const limited=await factory.call('/state');assert.equal(limited.customers.length,0);assert.equal(limited.orders[0].payments,undefined);assert.equal(limited.orders[0].items[0].price,undefined);assert.equal(limited.orders.find(o=>o.id===ids[0]).saleReview.note,'Checked by Sale');
+ await page.reload();await page.locator('.factory-navigation button').nth(3).click();await expect(page.locator('.factory-feedback')).toContainText('Checked by Sale');
  await page.getByRole('button',{name:'Chi tiết',exact:true}).click();await expect(page.locator('.factory-summary')).toBeVisible();
+ await expect(page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true})).toHaveCount(0);
+ await admin.call(`/users/${factoryUser.id}/visibility`,{factoryView:'full'});
+ await page.reload();await page.locator('.factory-navigation button').nth(4).click();await page.getByLabel('Tìm đơn Xưởng').fill('Factory Buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
+ await page.getByLabel('Tìm đơn Xưởng').fill('No such buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(0);
  await page.locator('.factory-navigation button').nth(5).click();await expect(page.locator('.factory-kpi strong').first()).toHaveText('2');await page.screenshot({path:'data/factory-analytics.png',fullPage:true,animations:'disabled'});
  await page.setViewportSize({width:390,height:844});await page.locator('.factory-navigation button').first().click();await page.screenshot({path:'data/factory-mobile.png',fullPage:true,animations:'disabled'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ await page.locator('.factory-navigation button').nth(4).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
  console.log('PASS: factory roles, atomic batch, stale versions, idempotency, UI bulk record, rework, office handoff, reports, mobile overflow');
 }finally{await browser?.close();server.kill()}
 

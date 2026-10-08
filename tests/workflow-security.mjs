@@ -22,7 +22,7 @@ try{
  await admin.call('/users',{name:'Wrong',email:'wrong@example.com',code:'KT-XX',role:'sale',password:'Initial-Password-2026'},400);
  let state=await sale.call('/customers',{name:'Workflow Buyer',company:'Salon',phone:'+12345',country:'United States',group:'Salon',address:'123 Road',recipient:'Buyer',recipientPhone:'+12345',social:'https://wa.me/12345',source:'Website',purchase:'First'});
  assert.equal(state.customers[0].id,'HQ-JD-1');
- const draft={customerId:'HQ-JD-1',date:'2026-01-01',due:'2026-02-01',paymentDue:'2026-03-01',recipient:'Buyer',phone:'+12345',address:'123 Road',country:'United States',discount:0,shippingFee:0,paymentFee:0,items:[{name:'Bulk',kind:'base',qty:100,price:10,unit:'Gram',priceBasis:'100g'}],payments:[],submit:true};
+ const draft={customerId:'HQ-JD-1',date:'2026-01-01',due:'2026-02-01',paymentDue:'2026-03-01',recipient:'Buyer',phone:'+12345',address:'123 Road',country:'United States',discount:0,shippingFee:0,paymentFee:0,items:[{name:'Bulk',kind:'base',qty:100,price:10,unit:'Gram',priceBasis:'100g',origin:'Raw Hair',lengthCm:50,texture:'Natural Straight',segment:'Premium',color:'1B'}],payments:[{sender:'Buyer',contact:'buyer@example.com',method:'Wise',date:'2026-01-01',amount:0}],submit:true};
  let result=await sale.call('/orders',draft),id=result.id,order=result.state.orders[0];assert.equal(order.orderCode,null);assert.match(id,/^[a-f0-9-]{36}$/);
  const action=async(c,action,extra={},status=200,key)=>{const body={action,version:order.version,...extra};const v=await c.call(`/orders/${id}/action`,body,status,key);if(status===200)order=v.orders.find(o=>o.id===id);return body};
  await action(other,'message',{text:'Access denied'},404);await action(factory,'received',{},403);
@@ -37,6 +37,7 @@ try{
  await action(sale,'payment',{payment:{sender:'Buyer',contact:'buyer@example.com',method:'Wise',date:'2026-01-01',amount:10,reference:'INITIAL'}});
  assert.equal((await sale.call('/state')).orders.find(o=>o.id===id)?.payments[0]?.contact,'buyer@example.com');
  await action(accountant,'accounting-approve',{paymentStatus:'full',receipts:[{id:order.payments[0].id,amount:10}]});
+ await action(factory,'factory-status',{status:'producing'});
  await action(factory,'factory-status',{status:'sale_check'});
  await action(sale,'accept');assert.equal(order.stage,4);
  await action(factory,'factory-office');
@@ -67,6 +68,7 @@ try{
  await cancelAction(sale,'payment',{payment:{sender:'Buyer',method:'Wise',date:'2026-01-01',amount:3,reference:'DEPOSIT'}});
  await cancelAction(accountant,'accounting-approve',{paymentStatus:'partial',receipts:[{id:cancelledOrder.payments[0].id,amount:3}]});
  await cancelAction(accountant,'accounting-forfeit',{text:'Too early'},400);
+ await cancelAction(factory,'factory-status',{status:'producing'});
  await cancelAction(factory,'factory-status',{status:'paused'});
  await cancelAction(accountant,'accounting-final',{},400);
  await cancelAction(sale,'accounting-forfeit',{text:'Wrong role'},403);
