@@ -17,3 +17,6 @@
 @media screen and (max-width:1119px){.chat-composer .message-form{flex-wrap:wrap;padding:14px}.chat-composer .message-form input:not([type=file]){flex:1 0 100%;width:100%;min-height:48px}.chat-composer .message-form>.btn{flex:1}.chat-file-hint{margin:0 14px 16px}.chat-image{max-width:100%}.hair-read td:last-child,.hair-read th:last-child{position:static;box-shadow:none}.color-form{inset:72px 8px 12px;width:auto}.color-form .actions{position:sticky;bottom:0;background:white;padding:10px 0}.order-brief .draft-save-state{white-space:normal}}
 @media screen and (max-width:1119px){.back-link,.text-btn,.welcome-link,.order-link{min-height:40px;display:inline-flex;align-items:center}.product-panel .btn,.qc-heading .btn{min-height:44px}.hair-editor .remove{min-width:32px;min-height:44px}}
 @media screen and (max-width:380px){.breadcrumb{display:none}.shell .topbar{justify-content:flex-end}.metrics,.refined-metrics,.customer-groups{grid-template-columns:1fr!important}.factory-kpi>span svg{display:none}}
+
+.payment-file-preview{display:block;max-width:100%;max-height:300px;object-fit:contain;margin:12px 0}
+@media screen and (max-width:1119px){.qc-media>div{width:88px;height:98px;padding-top:30px}.qc-media>div>button{width:44px;height:44px;top:0;right:0;font-size:22px}.chat-attachment button{min-width:44px;min-height:44px}}

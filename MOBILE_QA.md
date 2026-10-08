@@ -52,4 +52,15 @@ Kết quả ngày 08/10/2026: 77 lượt kiểm tra màn hình/trạng thái đ�
 
 ## Giới hạn
 
+### Rà soát tải tệp bổ sung — 08/10/2026
+
+Chạy `node tests/mobile-workspace.mjs` sẽ chạy cả `tests/mobile-upload-cases.mjs`. Kết quả cập nhật: **78** lượt màn hình/trạng thái đạt, không có lỗi JavaScript; 73 unit test và workflow-security đạt.
+
+- Chứng từ: chạm input để phát sinh filechooser, ảnh JPEG trên 1 MB có EXIF xoay 90 độ, tự giảm xuống tối đa 1 MB và giữ chiều đứng; xem trước; bỏ/chọn lại cùng tệp; từ chối HEIC, ảnh hỏng và PDF quá 1 MB; phục hồi sau lỗi; chọn/tải PDF hợp lệ và so sánh nguyên byte; lưu chứng từ PNG vào đơn.
+- Chat: chọn nhiều PNG/WebP, bỏ/chọn lại, từ chối quá dung lượng mà giữ tệp cũ; chặn mạng rồi gửi lại; giả lập máy chủ đã lưu nhưng mất phản hồi, xác nhận chỉ một tin nhắn; giải mã ảnh xem trước, tải ảnh gốc và so sánh nguyên byte; tải lại trang vẫn thấy ảnh.
+- QC: từ chối ảnh trên 5 MiB, ngắt mạng rồi chọn lại cùng ảnh, bỏ/thêm lại; lưu và kiểm tra liên kết tệp ở máy chủ; hoàn tất QC rồi tải lại trang vẫn thấy ảnh.
+- Sửa thao tác: thêm nút bỏ chứng từ, reset input để chọn lại cùng tệp, khóa gửi khi đang đọc tệp, phóng vùng chạm xóa ảnh chat/QC trên điện thoại. Ảnh chứng từ tối đa 20 MB trước xử lý; bản lưu vẫn tối đa 1 MB, có xem trước để người nhập kiểm tra độ rõ. PDF vẫn tối đa 1 MB. HEIC chưa hỗ trợ.
+
+Các file ảnh là dữ liệu thử tự sinh, không phải chứng từ khách hàng thật. Filechooser được Playwright nhận rồi cấp tệp; chưa thao tác thư viện ảnh/camera thực của hệ điều hành. Chưa xác nhận quay/upload/phát video trên thiết bị thật.
+
 Đây là kiểm thử mô phỏng cảm ứng trên Chromium, không phải kiểm thử thiết bị iPhone/Android vật lý. Bàn phím ảo, Safari iOS, hộp chọn tệp/camera và hộp thoại in của hệ điều hành vẫn cần kiểm tra trên thiết bị thực trước khi ký nghiệm thu responsive. Kết quả không có nghĩa mọi tổ hợp dữ liệu và mọi thiết bị đều đã được kiểm tra.
