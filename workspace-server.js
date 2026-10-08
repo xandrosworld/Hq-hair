@@ -199,7 +199,7 @@ export async function createWorkspace(dir){
   if(req.method==='GET')return next();
   if(req.user.role==='accounting'&&!( /^\/orders\/[^/]+\/action$/.test(req.path)&&['accounting-approve','accounting-cancel','accounting-final','accounting-forfeit'].includes(req.body.action)))return res.status(403).json({error:'Kế toán chỉ được xử lý thanh toán tại bước 3 và 7.'});
   if(req.user.role==='sales_lead'&&!req.user.lead_edit&&!(req.path==='/assign'&&req.user.lead_assign))return res.status(403).json({error:'Trưởng nhóm đang ở quyền chỉ xem. Quản trị có thể cấp thêm quyền.'});
-  if(req.user.role==='factory'&&!( /^\/orders\/[^/]+\/action$/.test(req.path)&&['message','factory-status','factory-office'].includes(req.body.action))&&!/^\/orders\/[^/]+\/(qc|qc-upload)$/.test(req.path))return res.status(403).json({error:'Tài khoản Xưởng hiện được xem đơn và trao đổi; không được sửa nội dung hoặc thanh toán.'});
+  if(req.user.role==='factory'&&req.path!=='/factory/batch'&&!( /^\/orders\/[^/]+\/action$/.test(req.path)&&['message','factory-status','factory-office'].includes(req.body.action))&&!/^\/orders\/[^/]+\/(qc|qc-upload)$/.test(req.path))return res.status(403).json({error:'Tài khoản Xưởng hiện được xem đơn và trao đổi; không được sửa nội dung hoặc thanh toán.'});
   if(req.path==='/reset')return res.status(403).json({error:'Không gian làm việc không hỗ trợ khôi phục dữ liệu mẫu.'});
   const key=req.get('Idempotency-Key');if(!key||!/^[\w-]{16,100}$/.test(key))return res.status(400).json({error:'Thiếu mã thao tác. Vui lòng tải lại trang.'});
   const hash=digest(req.path+JSON.stringify(req.body));

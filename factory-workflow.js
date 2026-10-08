@@ -8,7 +8,11 @@ export function applyFactoryWorkflow(order,user,action,body,event){
  if(action==='factory-status'){
   if(![3,4].includes(order.stage))fail(400,'Chỉ cập nhật Xưởng ghi nhận sau khi Kế toán duyệt hoặc khi Sale đã gửi lại.');
   if(!Object.hasOwn(productionLabels,body.status))fail(400,'Chọn trạng thái Xưởng hợp lệ.');
-  order.production={status:body.status,by:user.id,name:user.name,time,note};
+  if(order.stage===3&&body.status!=='producing')fail(400,'Cần ghi nhận sản xuất trước khi cập nhật hoặc gửi Sale Check.');
+  if(order.production?.status==='paused'&&body.status==='sale_check')fail(400,'Cần tiếp tục sản xuất trước khi gửi Sale Check.');
+  const recordedAt=order.production?.recordedAt||order.history?.find(h=>h.title==='Xưởng ghi nhận')?.time||order.production?.time||time;
+  order.production={...order.production,status:body.status,by:user.id,name:user.name,time,note,recordedAt};
+  if(body.status==='sale_check')order.production.checkAt=time;
   order.stage=body.status==='sale_check'?5:4;
   if(body.status==='sale_check')order.saleReview=null;
   event('Xưởng ghi nhận',productionLabels[body.status]+(note?' · '+note:''));

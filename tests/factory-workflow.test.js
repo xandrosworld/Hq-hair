@@ -12,7 +12,7 @@ test('factory production, pause, check and sale rework keep checked statuses and
  act('producing');assert.equal(o.stage,4);assert.equal(workflowStep(o,4).done,true);
  act('paused');assert.equal(workflowStep(o,4).label,'Tạm dừng');
  assert.throws(()=>applyFactoryWorkflow(o,factory,'factory-office',{},event));
- act('sale_check');assert.equal(o.stage,5);
+ assert.throws(()=>act('sale_check'));act('producing');act('sale_check');assert.equal(o.stage,5);
  assert.throws(()=>act('producing'));
  applySaleWorkflow(o,sale,'rework',{text:'Fix colour'},event);assert.equal(o.stage,4);assert.equal(workflowStep(o,5).tone,'red');
  assert.throws(()=>applyFactoryWorkflow(o,factory,'factory-office',{},event));

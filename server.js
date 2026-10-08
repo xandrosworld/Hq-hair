@@ -111,6 +111,22 @@ business.post('/orders',(req,res)=>{
  if(old)Object.assign(old,o);else {if(req.data.orders.length>=(req.work?30000:300))fail('Bản demo hỗ trợ tối đa 300 đơn.');req.data.orders.unshift(o)}
  req.save();res.json({state:req.view(),id:o.id});
 });
+business.post('/factory/batch',(req,res)=>{
+ if(req.user.role!=='factory')return res.status(403).json({error:'Chỉ Xưởng được cập nhật sản xuất hàng loạt.'});
+ const {orders,action,status,text:note}=req.body;
+ if(!Array.isArray(orders)||!orders.length||orders.length>100||new Set(orders.map(o=>o?.id)).size!==orders.length)fail('Chọn từ 1 đến 100 đơn khác nhau.');
+ if(!['factory-status','factory-office'].includes(action))fail('Thao tác hàng loạt không hợp lệ.');
+ const updates=orders.map(input=>{
+  const original=req.data.orders.find(o=>o.id===input?.id);req.assertAccess(original);
+  if(!original)fail('Không tìm thấy đơn.');
+  if(original.version!==input.version)throw Object.assign(new Error('Có đơn đã thay đổi. Tải lại danh sách rồi chọn lại.'),{status:409});
+  const copy=structuredClone(original);
+  applyFactoryWorkflow(copy,req.user,action,{status,text:note},(title,note)=>event(req,copy,title,note));
+  copy.version=(copy.version||0)+1;return copy;
+ });
+ for(const copy of updates){req.data.orders[req.data.orders.findIndex(o=>o.id===copy.id)]=copy;req.recordAudit?.('factory-batch',copy.id,{action,status,note})}
+ req.save();res.json(req.view());
+});
 business.post('/orders/:id/action',(req,res)=>{
  const o=req.data.orders.find(o=>o.id===req.params.id);req.assertAccess(o);req.assertVersion(o);if(!o)fail('Không tìm thấy đơn hàng.');const {action}=req.body;
  const beforeAccounting=typeof action==='string'&&action.startsWith('accounting-')?{payments:structuredClone(o.payments),approval:o.accountingApproval||null,finalPaymentCheck:o.finalPaymentCheck||null,cancelType:o.cancelType||null,stage:o.stage}:null;
