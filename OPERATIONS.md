@@ -11,7 +11,7 @@ Biến môi trường:
 - `NODE_ENV=production`: cookie Secure trên HTTPS.
 - `BACKUP_DIR`: nơi lưu bản sao. Mặc định `${DATA_DIR}/backups`; nếu có nơi lưu độc lập đã mount, trỏ vào đó.
 
-Mở `/workspace`. Quản lý vào “Tài khoản & đội ngũ” để cấp tài khoản, nhập bảng giá, phân công khách hàng. Cấp tài khoản Kế toán/Xưởng chỉ chuẩn bị danh tính; chưa mở chức năng các giai đoạn tiếp theo.
+Mở `/workspace`. Quản lý vào “Tài khoản & đội ngũ” để cấp tài khoản, nhập bảng giá, phân công khách hàng. Kế toán và Xưởng đã có không gian vận hành riêng. Quyền hiện hành xem phần đầu CUSTOMER_PERMISSIONS.md; phạm vi Xưởng và kiểm thử xem FACTORY_IMPLEMENTATION.md.
 
 Tài khoản chuẩn bị triển khai không thay cho danh sách nhân sự khách gửi. Không tự gửi mật khẩu cho khách. Quản lý chuyển mật khẩu ban đầu qua kênh riêng và người nhận đổi ngay khi đăng nhập.
 
@@ -47,7 +47,7 @@ Chỉ các route quản lý được đọc audit/backup/toàn bộ khách-đơn
 
 Nguồn kỹ thuật: [Node SQLite](https://nodejs.org/docs/latest-v22.x/api/sqlite.html), [Node crypto](https://nodejs.org/docs/latest-v22.x/api/crypto.html).
 
-Ảnh chat lưu trong bảng `chat_images` của database tương ứng (demo/workspace), tối đa 4 ảnh x 5 MiB mỗi tin. Cần theo dõi dung lượng volume và backup khi lượng ảnh tăng; ảnh không đi vào JSON danh sách đơn. Route mở ảnh kiểm tra phiên và quyền hiện tại trên đơn, kể cả sau chuyển người phụ trách.
+Ảnh chat lưu trong bảng `chat_images` của database tương ứng (demo/workspace), tối đa 20 ảnh/video mỗi tin, ảnh 10 MiB, video 25 MiB, tổng 50 MiB (chat-limits.js). Cần theo dõi dung lượng volume và backup khi lượng ảnh tăng; ảnh không đi vào JSON danh sách đơn. Route mở ảnh kiểm tra phiên và quyền hiện tại trên đơn, kể cả sau chuyển người phụ trách.
 
 
 ## Cập nhật vận hành VPS và bản sao trên máy vận hành
@@ -65,8 +65,8 @@ Nguồn kỹ thuật: [Node SQLite](https://nodejs.org/docs/latest-v22.x/api/sql
 
 - QC media is stored as BLOBs in `qc_media` in the existing SQLite databases, included in normal backups. Metadata only is returned in order state. Images: 5 MiB; MP4/WebM: 12 MiB; 4 files per row; 200 files/200 MiB per order. Unused uploads are retained for history and count toward the order quota.
 - `app_migrations` records the one-time customer-authorized full Factory visibility update; later permission changes survive restarts.
-- Cancelled orders retain data at stage -1, excluded from financial reports. Accounting actions require the accounting role and a current order version. QC editing requires assigned Sale, Factory, or manager, subject to content lock.
-- Verification: `npm test`, `node tests/security.mjs`, and after build `node tests/accounting-qc.mjs` (includes isolated API tests and Edge UI tests for all three roles). Tests create their own temporary databases and never change live orders.
+- Current workflow: cancellation before approval without receipts uses stage -1; deposit forfeiture closes at stage 10 with cancellation and content-lock markers. Cancelled orders are excluded from financial reports. Accounting actions require the accounting role and a current order version. QC editing requires assigned Sale at stage 8 or manager; Factory and Accounting are read-only. Manager changes after lock require a reason.
+- Verification: `npm test`, `node tests/security.mjs`, and after build `node tests/factory-integration.mjs`, `node tests/workflow-security.mjs` and `node tests/mobile-workspace.mjs`. `node tests/accounting-qc.mjs` verifies the current Sale step-8 QC permissions, read-only Factory/Accounting UI, authenticated media, locks and restart persistence. Tests create their own temporary databases and never change live orders.
 
 
 ## Product standards reference (2026-10-02)

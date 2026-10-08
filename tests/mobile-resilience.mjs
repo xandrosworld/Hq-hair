@@ -18,7 +18,7 @@ export async function draftRecovery(page,sale){
  assert.equal((await sale.call('/state')).orders.filter(o=>o.note==='Draft recovered after mobile connection failure').length,0);
  await page.getByLabel('Dự kiến giao hàng',{exact:true}).fill('2026-12-01');
  await page.getByRole('button',{name:'Thêm sản phẩm',exact:true}).first().tap();
- console.log('PASS draft: failed network preserves input; retry persists exactly one draft; clearing draft also works with blocked browser storage');
+ console.log('PASS draft: failed network preserves input; retry persists exactly one draft; clearing draft also works with the configured browser storage mode');
 }
 
 export async function pendingModal(page,id){

@@ -1,8 +1,19 @@
 # Phân quyền — phản hồi HQ Hair ngày 30/09/2026
 
-## Xác nhận 02/10/2026, 16:26–16:27 — đã triển khai
+## Phân quyền đang triển khai — rà soát 08/10/2026
 
-- Sale phụ trách và Xưởng đều nhập/lưu/hoàn tất phiếu kiểm định ở tab thứ ba. Kế toán chỉ xem phiếu.
+Phần này mô tả mã nguồn hiện tại; các mốc trao đổi bên dưới là lịch sử, không dùng thay hướng dẫn vận hành.
+
+- Xưởng ghi nhận/tiếp tục/tạm dừng sản xuất, gửi Sale Check và gửi văn phòng sau khi Sale chấp nhận; không duyệt tiền, không giao hàng cho khách thay Sale.
+- Xưởng và Kế toán **chỉ xem QC**. Sale phụ trách lập/lưu/hoàn tất QC ở bước 8. Quản trị có quyền ngoại lệ; sửa sau khóa cần lý do. Quy tắc được kiểm tra tại API và giao diện (`quality-control.js`, `src/quality-control.jsx`).
+- Xưởng có phạm vi `full` hoặc `products` do quản trị chọn. Phạm vi products được lọc ở máy chủ; không chỉ ẩn trường trên màn hình. Bảng Xưởng chỉ đưa đơn đã được duyệt và có mã chính thức vào hàng chờ.
+- Kế toán xử lý hủy mất cọc khi đủ điều kiện ở đơn tạm dừng hoặc kiểm tra thanh toán cuối; đơn chuyển sang bước 10, khóa nội dung và giữ lịch sử. Hủy trước duyệt không có chứng từ vẫn dùng trạng thái -1.
+- “Hủy – Mất phí” chưa có thao tác ghi mới; còn chờ khách chốt nghiệp vụ. Xem [FACTORY_IMPLEMENTATION.md](FACTORY_IMPLEMENTATION.md) về phạm vi, kiểm thử và điều kiện nghiệm thu.
+
+
+## Lịch sử 02/10/2026, 16:26–16:27 — quyền QC đã được thay thế
+
+- Tại mốc này Sale và Xưởng cùng nhập QC; **không còn áp dụng**. Quyền hiện hành ở đầu tài liệu: Xưởng/Kế toán chỉ xem, Sale nhập ở bước 8.
 - Cả ba bộ phận xem ba tab: sản phẩm, thanh toán & giao hàng, phiếu kiểm định. Sale vẫn theo đơn được giao; bản nháp chưa chia sẻ cho hai bộ phận còn lại.
 - Tài khoản Xưởng hiện có chuyển sang `full` một lần, có audit. Quản trị vẫn đổi phạm vi về sau được; khởi động lại không ghi đè thay đổi quyền sau đó.
 - Kế toán xử lý bước 3: hủy khi chưa có chứng từ/thanh toán; hoặc đối soát chứng từ, nhập thực nhận rồi xác nhận thanh toán một phần/đủ. Hai loại xác nhận đều hiện dấu tích và nhãn phụ ở bước 3, có người thực hiện/thời gian.

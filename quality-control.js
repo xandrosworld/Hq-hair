@@ -18,7 +18,7 @@ export function assertQCWrite(order,user,body){
 }
 export function qcMedia(input){
  if(typeof input?.data!=='string')fail(400,'Chọn ảnh hoặc video kiểm định.');
- if(input.data.startsWith('data:image/'))return parseChatImages([input])[0];
+ if(input.data.startsWith('data:image/')){const file=parseChatImages([input])[0];if(file.size>5*1024*1024)fail(400,'Ảnh kiểm định tối đa 5 MiB.');return file;}
  const match=input.data.match(/^data:(video\/(?:mp4|webm));base64,([A-Za-z0-9+/]+={0,2})$/);
  if(!match||match[2].length>16*1024*1024)fail(400,'Video chỉ nhận MP4/WebM tối đa 12 MiB.');
  const bytes=Buffer.from(match[2],'base64'),mime=match[1];

@@ -8,7 +8,7 @@ export const isWorkspace=location.pathname.startsWith('/workspace');
 let csrf='';
 const pendingWrites=new Map();
 export async function workspaceAPI(path,body){
- const businessWrite=!!body&&(/^\/orders(?:\/|$)/.test(path)||['/customers','/catalog','/assign','/pricing/adjust','/pricing/restore','/pricing/colors'].includes(path));
+ const businessWrite=!!body&&(/^\/orders(?:\/|$)/.test(path)||['/factory/batch','/customers','/catalog','/assign','/pricing/adjust','/pricing/restore','/pricing/colors'].includes(path));
  const signature=businessWrite?path+JSON.stringify(body):null;
  const key=body?(pendingWrites.get(signature)||crypto.randomUUID()):null;
  if(businessWrite)pendingWrites.set(signature,key);

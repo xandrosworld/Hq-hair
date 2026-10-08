@@ -30,3 +30,10 @@ test('QC completion requires every product note and attachment; Sale at step 8 c
  assert.throws(()=>saveQC(o,{role:'sale'},{qc:{...q,rows:[{...q.rows[0],mediaIds:['other-order']}]}}),{status:400});
  assert.throws(()=>qcMedia({data:'data:video/mp4;base64,ZmFrZQ=='}),{status:400});
 });
+
+test('QC image limit stays 5 MiB independently of the larger chat limit',()=>{
+ const image=Buffer.alloc(5*1024*1024+1);Buffer.from('89504e470d0a1a0a','hex').copy(image);
+ const input=bytes=>({name:'qc.png',data:'data:image/png;base64,'+bytes.toString('base64')});
+ assert.equal(qcMedia(input(image.subarray(0,-1))).size,5*1024*1024);
+ assert.throws(()=>qcMedia(input(image)),{status:400,message:'Ảnh kiểm định tối đa 5 MiB.'});
+});

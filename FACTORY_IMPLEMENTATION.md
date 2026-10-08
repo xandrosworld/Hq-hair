@@ -51,3 +51,45 @@ Các chỗ hợp đồng để trống, cần được ghi vào biên bản ch�
 3. **X06 quy đổi:** hiện 1.000 gram = 1 kg; pieces/bundles và các đơn vị khác được giữ riêng, không suy đoán trọng lượng.
 
 Vì mục 1 chưa được xác nhận, không đánh dấu toàn bộ X01–X06 “nghiệm thu 100%”. Những mục đã có quy tắc được triển khai và kiểm tra độc lập.
+
+
+## Hoàn thiện kỹ thuật ngày 08/10/2026 — trước phản hồi nghiệm thu của khách
+
+### Hướng dẫn vận hành hiện hành
+
+1. **Chưa ghi nhận:** chỉ đưa vào sản xuất đơn đã được Kế toán duyệt, có mã chính thức. Có thể chọn từng đơn hoặc nhiều đơn (tối đa 100).
+2. **Đã ghi nhận:** theo dõi sản xuất; tạm dừng hoặc tiếp tục. Đang tạm dừng phải tiếp tục trước khi gửi Sale Check. Xưởng không tự hủy mất cọc/phí hoặc xác nhận tiền.
+3. **Sale Check:** chờ phản hồi. Nếu Sale yêu cầu sửa, xử lý và gửi lại để kiểm tra. Khi Sale chấp nhận, Xưởng mới gửi văn phòng; không bàn giao trong trạng thái tạm dừng.
+4. **Đã gửi văn phòng:** theo dõi Kế toán kiểm tra tiền, Sale kiểm định/đặt ship và xác nhận khách nhận. Hạn gửi được giữ tại lúc bàn giao để tính sớm/đúng/trễ.
+5. **QC:** Xưởng và Kế toán chỉ xem. Sale phụ trách lập QC ở bước 8; quản trị sửa ngoại lệ theo quyền và lý do. Không dùng hướng dẫn QC cũ ngày 02/10 để cấp quyền thao tác.
+6. **Lỗi mạng/máy chủ:** thao tác hàng loạt giữ mã yêu cầu để thử lại, không tạo hai lần lịch sử nếu lần trước đã lưu. Lỗi phiên bản nghĩa có người vừa cập nhật đơn: kiểm tra trạng thái mới và chọn lại, không cố ghi đè.
+
+### Lỗi được tái hiện và khắc phục
+
+| Vấn đề | Bản sửa / bằng chứng |
+| --- | --- |
+| Phản hồi tải danh sách cũ đến sau khi ghi nhận hàng loạt làm UI hiện lại đơn chưa ghi nhận | Đánh số lượt tải, vô hiệu hóa lượt cũ khi bắt đầu ghi; kiểm thử giữ phản hồi cũ và trả về sau khi ghi thành công. |
+| Máy chủ đã ghi hàng loạt nhưng client mất phản hồi; frontend chưa giữ mã chống trùng cho endpoint này | Đưa `/factory/batch` vào cơ chế ghi có retry. Kiểm thử ngắt phản hồi sau khi server xử lý: gửi lại cùng mã, mỗi đơn chỉ có một sự kiện. |
+| Lỗi 503 trong khi xác nhận hàng loạt | Kiểm thử giữ lựa chọn/ghi chú, không cập nhật đơn, bấm thử lại dùng cùng mã; tạm dừng rồi tiếp tục đúng luồng. |
+| Giới hạn ảnh QC bị dùng chung giới hạn chat 10 MiB | Tách kiểm tra QC 5 MiB ở server, kiểm thử đúng ngưỡng và vượt ngưỡng. Không thay giới hạn chat. |
+| Tài liệu và bài kiểm thử QC cũ còn cho Xưởng ghi | Đồng bộ CUSTOMER_PERMISSIONS.md, SALE_IMPLEMENTATION.md, OPERATIONS.md và tests/accounting-qc.mjs theo quyền hiện hành. |
+
+### Bằng chứng kiểm thử và phạm vi
+
+| Nhóm | Bài kiểm thử |
+| --- | --- |
+| X01, X05, X06: nhóm đơn, ngày, sớm/trễ, thiếu ngày, gram/đơn vị riêng, lịch sử qua tháng/năm | `tests/factory-model.test.js`, `tests/delivery-days.test.js`, `tests/factory-integration.mjs` |
+| X02–X04: ghi nhận, hàng loạt nguyên tử, phiên bản cũ, phản hồi Sale, gửi văn phòng, retry | `tests/factory-workflow.test.js`, `tests/factory-integration.mjs` trên Chromium và WebKit |
+| Quyền các bộ phận, hủy mất cọc, khóa nội dung, audit | `tests/workflow-security.mjs`, `tests/accounting-qc.test.js` |
+| QC đọc/ghi đúng vai trò qua API/UI, ảnh theo quyền, range, chống upload trùng, còn dữ liệu sau restart | `tests/accounting-qc.mjs` (database thử riêng) |
+| Mobile, ảnh/PDF/video, mạng lỗi, phiên đăng nhập, luồng hoàn tất | `tests/mobile-workspace.mjs`, `tests/mobile-live.mjs`; xem MOBILE_QA.md về giới hạn thiết bị/codec |
+
+Chạy WebKit cho bài Xưởng: `$env:FACTORY_BROWSER='webkit'; $env:FACTORY_PORT='3199'; node tests/factory-integration.mjs`. Bản Chromium mặc định cổng 3196. Không chạy các bài dùng trùng cổng cùng lúc. Ảnh ghi theo engine tại `data/factory-chromium-*.png` và `data/factory-webkit-*.png`. Toàn bộ thao tác ghi được kiểm tra trên dữ liệu thử riêng.
+
+### Còn ngoài phạm vi xác nhận kỹ thuật tự động
+
+- Khách xác nhận nghiệp vụ hủy mất phí, mốc tính tiến độ và cách quy đổi sản lượng như danh sách chờ phía trên; cung cấp đơn mẫu có kết quả và người nghiệm thu. Chưa nhận trả lời thì giữ nguyên hành vi đã triển khai.
+- Cần chạy trên điện thoại vật lý để xác nhận camera/thư viện ảnh, bàn phím, tải tệp và codec Safari thực. WebKit trên Windows không thay thế Safari iPhone; không đánh dấu mục này đạt.
+- Không coi bộ test đạt là nghiệm thu nghiệp vụ hoặc chứng nhận không còn mọi lỗi. Phạm vi trên là những tình huống đã đối chiếu và có kiểm chứng.
+
+Kết quả lượt này: 74/74 unit test đạt; build thành công; factory-integration đạt trên Chromium và WebKit; accounting-qc và workflow-security đạt; mobile-workspace đạt 90 lượt mỗi engine (180 tổng), không có JavaScript page error. Video WebKit Windows vẫn chỉ xác minh truyền/tải tệp, không ghi nhận đạt phát trên iPhone thật.
