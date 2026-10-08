@@ -1,3 +1,4 @@
+import {applyCompensation} from './compensation.js';
 import {cleanCustomer,purchaseHistory} from './customer-fields.js';
 import {assertDraftSlot,fixedDraftCode} from './draft-orders.js';
 import {applyFactoryWorkflow} from './factory-workflow.js';
@@ -103,7 +104,7 @@ business.post('/orders',(req,res)=>{
  o.draftCode=fixedDraftCode(old||o,req.data.orders);
  o.requestCode=old?.requestCode||`YC-${o.id.replaceAll('-','').slice(0,12).toUpperCase()}`;
  o.messages=old?.messages||[];o.history=old?.history||[];
- if(old)for(const key of ['production','officeDispatch','finalPaymentCheck','customerFeedback','approvedAt','accountingApproval','qc','qcMedia','contentLockedAt','inspection','shippedDate','saleReview','receivedAt','completedAt','editRequested'])if(old[key]!==undefined)o[key]=old[key];
+ if(old)for(const key of ['compensations','production','officeDispatch','finalPaymentCheck','customerFeedback','approvedAt','accountingApproval','qc','qcMedia','contentLockedAt','inspection','shippedDate','saleReview','receivedAt','completedAt','editRequested'])if(old[key]!==undefined)o[key]=old[key];
  if(o.qc&&o.qc.signature!==qcSignature(o.items))o.qc={...o.qc,stale:true};
  if(req.work&&old&&!b.autosave)o.history.push({title:'Lưu phiên bản trước chỉnh sửa',actor:req.user.name,actorId:req.user.id,time:new Date().toISOString(),snapshot:{...old,history:undefined,messages:undefined}});
  if(!b.autosave||!old)event(req,o,exception?'Quản trị chỉnh sửa ngoại lệ':old?'Cập nhật bản nháp':'Nhập đơn',reason);if(b.submit&&!exception)event(req,o,'Chờ duyệt','Đã chuyển yêu cầu đến Kế toán. Đơn được khóa chỉnh sửa.');
@@ -131,6 +132,7 @@ business.post('/orders/:id/action',(req,res)=>{
   payment.correctedBy=req.user.id;payment.correctedAt=new Date().toISOString();
   event(req,o,'Quản trị điều chỉnh thanh toán',`${reason} · ${before.amount} → ${amount} USD · ${before.confirmed?'đã xác nhận':'chờ xác nhận'} → ${payment.confirmed?'đã xác nhận':'chờ xác nhận'}`);
  }
+ else if(applyCompensation(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}
  else if(applyAccounting(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){assignOrderCode(o,req.data.orders);req.recordAudit?.('accounting-decision',o.id,{before:beforeAccounting,after:{payments:o.payments,approval:o.accountingApproval,orderCode:o.orderCode,cancelledAt:o.cancelledAt,finalPaymentCheck:o.finalPaymentCheck,cancelType:o.cancelType,stage:o.stage},reason:req.body.text,receipts:req.body.receipts})}
  else if(applyFactoryWorkflow(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}
  else if(applySaleWorkflow(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}

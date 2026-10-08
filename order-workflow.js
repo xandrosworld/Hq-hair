@@ -6,7 +6,7 @@ const text=(value,max=1000)=>typeof value==='string'?value.trim().slice(0,max):'
 export const contentLocked=order=>!!order.contentLockedAt||!!order.inspection?.completedAt||order.stage>=9;
 export function exceptionReason(value){const reason=text(value);if(reason.length<5)fail('Nhập lý do chỉnh sửa ngoại lệ (ít nhất 5 ký tự).');return reason}
 export function assertContentAction(order,user,action,body){
- if(!contentLocked(order)||['message','received','complete','manager-stage'].includes(action))return;
+ if(!contentLocked(order)||['message','received','complete','manager-stage','compensation-add','compensation-void'].includes(action))return;
  if(user.role!=='manager')fail('Nội dung đơn đã khóa sau bước 8. Chỉ được trao đổi và thực hiện bước tiếp theo.');
  exceptionReason(body.reason||body.text);
 }

@@ -362,3 +362,8 @@ footer { color: #a4b0bf; font-size: 8px; padding-top: 18px; margin: 0 32px; }
   .invoice th { background: #f7f8fa; }
 }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation: none!important; transition: none!important; } }
+
+.refined-metrics{grid-template-columns:repeat(5,minmax(0,1fr))}
+.refined-metrics .metric-middle{flex-wrap:wrap}
+.refined-metrics .metric-middle>strong{font-size:28px}
+@media(max-width:700px){.refined-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
