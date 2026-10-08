@@ -20,3 +20,55 @@
 
 .payment-file-preview{display:block;max-width:100%;max-height:300px;object-fit:contain;margin:12px 0}
 @media screen and (max-width:1119px){.qc-media>div{width:88px;height:98px;padding-top:30px}.qc-media>div>button{width:44px;height:44px;top:0;right:0;font-size:22px}.chat-attachment button{min-width:44px;min-height:44px}}
+
+/* Keep editable product and QC fields within the phone viewport. */
+@media screen and (max-width:700px){
+ .hair-table-scroll:has(.hair-editor){container-type:normal;overflow:visible}
+ .hair-table-scroll .hair-table.hair-editor,.qc-sheet .qc-table{display:block;width:100%;min-width:0!important;table-layout:auto!important}
+ .hair-editor thead,.qc-table thead{display:none}
+ .hair-editor tbody,.qc-table tbody{display:block;width:100%}
+ .hair-editor tbody>tr{display:grid;grid-template-columns:minmax(0,1fr);padding:12px;border-bottom:2px solid #dce5ee;gap:10px}
+ .hair-editor tbody>tr>td{display:block;width:100%;max-width:none;min-width:0!important;text-align:left;border:0;padding:0!important;background:transparent}
+ .hair-editor td[data-label]::before{content:attr(data-label);display:block;font-size:12px;font-weight:600;color:#52697d;margin-bottom:5px}
+ .hair-editor .hair-segment-select span{font-size:16px;padding:12px 28px 12px 10px}
+ .hair-editor .hair-inline-price select{width:130px;flex-basis:130px;padding:0 6px}
+ .hair-editor .hair-color-options button{font-size:16px;min-height:44px;padding:10px}
+ .hair-editor .remove{width:44px;min-height:44px}
+ .hair-editor .hair-amount{font-size:18px;padding:10px!important;background:#dff2e9;border-radius:6px}
+ .hair-editor .hair-totals td:empty{display:none}
+ .hair-editor .hair-totals td:first-child{text-align:left}
+ .qc-sheet .table-scroll{overflow:visible}
+ .qc-product-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px 0}
+ .qc-table .qc-product-row td{display:block;min-width:0;width:auto;padding:0;border:0;text-align:left;font-size:13px}
+ .qc-product-row td::before{content:attr(data-label);display:block;font-size:11px;font-weight:600;color:#62768a;margin-bottom:4px}
+ .qc-product-row td:nth-child(2),.qc-product-row td:nth-child(8){grid-column:1/-1}
+ .qc-table .qc-review-row,.qc-table .qc-review-row>td{display:block;width:100%;padding:0;text-align:left}
+ .qc-review-fields{display:flex;flex-direction:column;padding:12px;gap:16px}
+ .qc-review-fields>div{width:100%}
+ .qc-review-fields textarea{min-height:110px;font-size:16px}
+ .qc-media>div{width:100px;height:auto;min-height:110px}
+ .qc-media img,.qc-media video{width:100%;height:80px}
+ .qc-upload{width:100px;min-height:80px;font-size:13px}
+ .qc-table select{font-size:16px;min-height:44px}
+ .hair-catalog-fields{grid-template-columns:minmax(0,1fr)}
+}
+@media screen and (max-width:1119px){
+ .modal-head h2{overflow-wrap:anywhere;min-width:0}.modal-head>.icon-btn{flex-shrink:0}
+ .chat-lightbox>video{width:100%}
+ input,select,textarea,button,a{scroll-margin-top:80px;scroll-margin-bottom:24px}
+ .overlay{padding-bottom:max(12px,env(safe-area-inset-bottom))}
+ .modal,.modal.wide{max-height:calc(100dvh - 24px);overflow-y:auto}
+ .factory-header>div:last-child{min-width:0;overflow-wrap:anywhere}
+}
+@media screen and (max-width:380px){.order-snapshot{grid-template-columns:minmax(0,1fr)!important}}
+.color-components{border:1px solid #d6e1e8;border-radius:8px;padding:12px;min-width:0}
+.color-components legend{font-size:13px;padding:0 5px}
+.color-components>div{max-height:280px;overflow:auto;overscroll-behavior:contain}
+.color-components label{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px;font-size:14px}
+.color-components input{flex:none;width:20px;height:20px}
+.protected-video{max-width:100%;min-width:0}
+.protected-video video{display:block;max-width:100%;max-height:65dvh;margin:0 auto;object-fit:contain}
+.video-recovery{padding:10px;background:#f0f6f9;font-size:13px;overflow-wrap:anywhere}
+.video-recovery .btn{margin:4px 4px 4px 0}
+.qc-media>div:has(.protected-video){width:min(320px,100%);height:auto;min-height:100px}
+.qc-media .protected-video video{width:100%;height:auto;max-height:240px;object-fit:contain}

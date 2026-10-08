@@ -27,7 +27,7 @@ try{
  const u=users.find(u=>u.role==='sale');await sale.call('/pricing/permissions/'+u.id,{priceEdit:true,colorEdit:true},{status:403});
  await owner.call('/pricing/permissions/'+u.id,{priceEdit:true,colorEdit:true});
  prices=await sale.call('/pricing');assert.equal(prices.canEditPrices,true);assert.equal(prices.canEditColors,true);
- const customer={name:'Buyer',company:'',phone:'+123456789',email:'',country:'United States',group:'Salon',address:'Street 1',recipient:'Buyer',recipientPhone:'+123456789',social:'example.com',source:'Website',purchase:'Đơn đầu tiên'};
+ const customer={name:'Buyer',company:'',phone:'+123456789',email:'',country:'United States',group:'Salon',address:'Street 1',recipient:'Buyer',recipientPhone:'+123456789',social:'https://example.com',source:'Website',purchase:'Đơn đầu tiên'};
  const state=await sale.call('/customers',customer);const row=prices.prices.find(p=>p.tier==='Basic'&&p.product==='Bulk'&&p.price===98.5);
  const draft={customerId:state.customers[0].id,date:'2026-09-30',due:'2026-10-30',items:[{name:row.product,kind:'base',unit:'Gram',priceBasis:'100g',price:98.5,qty:800,priceReference:{id:row.id,version:2,tier:row.tier,tone:row.tone}}],discount:0,shippingFee:0,paymentFee:0,payments:[],recipient:'Buyer',phone:'+123456789',country:'United States',address:'Street 1'};
  const saved=await sale.call('/orders',draft);

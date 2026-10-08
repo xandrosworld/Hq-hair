@@ -29,10 +29,12 @@ export async function paymentUploads(page){
  await expect(page.getByRole('alert')).toContainText('PDF tối đa');
  const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>','<< /Length 0 >>\nstream\n\nendstream'];
  let pdf='%PDF-1.4\n',offsets=[0];for(let i=0;i<objects.length;i++){offsets.push(Buffer.byteLength(pdf));pdf+=`${i+1} 0 obj\n${objects[i]}\nendobj\n`}const xref=Buffer.byteLength(pdf);pdf+=`xref\n0 5\n0000000000 65535 f \n${offsets.slice(1).map(n=>String(n).padStart(10,'0')+' 00000 n \n').join('')}trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
- await pick(page,input,image('receipt.pdf',Buffer.from(pdf),'application/pdf'));
+ await pick(page,input,image('corrupt.pdf',Buffer.from('not a PDF'),'application/pdf'));
+ await expect(page.getByRole('alert')).toContainText('PDF hợp lệ');
+ await pick(page,input,image('receipt.pdf',Buffer.from(pdf),'application/octet-stream'));
  await expect(page.getByText('Đã chọn: receipt.pdf',{exact:true})).toBeVisible();
  const downloadEvent=page.waitForEvent('download');await page.getByRole('link',{name:'Tải tệp đã chọn để kiểm tra'}).tap();const download=await downloadEvent;assert.equal(download.suggestedFilename(),'receipt.pdf');const chunks=[];for await(const chunk of await download.createReadStream())chunks.push(chunk);assert.equal(Buffer.concat(chunks).toString(),pdf);
- await pick(page,input,image('receipt.png'));
+ await pick(page,input,image('receipt.png',png,''));
  await expect(page.getByText('Đã chọn: receipt.png',{exact:true})).toBeVisible();
  await expect(page.getByRole('alert')).toHaveCount(0);
  await decoded(page.getByAltText('Ảnh chứng từ đã chọn'));
@@ -42,7 +44,7 @@ export async function paymentUploads(page){
 
 export async function chatUploads(page,sale,orderId){
  const add=page.getByRole('button',{name:'Thêm ảnh/video',exact:true});
- await pick(page,add,[image('chat-one.png'),image('chat-two.webp',webp,'image/webp')]);
+ await pick(page,add,[image('chat-one.png',png,''),image('chat-two.webp',webp,'image/webp')]);
  await page.getByRole('button',{name:'Bỏ ảnh chat-one.png'}).tap();
  await pick(page,add,image('chat-one.png'));
  await pick(page,add,image('too-big.png',Buffer.alloc(10*1024*1024+1)));
@@ -81,13 +83,13 @@ export async function qcUploads(page,sale,orderId){
  await expect(page.locator('.qc-sheet')).toContainText('tối đa 5 MiB');
  const endpoint=`**/api/work/orders/${orderId}/qc-upload`;
  await page.route(endpoint,route=>route.abort('internetdisconnected'));
- await pick(page,input,image('qc-retry.png'));
+ await pick(page,input,image('qc-retry.png',png,''));
  await expect(page.locator('.qc-sheet')).toContainText('Mất kết nối');
  await expect(input).toBeEnabled();await page.unroute(endpoint);
- await pick(page,input,image('qc-retry.png'));
+ await pick(page,input,image('qc-retry.png',png,''));
  await expect(page.getByRole('button',{name:'Bỏ tệp qc-retry.png'})).toBeVisible();
  await page.getByRole('button',{name:'Bỏ tệp qc-retry.png'}).tap();
- await pick(page,input,image('qc-retry.png'));
+ await pick(page,input,image('qc-retry.png',png,''));
  await expect(page.getByRole('button',{name:'Bỏ tệp qc-retry.png'})).toHaveCount(1);
  await decoded(page.locator('.qc-media img').first());
  await page.getByRole('button',{name:'Lưu QC',exact:true}).tap();

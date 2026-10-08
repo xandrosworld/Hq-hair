@@ -1,3 +1,4 @@
+import {MAX_CHAT_FILES} from '../chat-limits.js';
 import {standardsFixture} from './standards-fixture.mjs';
 import assert from 'node:assert/strict';
 import {spawn,spawnSync} from 'node:child_process';
@@ -50,7 +51,7 @@ try{
  await b.call('/customers',{...c,name:'Unauthorized'},{status:404});
  await a.call('/customers',{...c,name:'Changed'});
  await a.call('/customers',{...c,name:'Stale'},{status:409});
- const draft={customerId:c.id,date:'2026-09-29',due:'2026-10-10',items:[{name:'Bulk Hair',spec:'24 inches',kind:'base',unit:'Gram',price:8,qty:100}],discount:0,shippingFee:30,paymentFee:5,payments:[],recipient:'Buyer',phone:'+12345678',email:'buyer@example.com',country:'United States',address:'Example St'};
+ const draft={customerId:c.id,date:'2026-09-29',due:'2026-10-10',items:[{name:'Bulk Hair',origin:'Raw Hair',lengthCm:60,texture:'Natural Straight',segment:'Premium',color:'1B',spec:'24 inches',kind:'base',unit:'Gram',price:8,qty:100}],discount:0,shippingFee:30,paymentFee:5,payments:[{sender:'Buyer',amount:100,method:'Wise',date:'2026-09-29'}],recipient:'Buyer',phone:'+12345678',email:'buyer@example.com',country:'United States',address:'Example St'};
  const key=randomUUID();let saved=await a.call('/orders',draft,{key});const id=saved.id;
  assert.equal((await a.call('/orders',draft,{key})).id,id);assert.equal((await a.call('/state')).orders.length,1);
  await b.call('/orders',{...draft,id,version:1},{status:404});
@@ -75,7 +76,7 @@ try{
  const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=';
  order=(await a.call('/state')).orders[0];
  await a.call(`/orders/${id}/action`,{version:order.version,action:'message',images:[{name:'fake.png',data:'data:image/png;base64,ZmFrZWZha2VmYWtl'}]},{status:400});
- await a.call(`/orders/${id}/action`,{version:order.version,action:'message',images:Array.from({length:5},()=>({name:'a.png',data:png}))},{status:400});
+ await a.call(`/orders/${id}/action`,{version:order.version,action:'message',images:Array.from({length:MAX_CHAT_FILES+1},()=>({name:'a.png',data:png}))},{status:400});
  const imageKey=randomUUID(),imageBody={version:order.version,action:'message',text:'',images:[{name:'hair.png',data:png}]};
  state=await a.call(`/orders/${id}/action`,imageBody,{key:imageKey});
  state=await a.call(`/orders/${id}/action`,imageBody,{key:imageKey});
@@ -107,8 +108,10 @@ try{
  await a.call('/orders',draft,{key,status:404});
  assert.equal((await a.call('/customers',customer,{key:customerKey})).customers.length,0);
  assert.ok((await owner.call('/audit')).some(e=>e.action==='customer-assign'));
+ const extraCustomerState=await b.call('/customers',{...customer,name:'Independent draft buyer'});draft.customerId=extraCustomerState.customers.at(-1).id;
  const specimen=await b.call('/orders',{...draft,items:[{...product,qty:800}]});assert.equal(specimen.state.orders.find(o=>o.id===specimen.id).items[0].priceBasis,'100g');assert.equal(specimen.state.orders.find(o=>o.id===specimen.id).items[0].lengthCm,55);await b.call(`/orders/${specimen.id}/action`,{version:1,action:'delete'});
- const pair=await Promise.all([b.call('/orders',draft),b.call('/orders',draft)]);assert.notEqual(pair[0].id,pair[1].id);
+ const secondCustomerState=await b.call('/customers',{...customer,name:'Second concurrent buyer'});
+ const pair=await Promise.all([b.call('/orders',draft),b.call('/orders',{...draft,customerId:secondCustomerState.customers.at(-1).id})]);assert.notEqual(pair[0].id,pair[1].id);
  const concurrent=await Promise.all([1,2].map(n=>fetch(base+`/orders/${pair[0].id}/action`,{method:'POST',headers:{Cookie:b.cookie,'Content-Type':'application/json','X-CSRF-Token':b.csrf,'Idempotency-Key':randomUUID()},body:JSON.stringify({version:1,action:'message',text:'Concurrent '+n})})));
  assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,409]);
  await b.call(`/orders/${pair[0].id}/action`,{version:2,action:'delete'});await b.call(`/orders/${pair[1].id}/action`,{version:1,action:'delete'});

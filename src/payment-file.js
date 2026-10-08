@@ -1,3 +1,4 @@
+import {normalizeUploadFile} from './upload-file.js';
 const MB=1024*1024;
 export const readDataURL=file=>new Promise((resolve,reject)=>{
  const reader=new FileReader();
@@ -9,10 +10,12 @@ export const readDataURL=file=>new Promise((resolve,reject)=>{
 
 // Keep the stored receipt within the existing server limit, including on phones.
 export async function paymentFile(file){
+ file=normalizeUploadFile(file);
  if(!['image/png','image/jpeg','image/webp','application/pdf'].includes(file.type))throw Error('Chọn JPG, PNG, WebP hoặc PDF. Ảnh HEIC cần đổi sang JPG trước khi tải lên.');
  if(!file.size)throw Error('Tệp rỗng. Vui lòng chọn lại.');
  if(file.type==='application/pdf'){
   if(file.size>MB)throw Error('PDF tối đa 1 MB. Vui lòng chọn bản có dung lượng nhỏ hơn.');
+  if(await file.slice(0,5).text()!=='%PDF-')throw Error('Không mở được PDF. Hãy chọn tệp PDF hợp lệ.');
   return {file:await readDataURL(file),fileName:file.name};
  }
  if(file.size>20*MB)throw Error('Ảnh tối đa 20 MB trước khi xử lý. Vui lòng chọn ảnh nhỏ hơn.');
