@@ -31,7 +31,7 @@ Phát triển giao diện: chạy server và `npm run dev` trong hai terminal.
 - Công thức tạm để minh họa: doanh thu = sản phẩm gốc + bổ sung − giảm giá; tổng phải nhận = doanh thu + vận chuyển; tổng gửi khách = tổng phải nhận + phí nhận tiền. Quà tặng không thu tiền. Công nợ = tổng phải nhận − tiền đã xác nhận, tối thiểu 0. Công thức chính thức chờ biểu mẫu của khách.
 - Demo dùng ngày giao dự kiến làm hạn thanh toán. Biểu đồ đang hiển thị tháng 1–9/2026. Không có tích hợp tracking hãng vận chuyển.
 - Chứng từ PNG/JPG/WebP/PDF tối đa 1 MB; tối đa 200 khách, 300 đơn, 20 chứng từ/đơn, 200 tin nhắn/đơn/phiên. Invoice thương mại không bao gồm thông tin nội bộ/công nợ, không phải hóa đơn thuế.
-- Desktop tối thiểu 1120px; chưa tối ưu điện thoại theo phạm vi đã chốt.
+- Giao diện đã bổ sung responsive cho điện thoại; phạm vi kiểm tra Chromium/WebKit, upload và các giới hạn thiết bị thật được ghi tại [MOBILE_QA.md](MOBILE_QA.md).
 
 ## Kiểm tra
 

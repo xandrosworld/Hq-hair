@@ -122,3 +122,31 @@ node tests/mobile-live.mjs
 ```
 
 Ảnh và `results.json` nằm trong `data/mobile-audit/chromium`, `webkit`, `live` (gitignored). Đọc cả `mediaChecks`, không chỉ số lượt đạt. Không chạy hai tiến trình dùng cùng `MOBILE_PORT` cùng lúc.
+
+
+## Rà soát bổ sung: lưu dữ liệu và thao tác trên màn hình nhỏ
+
+- Tái hiện lỗi khi `localStorage` ném `SecurityError`: máy chủ nhận đơn nhưng nút lưu không đưa người dùng tới chi tiết và giao diện báo lỗi. Bọc thao tác cache ở autosave, lưu thủ công và xóa nháp để cache không làm sai kết quả ghi máy chủ.
+- Sửa callback Escape của Modal bị giữ từ lần mở đầu: kiểm tra trạng thái `busy` mới nhất, tránh đóng popup khi đang gửi xác nhận.
+- `tests/mobile-resilience.mjs`: ngắt request autosave, xác nhận nội dung vẫn giữ, kết nối lại lưu đúng một nháp; xóa nháp; giữ request xác nhận rồi Escape; trả lỗi 503, kiểm tra giữ ghi chú và gửi lại.
+- `mobile-workspace.mjs` cho phép chọn khung thao tác qua `MOBILE_WIDTH`/`MOBILE_HEIGHT` và chặn toàn bộ get/set/remove của Storage qua `MOBILE_STORAGE_BLOCKED=1`. Khác với ma trận đo bố cục trước đó, các bước tap/fill/chọn tệp trong toàn luồng chạy trực tiếp ở khung đã chọn.
+- Bổ sung xóa cookie phiên trong context thử, kiểm tra API trả 401, đăng nhập lại qua giao diện và xác nhận đơn đã hoàn tất vẫn còn.
+- Không thay đổi xác thực hoặc dữ liệu production để kiểm tra. Các giới hạn điện thoại vật lý, bàn phím thật và bộ giải mã video WebKit Windows ở trên vẫn áp dụng.
+
+Lệnh kiểm tra bổ sung (mỗi engine dùng cổng riêng):
+
+```powershell
+$env:MOBILE_WIDTH='320'
+$env:MOBILE_HEIGHT='568'
+$env:MOBILE_STORAGE_BLOCKED='1'
+$env:MOBILE_OUTPUT='data/mobile-audit/resilience-chromium'
+node tests/mobile-workspace.mjs
+$env:MOBILE_BROWSER='webkit'
+$env:MOBILE_PORT='3198'
+$env:MOBILE_WIDTH='390'
+$env:MOBILE_HEIGHT='360'
+$env:MOBILE_OUTPUT='data/mobile-audit/resilience-webkit'
+node tests/mobile-workspace.mjs
+```
+
+Kết quả lượt bổ sung: Chromium 320×568 và WebKit 390×360 đều hoàn tất 90 lượt kiểm tra màn hình cùng luồng thao tác, không có JavaScript page error; tất cả đều bật chặn Storage. Unit test 73/73 đạt và production build thành công.
