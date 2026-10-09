@@ -40,7 +40,7 @@ test('CSV uses exact filtered rows and escapes spreadsheet formulas, quotes and 
 
 test('Customer payment mapping: revenue receipts exclude shipping, debt uses gross receipts and total',()=>{
  const sample=order('sample','2026-10-01','c1',{items:[{kind:'base',qty:500,price:160,unit:'Gram',priceBasis:'100g'}],discount:30,shippingFee:85,paymentFee:0});
- for(const [paid,net,debt] of [[0,-85,855],[50,-35,805],[500,415,355],[855,770,0],[900,815,0]]){
+ for(const [paid,net,debt] of [[0,0,855],[50,0,805],[84,0,771],[85,0,770],[85.01,0.01,769.99],[86,1,769],[500,415,355],[855,770,0],[900,815,0]]){
   const o={...sample,payments:[{amount:paid,confirmed:true},{amount:999,confirmed:false}]};
   const t=totals(o);assert.equal(t.revenue,770);assert.equal(t.total,855);assert.equal(t.paid,paid);assert.equal(t.revenuePaid,net);assert.equal(t.debt,debt);
   const sum=financialSummary([o,{...o,stage:0},{...o,cancelledAt:'2026-10-02'}]);

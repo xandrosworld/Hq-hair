@@ -23,7 +23,7 @@ export function totals(o) {
  const total=round(receive+(+o.paymentFee||0));
  const paid=round((o.payments||[]).filter(p=>p.confirmed).reduce((s,p)=>s+(+p.amount||0),0));
  const pending=round((o.payments||[]).filter(p=>!p.confirmed).reduce((s,p)=>s+(+p.amount||0),0));
- const revenuePaid=round(paid-(+o.shippingFee||0));
+ const revenuePaid=round(Math.max(0,paid-(+o.shippingFee||0)));
  return {base,extra,revenue,receive,total,paid,revenuePaid,pending,debt:round(Math.max(0,total-paid))};
 }
 export function status(o){if(o.stage===10&&o.cancelType==='deposit_forfeited')return 'Hoàn thành - Hủy đơn mất cọc';return o.cancelledAt?'Đã hủy':o.stage===0?'Bản nháp':orderQueue(o)?.label||steps[o.stage-1]}
