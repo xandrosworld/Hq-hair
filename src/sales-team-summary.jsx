@@ -2,14 +2,14 @@ import {isOfficialOrder} from '../order-identity.js';
 import React from 'react';
 import {totals,money} from '../shared.js';
 
-export function SalesTeamSummary({orders,customers}){
+export function SalesTeamSummary({orders,customers,revenueBasis=false}){
  const groups=new Map();
  const get=(id,name)=>{if(!groups.has(id))groups.set(id,{id,name,customers:new Set(),orders:0,active:0,revenue:0,paid:0,debt:0});return groups.get(id)};
  for(const c of customers)get(c.ownerId||c.sale,c.sale).customers.add(c.id);
  for(const order of orders){
   const row=get(order.ownerId||order.sale,order.sale);
   if(!isOfficialOrder(order))continue;row.orders++;
-  const total=totals(order);row.revenue+=total.revenue;row.paid+=total.paid;row.debt+=total.debt;
+  const total=totals(order);row.revenue+=total.revenue;row.paid+=revenueBasis?total.revenuePaid:total.paid;row.debt+=total.debt;
   if(order.stage<10)row.active++;
  }
  const rows=[...groups.values()].sort((a,b)=>b.revenue-a.revenue);

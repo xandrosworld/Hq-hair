@@ -1,3 +1,4 @@
+import {totals} from '../shared.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validDate,monthlySeries,customerActivity,reportOrders,financialSummary,reportCSV,csvCell} from '../reporting.js';
@@ -35,4 +36,17 @@ test('CSV uses exact filtered rows and escapes spreadsheet formulas, quotes and 
  const csv=reportCSV(rows,data.customers);assert.ok(csv.startsWith('\uFEFF'));assert.equal(csv.split('\r\n').length,2);assert.ok(csv.includes("' =")==false);assert.ok(csv.includes("'=HYPERLINK"));assert.ok(!csv.includes('"b"'));
  for(const input of ['=1','+1','-1','@a','  =1','\ttext'])assert.ok(csvCell(input).startsWith('"\''));
  assert.equal(csvCell('a"b'),'"a""b"');assert.equal(csvCell(null),'""');
+});
+
+test('Customer payment mapping: revenue receipts exclude shipping, debt uses gross receipts and total',()=>{
+ const sample=order('sample','2026-10-01','c1',{items:[{kind:'base',qty:500,price:160,unit:'Gram',priceBasis:'100g'}],discount:30,shippingFee:85,paymentFee:0});
+ for(const [paid,net,debt] of [[0,-85,855],[50,-35,805],[500,415,355],[855,770,0],[900,815,0]]){
+  const o={...sample,payments:[{amount:paid,confirmed:true},{amount:999,confirmed:false}]};
+  const t=totals(o);assert.equal(t.revenue,770);assert.equal(t.total,855);assert.equal(t.paid,paid);assert.equal(t.revenuePaid,net);assert.equal(t.debt,debt);
+  const sum=financialSummary([o,{...o,stage:0},{...o,cancelledAt:'2026-10-02'}]);
+  assert.equal(sum.revenuePaid,net);assert.equal(sum.debt,debt);
+  assert.equal(monthlySeries([o],2026,'revenuePaid')[9],net);
+  const csv=reportCSV([o],[{id:'c1',name:'Buyer'}]);assert.ok(csv.includes('"770","855",'+csvCell(net)+','+csvCell(paid)+',"85","30","0",'+csvCell(debt)));
+ }
+ const legacy=totals({...sample,paymentFee:15,payments:[{amount:500,confirmed:true}]});assert.equal(legacy.total,870);assert.equal(legacy.debt,370);
 });

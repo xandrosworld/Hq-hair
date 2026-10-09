@@ -16,6 +16,6 @@ export function InvoiceContent({order:o,customer:c,orders=[],demo=false}){
  <ProductReadTable items={o.items} language="en"/>
  <div className="invoice-settlement"><section className="invoice-shipping"><h3>SHIPPING DETAILS</h3><Facts rows={[
  ['Recipient',o.recipient],['Phone',o.phone],['Email',o.email],['Address',o.address],['Country',o.country],['Carrier',[o.carrier,o.service].filter(Boolean).join(' · ')],['Tracking',o.tracking],['Expected delivery',o.due?dateText(o.due):'']
- ]}/></section><div className="invoice-totals">{[['Subtotal',t.base+t.extra],['Discount',-o.discount],['Shipping (collected on behalf)',o.shippingFee],['All payment and transaction fees are borne by the buyer. Seller must receive the full amount.',null]].map(([k,v])=><div key={k}><span>{k}</span>{v!==null&&<b>{money(v)}</b>}</div>)}</div></div>
+ ]}/></section><div className="invoice-totals">{[['Subtotal',t.base+t.extra],['Discount',-o.discount],['Shipping (collected on behalf)',o.shippingFee],['All payment and transaction fees are borne by the buyer. Seller must receive the full amount.',null],['TOTAL USD',t.total]].map(([k,v])=><div key={k} className={v===null?'invoice-payment-note':undefined}><span>{k}</span>{v!==null&&<b>{money(v)}</b>}</div>)}</div></div>
  <div className="invoice-bottom">Thank you for choosing HQ Hair.{demo&&<small>DEMO · Sample document, not valid for payment.</small>}</div></article>;
 }

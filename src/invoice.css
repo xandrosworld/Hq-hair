@@ -29,5 +29,5 @@
 }
 @media print{#invoice .invoice-weight{display:none!important}}
 
-.invoice-totals>div:last-child{align-items:flex-start;gap:12px;line-height:1.55}.invoice-totals>div:last-child>span{min-width:0;overflow-wrap:anywhere;font-size:11px}.invoice-totals>div:last-child>b{white-space:nowrap;flex-shrink:0}
-@media print{.invoice-totals>div:last-child>span{font-size:9px}}
+.invoice-totals>div:last-child{align-items:flex-start;gap:12px;line-height:1.55}.invoice-totals>.invoice-payment-note>span{min-width:0;overflow-wrap:anywhere;font-size:11px}.invoice-totals>div:last-child>b{white-space:nowrap;flex-shrink:0}
+@media print{.invoice-totals>.invoice-payment-note>span{font-size:9px}}

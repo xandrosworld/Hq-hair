@@ -60,3 +60,15 @@ Chỉ ghi đạt nghiệm thu sau khi đối chiếu C01–C04/S01–S13 bằng 
 Công nợ đã chốt độc lập theo từng đơn: đơn mới không mang nợ/tiền trả từ đơn cũ. Chưa xác nhận phạm vi chuyển dữ liệu lịch sử.
 
 Trưởng nhóm Sale đã có vai trò riêng mặc định chỉ đọc toàn đội; tổng hợp theo người phụ trách. Quản trị có thể cấp riêng thao tác như Sale và phân công khách, không biến Lead thành quản trị. Xem CUSTOMER_PERMISSIONS.md và tests/sales-lead.mjs.
+
+
+## Chốt hiển thị và công thức báo cáo — 09/10/2026
+
+- Bảng Thanh toán & giao hàng giữ lưu ý phí (không gắn số tiền), ngay dưới là **Tổng thu**. Bỏ dòng Dự kiến theo chứng từ. Sau Đã nhận thêm **Doanh thu đã nhận = Đã nhận − Phí vận chuyển**.
+- Hóa đơn/PDF dùng lưu ý tiếng Anh và dòng **TOTAL USD** riêng ngay phía dưới, bằng Tổng thu; không xuất công nợ/chứng từ nội bộ.
+- Tab Doanh thu & công nợ: Doanh thu lấy Doanh thu đơn hàng; Đã nhận lấy Doanh thu đã nhận; Công nợ lấy Tổng thu trừ tiền thực nhận gốc theo từng đơn (giữ sàn 0 và không bù trừ giữa đơn). Giảm giá cộng giảm giá đơn; Thiệt hại cộng bồi thường chưa bị hủy.
+- Thẻ KPI, đường biểu đồ, tổng hợp đội Sale trong tab này và CSV cùng dùng doanh thu đã nhận sau phí vận chuyển. Tiền thực nhận gốc vẫn được lưu riêng để đối soát và tính công nợ. Trang tổng quan ngoài tab báo cáo vẫn giữ chỉ số tiền thực nhận hiện có.
+- Theo đúng phép trừ khách cung cấp, doanh thu đã nhận có thể âm khi tiền nhận thấp hơn phí vận chuyển. Không tự áp sàn 0 hoặc phân bổ phí theo tỷ lệ. Biểu đồ hỗ trợ giá trị âm.
+- Tổng thu giữ phí nhận tiền trên dữ liệu cũ nếu còn; công nợ dùng Tổng thu nên tính cả khoản cũ này. Không sửa dữ liệu chứng từ/đơn đã lưu.
+- Ví dụ: hàng 800, giảm 30, vận chuyển 85, thực nhận 500 → doanh thu 770, tổng thu 855, doanh thu đã nhận 415, công nợ 355 USD.
+- Kiểm thử: `tests/reporting.test.js` kiểm tra chưa nhận/nhận ít hơn phí/một phần/đủ/dư, chứng từ chờ, đơn hủy/nháp và phí cũ; `tests/financial-display.mjs` kiểm tra số mẫu trên Chromium/WebKit, khung 320/390/1440, PDF, thẻ/biểu đồ/CSV. Có thể xuất PDF thử bằng `$env:PRINT_PDF='1'; node tests/financial-display.mjs`.
