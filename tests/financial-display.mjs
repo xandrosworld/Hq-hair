@@ -18,8 +18,8 @@ try{
  const financial=page.locator('.financial');
  await expect(financial.locator('div').filter({has:page.locator('span',{hasText:/^Tổng thu$/})})).toContainText('$855.00');
  await expect(financial).not.toContainText('Dự kiến theo chứng từ');
- const labels=await financial.locator(':scope>div>span').allTextContents();assert.equal(labels[labels.indexOf('Đã nhận')+1],'Doanh thu đã nhận');assert.equal(labels[labels.indexOf('Tổng thu')-1],'Tất cả phí thanh toán và phí giao dịch do người mua chịu. Người bán phải nhận đủ số tiền.');
- for(const [label,value] of [['Đã nhận','$500.00'],['Doanh thu đã nhận','$415.00'],['Công nợ còn lại','$355.00']])await expect(financial.locator(':scope>div').filter({has:page.getByText(label,{exact:true})})).toContainText(value);
+ const labels=await financial.locator(':scope>div>span').allTextContents();assert.equal(labels[labels.indexOf('Tổng đã nhận')+1],'Doanh thu đã nhận');assert.equal(labels[labels.indexOf('Tổng thu')-1],'Tất cả phí thanh toán và phí giao dịch do người mua chịu. Người bán phải nhận đủ số tiền.');
+ for(const [label,value] of [['Tổng đã nhận','$500.00'],['Doanh thu đã nhận','$415.00'],['Công nợ còn lại','$355.00']])await expect(financial.locator(':scope>div').filter({has:page.getByText(label,{exact:true})})).toContainText(value);
  for(const width of [320,390,1440]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await financial.screenshot({path:`${output}/${engine.name()}-summary-${width}.png`})}
  await page.getByRole('button',{name:'In hóa đơn',exact:true}).click();await expect(page.locator('.invoice-payment-note')).not.toContainText('$');await expect(page.locator('.invoice-totals>div').last()).toHaveText('TOTAL USD$855.00');await page.evaluate(()=>document.fonts.ready);
  if(engine===chromium&&process.env.PRINT_PDF==='1')await page.pdf({path:`${output}/invoice.pdf`,format:'A4',printBackground:true});
