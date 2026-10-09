@@ -1,3 +1,4 @@
+import {approvalDate} from './order-identity.js';
 import {deliveryDate,deliveryDays,deliveryTiming} from './delivery-days.js';
 import {today,round} from './shared.js';
 export const factoryTabs={overview:'Tổng quan',waiting:'Chưa ghi nhận',production:'Đã ghi nhận',review:'Đã gửi Sale Check',office:'Đã gửi văn phòng',analytics:'Thống kê & phân tích'};
@@ -10,12 +11,12 @@ export function factoryGroup(o){
  return o.stage===3?'waiting':'production';
 }
 export function factoryState(o){
- if(o.cancelledAt)return o.cancelType==='deposit_forfeited'?'forfeited':o.cancelType==='fee_forfeited'?'fee_forfeited':'cancelled';
+ if(o.cancelledAt)return o.cancelType==='deposit_forfeited'?'forfeited':'cancelled';
  if(factoryGroup(o)==='office')return o.inspection?.completedAt||o.stage>=9?'shipped':'payment';
  if(factoryGroup(o)==='review')return o.stage===5?'waiting_review':o.saleReview?.result==='rework'?'rework':'accepted';
  return o.stage===3?'waiting':o.production?.status==='paused'?'paused':'producing';
 }
-export const factoryStateLabels={waiting:'Chờ ghi nhận',producing:'Đang sản xuất',paused:'Tạm dừng',forfeited:'Hủy - Mất cọc',fee_forfeited:'Hủy - Mất phí',cancelled:'Đã hủy',waiting_review:'Chờ Sale Check',rework:'Cần sửa',accepted:'Tiếp tục sản xuất',payment:'Kiểm tra thanh toán / đặt ship',shipped:'Đã gửi khách'};
+export const factoryStateLabels={waiting:'Chờ ghi nhận',producing:'Đang sản xuất',paused:'Tạm dừng',forfeited:'Hủy - Mất cọc',cancelled:'Đã hủy',waiting_review:'Chờ Sale Check',rework:'Cần sửa',accepted:'Tiếp tục sản xuất',payment:'Kiểm tra thanh toán / đặt ship',shipped:'Đã gửi khách'};
 export function quantities(o){
  const result={};
  for(const item of o.items||[]){let unit=String(item.unit||'').trim();if(/^(g|gram|grams)$/i.test(unit))unit='g';if(!unit)unit='Chưa rõ đơn vị';result[unit]=round((result[unit]||0)+(Number(item.qty)||0))}
@@ -52,4 +53,11 @@ export function filterFactoryOrders(orders,{tab='waiting',query='',state='all',f
   if(timing!=='all'&&(timing==='unknown'?t.days!=null:timing==='early'?!(t.days>0):timing==='onTime'?t.days!==0:!(t.days<0)))return false;
   return true;
  }).sort((a,b)=>sort==='newest'?factoryDate(b,tab).localeCompare(factoryDate(a,tab)):sort==='oldest'?(factoryDate(a,tab)||'9999').localeCompare(factoryDate(b,tab)||'9999'):(deliveryTiming(a).due||'9999').localeCompare(deliveryTiming(b).due||'9999')||a.orderCode.localeCompare(b.orderCode));
+}
+
+// Calendar-day durations start at first accounting approval, never order entry.
+export function factoryTiming(order){
+ const timing=deliveryTiming(order),approved=approvalDate(order);
+ const duration=end=>{const days=deliveryDays(end,approved);return days==null||days<0?null:days};
+ return {...timing,approved,plannedDays:duration(timing.due),actualDays:timing.actual?duration(timing.actual):null};
 }

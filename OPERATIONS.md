@@ -75,3 +75,11 @@ Nguồn kỹ thuật: [Node SQLite](https://nodejs.org/docs/latest-v22.x/api/sql
 - Files live in `DATA_DIR/product-standards` (override: `HQ_STANDARDS_DIR`), outside the public web root and Git. Deploying code preserves this directory. Keep an independent copy of these immutable files: the SQLite backup does not include them. The operator copy is `data/product-standards`, with the original customer PDF also retained in Downloads.
 - Original SHA-256: `bfcd6f789895d11af7888d27d06d8734c2365defbd24d0123cdaae2a38e9af5f`. Previews are 2160x1215 WebP; 7 categories, Vietnamese/English paired pages. Do not silently revise source specifications.
 - API/UI tests generate synthetic document fixtures and do not need the private customer file.
+
+
+## Xác nhận phần Xưởng ngày 09/10/2026
+
+- Chỉ Kế toán hủy mất cọc khi đơn bước 4 đang tạm dừng tại Xưởng; không có nghiệp vụ hủy mất phí. API chặn cả trạng thái không hợp lệ và phiên bản cũ. Không thay đổi số tiền/chứng từ lịch sử.
+- Xưởng hiển thị ngày duyệt lần đầu, hạn gửi văn phòng, số ngày kế hoạch, ngày gửi và số ngày thực tế. Cả hai khoảng thời gian tính từ ngày duyệt; sớm/đúng/trễ so ngày gửi với hạn chốt khi bàn giao. Thiếu ngày hiện “—”.
+- Cộng gram rồi đổi tổng sang kg; đơn vị khác giữ riêng. Đơn mẫu và kết quả nghiệm thu từ khách vẫn đang chờ.
+- Chi tiết quy tắc và bằng chứng: FACTORY_IMPLEMENTATION.md. Xác nhận này thay thế các mô tả cũ cho phép hủy mất cọc ở bước thanh toán cuối.

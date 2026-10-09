@@ -43,6 +43,7 @@ try{
  await action(factory,'factory-office');
  assert.equal(order.officeDispatch.dueDate,draft.due);
  const dispatchTime=order.officeDispatch.time;
+ await action(accountant,'accounting-forfeit',{text:'Cannot cancel after office dispatch'},400);
  await action(factory,'factory-office',{},400);assert.equal(order.officeDispatch.time,dispatchTime);
  await action(accountant,'accounting-final');assert.equal(order.stage,8);
  const inspection={checked:true,carrier:'DHL',service:'Express',tracking:'TRACK-123',shippedDate:'2026-01-02',reference:'QC-123'};
@@ -69,6 +70,12 @@ try{
  await cancelAction(accountant,'accounting-approve',{paymentStatus:'partial',receipts:[{id:cancelledOrder.payments[0].id,amount:3}]});
  await cancelAction(accountant,'accounting-forfeit',{text:'Too early'},400);
  await cancelAction(factory,'factory-status',{status:'producing'});
+ await cancelAction(accountant,'accounting-forfeit',{text:'Cannot cancel while producing'},400);
+ await cancelAction(factory,'factory-status',{status:'paused'});
+ const stalePausedVersion=cancelledOrder.version;
+ await cancelAction(factory,'factory-status',{status:'producing'});
+ await accountant.call(`/orders/${cancelledOrder.id}/action`,{version:stalePausedVersion,action:'accounting-forfeit',text:'Stale paused screen'},409);
+ await cancelAction(accountant,'accounting-forfeit',{text:'Already resumed'},400);
  await cancelAction(factory,'factory-status',{status:'paused'});
  await cancelAction(accountant,'accounting-final',{},400);
  await cancelAction(sale,'accounting-forfeit',{text:'Wrong role'},403);

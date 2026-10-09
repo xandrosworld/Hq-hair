@@ -1,14 +1,14 @@
 # Phân quyền — phản hồi HQ Hair ngày 30/09/2026
 
-## Phân quyền đang triển khai — rà soát 08/10/2026
+## Phân quyền đang triển khai — rà soát 09/10/2026
 
 Phần này mô tả mã nguồn hiện tại; các mốc trao đổi bên dưới là lịch sử, không dùng thay hướng dẫn vận hành.
 
 - Xưởng ghi nhận/tiếp tục/tạm dừng sản xuất, gửi Sale Check và gửi văn phòng sau khi Sale chấp nhận; không duyệt tiền, không giao hàng cho khách thay Sale.
 - Xưởng và Kế toán **chỉ xem QC**. Sale phụ trách lập/lưu/hoàn tất QC ở bước 8. Quản trị có quyền ngoại lệ; sửa sau khóa cần lý do. Quy tắc được kiểm tra tại API và giao diện (`quality-control.js`, `src/quality-control.jsx`).
 - Xưởng có phạm vi `full` hoặc `products` do quản trị chọn. Phạm vi products được lọc ở máy chủ; không chỉ ẩn trường trên màn hình. Bảng Xưởng chỉ đưa đơn đã được duyệt và có mã chính thức vào hàng chờ.
-- Kế toán xử lý hủy mất cọc khi đủ điều kiện ở đơn tạm dừng hoặc kiểm tra thanh toán cuối; đơn chuyển sang bước 10, khóa nội dung và giữ lịch sử. Hủy trước duyệt không có chứng từ vẫn dùng trạng thái -1.
-- “Hủy – Mất phí” chưa có thao tác ghi mới; còn chờ khách chốt nghiệp vụ. Xem [FACTORY_IMPLEMENTATION.md](FACTORY_IMPLEMENTATION.md) về phạm vi, kiểm thử và điều kiện nghiệm thu.
+- Kế toán xử lý hủy mất cọc chỉ khi đơn bước 4 đang được Xưởng tạm dừng, có cọc và còn khoản chưa thanh toán; đơn chuyển sang bước 10, khóa nội dung và giữ lịch sử. Hủy trước duyệt không có chứng từ vẫn dùng trạng thái -1.
+- Khách xác nhận 09/10: chỉ “Hủy mất cọc”, không có “Hủy mất phí”. Sau khi Xưởng tiếp tục sản xuất hoặc gửi văn phòng, Kế toán không được hủy mất cọc. Xem [FACTORY_IMPLEMENTATION.md](FACTORY_IMPLEMENTATION.md) về phạm vi, kiểm thử và điều kiện nghiệm thu.
 
 
 ## Lịch sử 02/10/2026, 16:26–16:27 — quyền QC đã được thay thế

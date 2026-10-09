@@ -16,11 +16,11 @@ test('Final accounting requires office handoff, correct role and full receipts w
  assert.throws(()=>applyAccounting(o,accountant,'accounting-final',{},()=>{}));
 });
 test('Forfeiture preserves official code and receipts, requires deposit, debt and reason',()=>{
- const o=order(),payments=structuredClone(o.payments);
+ const o={...order(),stage:4,officeDispatch:null,production:{status:'paused'}},payments=structuredClone(o.payments);
  assert.throws(()=>applyAccounting(o,accountant,'accounting-forfeit',{},()=>{}));
  applyAccounting(o,accountant,'accounting-forfeit',{text:'Customer cancelled and forfeited deposit'},()=>{});
  assert.equal(o.stage,10);assert.ok(o.completedAt);assert.equal(o.orderCode,'HQ-JD-1-1');assert.deepEqual(o.payments,payments);
  assert.equal(o.finalPaymentCheck.deposit,30);assert.equal(o.cancelType,'deposit_forfeited');assert.equal(workflowStep(o,7).tone,'red');
  assert.throws(()=>applyAccounting(o,accountant,'accounting-final',{},()=>{}));
- for(const payments of [[],[{amount:100,confirmed:true}]])assert.throws(()=>applyAccounting({...order(),payments},accountant,'accounting-forfeit',{text:'reason'},()=>{}));
+ for(const payments of [[],[{amount:100,confirmed:true}]])assert.throws(()=>applyAccounting({...order(),stage:4,officeDispatch:null,production:{status:'paused'},payments},accountant,'accounting-forfeit',{text:'reason'},()=>{}));
 });

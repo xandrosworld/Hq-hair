@@ -72,3 +72,11 @@ Trưởng nhóm Sale đã có vai trò riêng mặc định chỉ đọc toàn �
 - Tổng thu giữ phí nhận tiền trên dữ liệu cũ nếu còn; công nợ dùng Tổng thu nên tính cả khoản cũ này. Không sửa dữ liệu chứng từ/đơn đã lưu.
 - Ví dụ: hàng 800, giảm 30, vận chuyển 85, thực nhận 500 → doanh thu 770, tổng thu 855, doanh thu đã nhận 415, công nợ 355 USD.
 - Kiểm thử: `tests/reporting.test.js` kiểm tra chưa nhận/nhận ít hơn phí/một phần/đủ/dư, chứng từ chờ, đơn hủy/nháp và phí cũ; `tests/financial-display.mjs` kiểm tra số mẫu trên Chromium/WebKit, khung 320/390/1440, PDF, thẻ/biểu đồ/CSV. Có thể xuất PDF thử bằng `$env:PRINT_PDF='1'; node tests/financial-display.mjs`.
+
+
+## Xác nhận phần Xưởng ngày 09/10/2026
+
+- Chỉ Kế toán hủy mất cọc khi đơn bước 4 đang tạm dừng tại Xưởng; không có nghiệp vụ hủy mất phí. API chặn cả trạng thái không hợp lệ và phiên bản cũ. Không thay đổi số tiền/chứng từ lịch sử.
+- Xưởng hiển thị ngày duyệt lần đầu, hạn gửi văn phòng, số ngày kế hoạch, ngày gửi và số ngày thực tế. Cả hai khoảng thời gian tính từ ngày duyệt; sớm/đúng/trễ so ngày gửi với hạn chốt khi bàn giao. Thiếu ngày hiện “—”.
+- Cộng gram rồi đổi tổng sang kg; đơn vị khác giữ riêng. Đơn mẫu và kết quả nghiệm thu từ khách vẫn đang chờ.
+- Chi tiết quy tắc và bằng chứng: FACTORY_IMPLEMENTATION.md. Xác nhận này thay thế các mô tả cũ cho phép hủy mất cọc ở bước thanh toán cuối.

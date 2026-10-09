@@ -20,7 +20,8 @@ export function applyAccounting(order,user,action,body,event){
  if(order.cancelledAt||order.contentLockedAt)fail(400,'Đơn đã hủy hoặc đã khóa nội dung.');
  const now=new Date().toISOString(),note=typeof body.text==='string'?body.text.trim().slice(0,1000):'';
  if(['accounting-final','accounting-forfeit'].includes(action)){
-  if(!(action==='accounting-forfeit'&&canForfeitPaused(order))&&(![6,7].includes(order.stage)||!order.orderCode||(!order.officeDispatch&&!order.history?.some(h=>['Đã gửi đến văn phòng','Gửi đến văn phòng'].includes(h.title)))))fail(400,'Xưởng phải xác nhận gửi đến văn phòng trước bước kiểm tra thanh toán lần cuối.');
+  if(action==='accounting-forfeit'&&!canForfeitPaused(order))fail(400,'Chỉ hủy mất cọc khi Xưởng đang tạm dừng sản xuất.');
+  if(action==='accounting-final'&&(![6,7].includes(order.stage)||!order.orderCode||(!order.officeDispatch&&!order.history?.some(h=>['Đã gửi đến văn phòng','Gửi đến văn phòng'].includes(h.title)))))fail(400,'Xưởng phải xác nhận gửi đến văn phòng trước bước kiểm tra thanh toán lần cuối.');
   if(action==='accounting-forfeit'){
    const total=totals(order);
    if(total.paid<=0||total.debt<=0)fail(400,'Hủy mất cọc chỉ áp dụng khi đã nhận cọc và còn khoản chưa thanh toán.');

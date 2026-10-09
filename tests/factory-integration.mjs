@@ -1,3 +1,4 @@
+import {factoryTiming} from '../factory-model.js';
 import {chromium,webkit,expect} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
@@ -76,6 +77,11 @@ try{
  const limited=await factory.call('/state');assert.equal(limited.customers.length,0);assert.equal(limited.orders[0].payments,undefined);assert.equal(limited.orders[0].items[0].price,undefined);assert.equal(limited.orders.find(o=>o.id===ids[0]).saleReview.note,'Checked by Sale');
  await page.reload();await page.locator('.factory-navigation button').nth(3).click();await expect(page.locator('.factory-feedback')).toContainText('Checked by Sale');
  await page.getByRole('button',{name:'Chi tiết',exact:true}).click();await expect(page.locator('.factory-summary')).toBeVisible();
+ const limitedOrder=limited.orders.find(o=>o.id===ids[0]);
+ assert.ok(limitedOrder.approvedAt);assert.equal(factoryTiming(limitedOrder).approved,factoryTiming((await get()).find(o=>o.id===ids[0])).approved);
+ await expect(page.locator('.factory-summary')).toContainText('Ngày duyệt');
+ await expect(page.locator('.factory-summary')).toContainText('Kế hoạch');
+ await expect(page.locator('.factory-summary')).toContainText('Thực tế');
  await expect(page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true})).toHaveCount(0);
  await admin.call(`/users/${factoryUser.id}/visibility`,{factoryView:'full'});
  await page.reload();await page.locator('.factory-navigation button').nth(4).click();await page.getByLabel('Tìm đơn Xưởng').fill('Factory Buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
@@ -83,6 +89,28 @@ try{
  await page.locator('.factory-navigation button').nth(5).click();await expect(page.locator('.factory-kpi strong').first()).toHaveText('2');await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-analytics.png`,fullPage:true,animations:'disabled'});
  await page.setViewportSize({width:390,height:844});await page.locator('.factory-navigation button').first().click();await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-mobile.png`,fullPage:true,animations:'disabled'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  await page.locator('.factory-navigation button').nth(4).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
+ await expect(page.locator('.factory-duration').first()).toContainText('Kế hoạch:');
+ await expect(page.locator('.factory-duration').first()).toContainText('Thực tế:');
+ await page.getByRole('button',{name:'Chi tiết',exact:true}).first().click();
+ await expect(page.locator('.factory-summary')).toContainText('Ngày gửi văn phòng');
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-timing-mobile.png`,fullPage:true,animations:'disabled'});
+ // Accounting UI offers forfeiture only while Factory has paused this order.
+ const partial=await sale.call('/orders',draft);let partialOrder=partial.state.orders.find(o=>o.id===partial.id);
+ let next=await accountant.call(`/orders/${partial.id}/action`,{version:partialOrder.version,action:'accounting-approve',paymentStatus:'partial',receipts:[{id:partialOrder.payments[0].id,amount:3}]});partialOrder=next.orders.find(o=>o.id===partial.id);
+ for(const status of ['producing','paused']){next=await factory.call(`/orders/${partial.id}/action`,{version:partialOrder.version,action:'factory-status',status});partialOrder=next.orders.find(o=>o.id===partial.id)}
+ const accountingPage=await accountant.ctx.newPage();await accountingPage.goto(base+'/workspace');
+ await accountingPage.locator('.order-link').filter({hasText:partialOrder.orderCode}).click();
+ await expect(accountingPage.getByRole('button',{name:'Hủy đơn mất cọc',exact:true})).toBeEnabled();
+ next=await factory.call(`/orders/${partial.id}/action`,{version:partialOrder.version,action:'factory-status',status:'producing'});partialOrder=next.orders.find(o=>o.id===partial.id);
+ await accountingPage.getByRole('button',{name:'Tải dữ liệu mới',exact:true}).click();
+ await expect(accountingPage.getByRole('button',{name:'Hủy đơn mất cọc',exact:true})).toHaveCount(0);
+ await accountingPage.getByRole('button',{name:'Danh sách đơn',exact:true}).click();
+ const officeOrder=(await get()).find(o=>o.officeDispatch);
+ await accountingPage.locator('.order-link').filter({hasText:officeOrder.orderCode}).click();
+ await expect(accountingPage.getByRole('button',{name:'Xác nhận đủ',exact:true})).toBeVisible();
+ await expect(accountingPage.getByRole('button',{name:'Hủy đơn mất cọc',exact:true})).toHaveCount(0);
+ console.log('PASS accounting UI: paused-only forfeiture, hidden after resume and office dispatch');
  console.log('PASS: factory roles, atomic batch, stale versions, idempotency, UI bulk record, rework, office handoff, reports, mobile overflow');
 }finally{await browser?.close();if(server.exitCode===null){const stopped=new Promise(r=>server.once('exit',r));server.kill();await stopped}if(!path.resolve(dir).startsWith(path.resolve(os.tmpdir())+path.sep))throw Error('Unsafe cleanup');rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:200})}
 

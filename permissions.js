@@ -13,7 +13,7 @@ export function factoryOrder(order){
  // Allowlist: never include customer/payment data, snapshots or unknown future fields.
  const progress=Object.fromEntries(['accountingApproval','production','saleReview','officeDispatch','finalPaymentCheck','inspection','customerFeedback'].map(key=>[key,order[key]?{status:order[key].status,result:order[key].result,name:order[key].name,time:order[key].time,completedAt:order[key].completedAt,recordedAt:order[key].recordedAt,checkAt:order[key].checkAt,dueDate:order[key].dueDate}:null]));
  if(progress.saleReview)progress.saleReview.note=order.saleReview.note;
- return {...progress,contentLockedAt:order.contentLockedAt,cancelledAt:order.cancelledAt,cancelType:order.cancelType,qc:order.qc,qcMedia:order.qcMedia,id:order.id,orderCode:order.orderCode,requestCode:order.requestCode,stage:order.stage,version:order.version,date:order.date,due:order.due,sale:order.sale,
+ return {...progress,contentLockedAt:order.contentLockedAt,cancelledAt:order.cancelledAt,cancelType:order.cancelType,qc:order.qc,qcMedia:order.qcMedia,id:order.id,orderCode:order.orderCode,requestCode:order.requestCode,approvedAt:order.approvedAt,stage:order.stage,version:order.version,date:order.date,due:order.due,sale:order.sale,
   items:order.items.map(i=>({name:i.name,origin:i.origin,lengthCm:i.lengthCm,texture:i.texture,segment:i.segment,color:i.color,productNote:i.productNote,spec:i.spec,kind:i.kind,unit:i.unit,qty:i.qty})),
   messages:order.messages.map(m=>({id:m.id,text:m.text,author:m.author,time:m.time,images:m.images})),
   history:order.history.map(h=>({title:h.title,actor:h.actor,time:h.time}))};
