@@ -43,7 +43,7 @@ try{
  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await ready;
  const retryKeys=[];
  await page.route('**/api/work/factory/batch',async route=>{retryKeys.push(route.request().headers()['idempotency-key']);if(retryKeys.length===1){await route.fetch();await route.abort('internetdisconnected')}else await route.continue()});
- await page.getByLabel('Chọn tất cả trên trang').check();await page.getByRole('button',{name:'Ghi nhận / tiếp tục',exact:true}).click();await page.getByRole('button',{name:'Xác nhận 3 đơn',exact:true}).click();await expect(page.getByText('Không có đơn phù hợp.',{exact:true})).toBeVisible();
+ await page.getByLabel('Chọn tất cả trên trang').check();await page.locator('.factory-bulk').getByRole('button',{name:'Ghi nhận',exact:true}).click();await page.getByRole('button',{name:'Xác nhận 3 đơn',exact:true}).click();await expect(page.getByText('Không có đơn phù hợp.',{exact:true})).toBeVisible();
  assert.ok((await get()).every(o=>o.stage===4));
  assert.equal(retryKeys.length,2);assert.equal(retryKeys[0],retryKeys[1]);
  assert.ok((await get()).every(o=>o.history.filter(h=>h.title==='Xưởng ghi nhận').length===1));
