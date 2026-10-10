@@ -15,7 +15,7 @@ try{
  async function client(){const ctx=await browser.newContext({viewport:{width:1440,height:1050},reducedMotion:'reduce'});let csrf='';return {ctx,async call(url,body,status=200,key=randomUUID()){const r=await ctx.request[body?'post':'get'](base+'/api/work'+url,body?{headers:{'X-CSRF-Token':csrf,'Idempotency-Key':key},data:body}:{});const v=await r.json();assert.equal(r.status(),status,JSON.stringify(v));if(v.csrf)csrf=v.csrf;return v}}}
  const admin=await client(),factory=await client(),accountant=await client(),sale=await client();
  await admin.call('/login',{email:'owner@example.com',password:'Initial-Password-2026'});await admin.call('/password',{currentPassword:'Initial-Password-2026',password:'Owner-New-Password-2026'});
- for(const [c,code,role] of [[factory,'SX-QA','factory'],[accountant,'KT-QA','accounting'],[sale,'HQ-QA','sale']]){await admin.call('/users',{name:code,email:code+'@example.com',code,role,password:'Initial-Password-2026'});await c.call('/login',{email:code+'@example.com',password:'Initial-Password-2026'});await c.call('/password',{currentPassword:'Initial-Password-2026',password:'Personal-Password-2026'})}
+ for(const [c,code,role] of [[factory,'SX-QA','factory'],[accountant,'KT-QA','accounting'],[sale,'HQ-QA','sale']]){await admin.call('/users',{name:code,email:role==='factory'?'xuong1':code+'@example.com',code,role,password:'Initial-Password-2026'});await c.call('/login',{email:role==='factory'?'xuong1':code+'@example.com',password:'Initial-Password-2026'});await c.call('/password',{currentPassword:'Initial-Password-2026',password:'Personal-Password-2026'})}
  const state=await sale.call('/customers',{name:'Factory Buyer',phone:'123',country:'United States',group:'Salon',address:'Road',recipient:'Buyer',recipientPhone:'123',source:'Website'});
  const draft={customerId:state.customers[0].id,date:'2026-10-01',due:'2026-10-10',recipient:'Buyer',phone:'123',address:'Road',country:'United States',discount:0,shippingFee:0,paymentFee:0,items:[{name:'Bulk',kind:'base',qty:100,price:10,unit:'Gram',priceBasis:'100g',origin:'Raw Hair',lengthCm:50,texture:'Natural Straight',segment:'Premium',color:'1B'}],payments:[{sender:'Buyer',method:'Wise',date:'2026-10-01',amount:10}],submit:true};
  const ids=[];
@@ -31,7 +31,7 @@ try{
  await factory.call('/factory/batch',{...request,orders:request.orders.map((o,i)=>({...o,version:i===2?-1:o.version}))},409);
  assert.ok((await get()).every(o=>o.stage===3));
  const page=await factory.ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/workspace');
- await expect(page.locator('.factory-navigation button')).toHaveCount(6);
+ await expect(page.locator('.factory-navigation button')).toHaveCount(7);
  await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-overview.png`,fullPage:true,animations:'disabled'});
  await page.locator('.factory-navigation button').nth(1).click();
  // An older refresh must not undo a successful mutation on screen.
@@ -110,6 +110,39 @@ try{
  await accountingPage.locator('.order-link').filter({hasText:officeOrder.orderCode}).click();
  await expect(accountingPage.getByRole('button',{name:'Xác nhận đủ',exact:true})).toBeVisible();
  await expect(accountingPage.getByRole('button',{name:'Hủy đơn mất cọc',exact:true})).toHaveCount(0);
+ await page.locator('.factory-navigation').getByRole('button',{name:'Thông báo',exact:true}).click();
+ await expect(page.locator('.order-notifications')).toBeVisible();
+ await expect(page.locator('.notification-cards article').first()).toBeVisible();
+ await page.locator('.notification-cards article').first().getByRole('button').click();
+ await expect(page.locator('.factory-summary')).toBeVisible();
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ const retryPage=await factory.ctx.newPage();let failed=false;
+ await retryPage.route('**/api/work/state',async route=>{if(!failed){failed=true;await route.abort('failed')}else await route.continue()});
+ await retryPage.goto(base+'/workspace');await expect(retryPage.getByRole('button',{name:'Thử tải lại',exact:true})).toBeEnabled();
+ await retryPage.getByRole('button',{name:'Thử tải lại',exact:true}).click();
+ await expect(retryPage.locator('.factory-kpis')).toBeVisible();
+ const adminPage=await admin.ctx.newPage();await adminPage.goto(base+'/workspace');
+ await adminPage.locator('#workspace-navigation').getByRole('button',{name:'Tài khoản & đội ngũ',exact:true}).click();
+ const createForm=adminPage.locator('form').filter({has:adminPage.getByRole('button',{name:'Cấp tài khoản',exact:true})});
+ await createForm.getByLabel('Họ và tên',{exact:true}).fill('Xưởng UI');
+ await createForm.getByLabel('Email / Tên đăng nhập tài khoản',{exact:true}).fill('xuong.ui');
+ await createForm.getByLabel('Mật khẩu ban đầu',{exact:true}).fill('Factory-Initial-2026');
+ await createForm.getByLabel('Vai trò',{exact:true}).selectOption('factory');
+ await createForm.getByRole('button',{name:'Cấp tài khoản',exact:true}).click();
+ await expect(adminPage.getByRole('status')).toContainText('Đã cấp tài khoản');
+ const created=(await admin.call('/users')).find(u=>u.email==='xuong.ui');assert.equal(created.role,'factory');assert.match(created.code,/^SX-/);
+ await admin.call('/users',{name:'Duplicate',email:'XUONG.UI',role:'factory',password:'Factory-Initial-2026'},409);
+ await admin.call('/users',{name:'Invalid',email:'xuong 1',role:'factory',password:'Factory-Initial-2026'},400);
+ const timeoutPage=await factory.ctx.newPage();await timeoutPage.clock.install();let hangingRoute,readCount=0;
+ await timeoutPage.route('**/api/work/state',route=>{hangingRoute=route;readCount++});
+ await timeoutPage.goto(base+'/workspace');await expect.poll(()=>!!hangingRoute).toBe(true);
+ await timeoutPage.clock.fastForward(31000);
+ await expect(timeoutPage.getByRole('alert')).toContainText('Tải dữ liệu quá lâu');assert.equal(readCount,1);
+ await timeoutPage.unroute('**/api/work/state');await hangingRoute.abort().catch(()=>{});
+ await timeoutPage.getByRole('button',{name:'Thử tải lại',exact:true}).click();await expect(timeoutPage.locator('.factory-kpis')).toBeVisible();
+ await page.locator('.factory-navigation').getByRole('button',{name:'Thông báo',exact:true}).click();
+ await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-notifications-mobile.png`,fullPage:true,animations:'disabled'});
+ console.log('PASS factory username login, notification navigation and failed-load retry');
  console.log('PASS accounting UI: paused-only forfeiture, hidden after resume and office dispatch');
  console.log('PASS: factory roles, atomic batch, stale versions, idempotency, UI bulk record, rework, office handoff, reports, mobile overflow');
 }finally{await browser?.close();if(server.exitCode===null){const stopped=new Promise(r=>server.once('exit',r));server.kill();await stopped}if(!path.resolve(dir).startsWith(path.resolve(os.tmpdir())+path.sep))throw Error('Unsafe cleanup');rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:200})}

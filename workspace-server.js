@@ -137,7 +137,7 @@ export async function createWorkspace(dir){
    db.prepare('DELETE FROM auth_sessions WHERE user_id=?').run(b.id);audit(req.user,password?'user-reset':'user-status',b.id);
   }else{
    const email=String(b.email||'').trim().toLowerCase(),name=String(b.name||'').trim().slice(0,100);
-   if(!(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||(b.role==='sales_lead'&&/^[a-z][a-z0-9._-]{2,39}$/.test(email)))||!name||!['sale','sales_lead','manager','accounting','factory'].includes(b.role))reject(400,'Kiểm tra tên, email và vai trò.');
+   if(!(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||(/^[a-z][a-z0-9._-]{2,39}$/.test(email)))||!name||!['sale','sales_lead','manager','accounting','factory'].includes(b.role))reject(400,'Nhập họ tên, vai trò và email hợp lệ hoặc tên đăng nhập 3–40 ký tự không dấu (bắt đầu bằng chữ, gồm chữ, số, dấu chấm, gạch dưới hoặc gạch ngang).');
    const password=await hashPassword(b.password);
    if(!db.prepare('SELECT token FROM auth_sessions WHERE token=?').get(req.session.token))reject(401,'Phiên đã kết thúc.');
    if(db.prepare('SELECT id FROM users WHERE email=?').get(email))reject(409,'Email đã được sử dụng.');

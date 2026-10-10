@@ -96,3 +96,12 @@ Chạy WebKit cho bài Xưởng: `$env:FACTORY_BROWSER='webkit'; $env:FACTORY_PO
 - Không coi bộ test đạt là nghiệm thu nghiệp vụ hoặc chứng nhận không còn mọi lỗi. Phạm vi trên là những tình huống đã đối chiếu và có kiểm chứng.
 
 Kết quả lượt này: 74/74 unit test đạt; build thành công; factory-integration đạt trên Chromium và WebKit; accounting-qc và workflow-security đạt; mobile-workspace đạt 90 lượt mỗi engine (180 tổng), không có JavaScript page error. Video WebKit Windows vẫn chỉ xác minh truyền/tải tệp, không ghi nhận đạt phát trên iPhone thật.
+
+
+## Sửa phản hồi tài khoản và thông báo ngày 10/10/2026
+
+- Form cấp tài khoản ghi Email / Tên đăng nhập nhưng server trước đây chỉ chấp nhận username cho Trưởng nhóm Sale. Đồng bộ các vai trò: email hoặc username 3–40 ký tự ASCII bắt đầu bằng chữ, cho phép chữ/số/dấu chấm/gạch dưới/gạch ngang. Giữ kiểm tra trùng, quyền quản trị, mật khẩu và mã theo vai trò; để trống mã tự cấp SX cho Xưởng.
+- Thêm tab Thông báo riêng, dùng nguồn tiến độ và tin nhắn trong 5 ngày trước đến hiện tại, chỉ từ đơn được API cho phép xem; mở trực tiếp chi tiết đơn. Giữ thông báo ở tổng quan.
+- Loại tải /state trùng từ giao diện chung đối với Xưởng/Kế toán. Xưởng không chồng lượt đọc khi lượt cũ chưa xong; timeout đọc sau 30 giây, báo lỗi và nút Thử tải lại. Khi lỗi, ngừng polling cho tới thử lại hoặc quay lại cửa sổ. Không áp timeout 30 giây cho upload/ghi dữ liệu.
+- Không kết luận ảnh đang tải là lỗi tạo tài khoản: tài khoản trong ảnh đã vào được không gian Xưởng; nguyên nhân mạng tại thời điểm chụp chưa xác minh.
+- Kiểm thử database riêng: tạo Xưởng qua form quản trị với username/tự cấp mã; trùng và tên sai bị chặn; đăng nhập/đổi mật khẩu; tab thông báo/mở đơn trên mobile; lỗi mạng và mạng treo/phục hồi, không gửi chồng /state. Factory integration đạt trên Chromium và WebKit; accounting-qc đạt; 77 unit test đạt.

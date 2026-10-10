@@ -1,7 +1,7 @@
 import {approvalDate} from './order-identity.js';
 import {deliveryDate,deliveryDays,deliveryTiming} from './delivery-days.js';
 import {today,round} from './shared.js';
-export const factoryTabs={overview:'Tổng quan',waiting:'Chưa ghi nhận',production:'Đã ghi nhận',review:'Đã gửi Sale Check',office:'Đã gửi văn phòng',analytics:'Thống kê & phân tích'};
+export const factoryTabs={overview:'Tổng quan',waiting:'Chưa ghi nhận',production:'Đã ghi nhận',review:'Đã gửi Sale Check',office:'Đã gửi văn phòng',analytics:'Thống kê & phân tích',notifications:'Thông báo'};
 export const factoryOrders=orders=>orders.filter(o=>o.orderCode&&o.stage>=3);
 export function factoryGroup(o){
  if(o.cancelledAt)return 'production';
