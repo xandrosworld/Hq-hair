@@ -31,9 +31,10 @@ try{
  await factory.call('/factory/batch',{...request,orders:request.orders.map((o,i)=>({...o,version:i===2?-1:o.version}))},409);
  assert.ok((await get()).every(o=>o.stage===3));
  const page=await factory.ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/workspace');
- await expect(page.locator('.factory-navigation button')).toHaveCount(7);
+ await expect(page.locator('.factory-navigation button')).toHaveCount(6);
+ const navClick=async index=>{const button=page.locator('.factory-navigation button').nth(index);if(page.viewportSize().width<=1119&&!await button.isVisible())await page.getByRole('button',{name:'Mở menu',exact:true}).click();await button.click()};
  await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-overview.png`,fullPage:true,animations:'disabled'});
- await page.locator('.factory-navigation button').nth(1).click();
+ await navClick(1);
  // An older refresh must not undo a successful mutation on screen.
  let releaseRefresh,refreshReady,refreshDone;
  const held=new Promise(r=>releaseRefresh=r),ready=new Promise(r=>refreshReady=r),done=new Promise(r=>refreshDone=r);
@@ -51,7 +52,7 @@ try{
  releaseRefresh();await done;await page.unroute('**/api/work/state');await page.waitForTimeout(200);
  await expect(page.getByText('Không có đơn phù hợp.',{exact:true})).toBeVisible();
  console.log('PASS refresh arriving after batch cannot restore stale queue');
- await page.locator('.factory-navigation button').nth(2).click();await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-production.png`,fullPage:true,animations:'disabled'});
+ await navClick(2);await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-production.png`,fullPage:true,animations:'disabled'});
  await page.getByLabel('Chọn tất cả trên trang').check();await page.getByRole('button',{name:'Tạm dừng',exact:true}).click();
  await page.locator('.factory-confirm textarea').fill('Pause note retained after server error');
  const manualKeys=[];
@@ -70,12 +71,12 @@ try{
  for(const o of await get())await sale.call(`/orders/${o.id}/action`,{version:o.version,action:o.id===ids[0]?'rework':'accept',text:'Checked by Sale'});
  orders=await get();await factory.call('/factory/batch',{action:'factory-office',orders:orders.map(o=>({id:o.id,version:o.version}))},400);assert.ok((await get()).every(o=>o.stage===4));
  await factory.call('/factory/batch',{action:'factory-office',orders:orders.filter(o=>o.id!==ids[0]).map(o=>({id:o.id,version:o.version}))});
- await page.reload();await page.locator('.factory-navigation button').nth(3).click();await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(1);
+ await page.reload();await navClick(3);await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(1);
  await expect(page.locator('.factory-feedback')).toContainText('Checked by Sale');
  const factoryUser=(await admin.call('/users')).find(u=>u.role==='factory');
  await admin.call(`/users/${factoryUser.id}/visibility`,{factoryView:'products'});
  const limited=await factory.call('/state');assert.equal(limited.customers.length,0);assert.equal(limited.orders[0].payments,undefined);assert.equal(limited.orders[0].items[0].price,undefined);assert.equal(limited.orders.find(o=>o.id===ids[0]).saleReview.note,'Checked by Sale');
- await page.reload();await page.locator('.factory-navigation button').nth(3).click();await expect(page.locator('.factory-feedback')).toContainText('Checked by Sale');
+ await page.reload();await navClick(3);await expect(page.locator('.factory-feedback')).toContainText('Checked by Sale');
  await page.getByRole('button',{name:'Chi tiết',exact:true}).click();await expect(page.locator('.factory-summary')).toBeVisible();
  const limitedOrder=limited.orders.find(o=>o.id===ids[0]);
  assert.ok(limitedOrder.approvedAt);assert.equal(factoryTiming(limitedOrder).approved,factoryTiming((await get()).find(o=>o.id===ids[0])).approved);
@@ -84,11 +85,11 @@ try{
  await expect(page.locator('.factory-summary')).toContainText('Thực tế');
  await expect(page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true})).toHaveCount(0);
  await admin.call(`/users/${factoryUser.id}/visibility`,{factoryView:'full'});
- await page.reload();await page.locator('.factory-navigation button').nth(4).click();await page.getByLabel('Tìm đơn Xưởng').fill('Factory Buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
+ await page.reload();await navClick(4);await page.getByLabel('Tìm đơn Xưởng').fill('Factory Buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
  await page.getByLabel('Tìm đơn Xưởng').fill('No such buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(0);
- await page.locator('.factory-navigation button').nth(5).click();await expect(page.locator('.factory-kpi strong').first()).toHaveText('2');await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-analytics.png`,fullPage:true,animations:'disabled'});
- await page.setViewportSize({width:390,height:844});await page.locator('.factory-navigation button').first().click();await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-mobile.png`,fullPage:true,animations:'disabled'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
- await page.locator('.factory-navigation button').nth(4).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
+ await navClick(5);await expect(page.locator('.factory-kpi strong').first()).toHaveText('2');await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-analytics.png`,fullPage:true,animations:'disabled'});
+ await page.setViewportSize({width:390,height:844});await navClick(0);await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-mobile.png`,fullPage:true,animations:'disabled'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ await navClick(4);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
  await expect(page.locator('.factory-duration').first()).toContainText('Kế hoạch:');
  await expect(page.locator('.factory-duration').first()).toContainText('Thực tế:');
  await page.getByRole('button',{name:'Chi tiết',exact:true}).first().click();
@@ -110,7 +111,7 @@ try{
  await accountingPage.locator('.order-link').filter({hasText:officeOrder.orderCode}).click();
  await expect(accountingPage.getByRole('button',{name:'Xác nhận đủ',exact:true})).toBeVisible();
  await expect(accountingPage.getByRole('button',{name:'Hủy đơn mất cọc',exact:true})).toHaveCount(0);
- await page.locator('.factory-navigation').getByRole('button',{name:'Thông báo',exact:true}).click();
+ await page.locator('.factory-topbar').getByRole('button',{name:'Thông báo',exact:true}).click();
  await expect(page.locator('.order-notifications')).toBeVisible();
  await expect(page.locator('.notification-cards article').first()).toBeVisible();
  await page.locator('.notification-cards article').first().getByRole('button').click();
@@ -140,7 +141,7 @@ try{
  await expect(timeoutPage.getByRole('alert')).toContainText('Tải dữ liệu quá lâu');assert.equal(readCount,1);
  await timeoutPage.unroute('**/api/work/state');await hangingRoute.abort().catch(()=>{});
  await timeoutPage.getByRole('button',{name:'Thử tải lại',exact:true}).click();await expect(timeoutPage.locator('.factory-kpis')).toBeVisible();
- await page.locator('.factory-navigation').getByRole('button',{name:'Thông báo',exact:true}).click();
+ await page.locator('.factory-topbar').getByRole('button',{name:'Thông báo',exact:true}).click();
  await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-notifications-mobile.png`,fullPage:true,animations:'disabled'});
  console.log('PASS factory username login, notification navigation and failed-load retry');
  console.log('PASS accounting UI: paused-only forfeiture, hidden after resume and office dispatch');

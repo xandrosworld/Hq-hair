@@ -105,3 +105,8 @@ Kết quả lượt này: 74/74 unit test đạt; build thành công; factory-in
 - Loại tải /state trùng từ giao diện chung đối với Xưởng/Kế toán. Xưởng không chồng lượt đọc khi lượt cũ chưa xong; timeout đọc sau 30 giây, báo lỗi và nút Thử tải lại. Khi lỗi, ngừng polling cho tới thử lại hoặc quay lại cửa sổ. Không áp timeout 30 giây cho upload/ghi dữ liệu.
 - Không kết luận ảnh đang tải là lỗi tạo tài khoản: tài khoản trong ảnh đã vào được không gian Xưởng; nguyên nhân mạng tại thời điểm chụp chưa xác minh.
 - Kiểm thử database riêng: tạo Xưởng qua form quản trị với username/tự cấp mã; trùng và tên sai bị chặn; đăng nhập/đổi mật khẩu; tab thông báo/mở đơn trên mobile; lỗi mạng và mạng treo/phục hồi, không gửi chồng /state. Factory integration đạt trên Chromium và WebKit; accounting-qc đạt; 77 unit test đạt.
+
+
+### Điều chỉnh bố cục Xưởng theo yêu cầu 10/10/2026
+
+Sáu mục Tổng quan / Chưa ghi nhận / Đã ghi nhận / Đã gửi Sale Check / Đã gửi văn phòng / Thống kê & phân tích nằm ở thanh bên trái, dùng bố cục sidebar của Sale. Thông báo chuyển thành nút chuông trên thanh trên cùng, có số cập nhật trong kỳ hiện tại (không phải bộ đếm chưa đọc). Điện thoại dùng menu thu gọn ☰ chung với Sale; chọn mục tự đóng menu, hỗ trợ Escape và lớp nền đóng. Nguồn thông báo, quyền truy cập và nghiệp vụ đơn không đổi.
