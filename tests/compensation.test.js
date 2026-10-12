@@ -21,3 +21,10 @@ test('post-delivery compensation totals exclude voids, preserve history and reje
  assert.throws(()=>applyCompensation(o,user,'compensation-void',body,event));
  assert.equal(monthlySeries([{...o,stage:0}],2026,'damages')[0],0);
 });
+
+test('Only accounting records actual cancelled-order loss; loss remains separate from debt and receipts',()=>{
+ const o={orderCode:'HQ-1',date:'2026-01-01',stage:10,cancelledAt:'2026-01-02',cancelType:'deposit_forfeited',items:[],payments:[]},body={amount:120,date:'2026-01-02',text:'Actual production loss'},user={id:'kt',name:'Accounting',role:'accounting'};
+ for(const role of ['sale','sales_lead','factory','manager'])assert.throws(()=>applyCompensation(o,{role},'compensation-add',body,()=>{}));
+ applyCompensation(o,user,'compensation-add',body,()=>{});assert.equal(compensationTotal(o),120);assert.equal(o.compensations[0].kind,'cancellation_loss');assert.equal(o.stage,10);assert.equal(o.payments.length,0);
+ assert.throws(()=>applyCompensation({...o,cancelType:undefined},user,'compensation-add',body,()=>{}));
+});

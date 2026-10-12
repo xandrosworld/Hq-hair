@@ -34,3 +34,9 @@
 - Báo cáo doanh thu Sale cũ vẫn là thống kê nhóm đơn theo ngày đặt; không coi bộ lọc đó là báo cáo thu tiền theo ngày. Báo cáo mới là nguồn đối chiếu Kế toán theo cơ chế vừa chốt.
 - Hủy mất cọc giữ tiền và không còn nợ đã được khách xác nhận. Ship/thiệt hại đơn hủy vẫn chờ chi tiết; chưa bổ sung cơ chế tự động.
 - Thu dư vẫn ghi số thật; không tự hoàn hoặc chuyển tiền giữa đơn.
+
+## Chốt 12/10/2026 15:58 — hủy chưa giao và thiệt hại
+- Đơn hủy chưa giao không phân bổ tiền đã nhận cho ship: ship đã nhận = 0; doanh thu đã nhận bằng tổng tiền đã xác nhận, công nợ = 0. Giữ phí dự kiến trên hồ sơ gốc để đối chiếu, không coi đó là ship đã thu.
+- Kế toán nhập thiệt hại thực tế tại tab Thiệt hại của đơn hủy mất cọc. Ghi ngày, lý do và người nhập; tổng cộng vào thống kê Thiệt hại hiện có. Không suy ra thiệt hại từ công nợ thiếu hoặc tự trừ doanh thu.
+- Không mở lại đơn đã đóng, không thay đổi cơ chế bồi thường của đơn không hủy. Nguồn/loại/thời điểm tỷ giá vẫn chờ khách chốt.
+- Đã kiểm tra API và giao diện nhập thiệt hại trên đơn thực sự đi qua duyệt, Xưởng tạm dừng và hủy mất cọc trong cơ sở dữ liệu kiểm thử.

@@ -1,3 +1,4 @@
+import {shippingToAllocate} from './shipping-allocation.js';
 import {orderQueue} from './order-queue.js';
 import {rawProductAmount} from './product-fields.js';
 export const steps = ['Nhập đơn','Chờ duyệt','Đã duyệt','Xưởng ghi nhận','Sale tiếp nhận','Đã gửi đến văn phòng','Kiểm tra thanh toán lần cuối','Phiếu kiểm định và đặt ship','Đã nhận','Hoàn thành'];
@@ -23,8 +24,8 @@ export function totals(o) {
  const total=round(receive+(+o.paymentFee||0));
  const paid=round((o.payments||[]).filter(p=>p.confirmed).reduce((s,p)=>s+(+p.amount||0),0));
  const pending=round((o.payments||[]).filter(p=>!p.confirmed).reduce((s,p)=>s+(+p.amount||0),0));
- const revenuePaid=round(Math.max(0,paid-(+o.shippingFee||0)));
- const shippingPaid=round(Math.min(Math.max(0,paid),Math.max(0,+o.shippingFee||0)));
+ const revenuePaid=round(Math.max(0,paid-shippingToAllocate(o)));
+ const shippingPaid=round(Math.min(Math.max(0,paid),shippingToAllocate(o)));
  return {base,extra,revenue,receive,total,paid,revenuePaid,shippingPaid,pending,debt:o.cancelledAt?0:round(Math.max(0,total-paid))};
 }
 export function status(o){if(o.stage===10&&o.cancelType==='deposit_forfeited')return 'Hoàn thành - Hủy đơn mất cọc';return o.cancelledAt?'Đã hủy':o.stage===0?'Bản nháp':orderQueue(o)?.label||steps[o.stage-1]}

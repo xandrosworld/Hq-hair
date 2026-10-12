@@ -52,13 +52,13 @@ test('Customer payment mapping: revenue receipts exclude shipping, debt uses gro
 });
 
 
-test('Approved forfeiture remains in financial reports; shipping is collected first and closed debt is zero',()=>{
+test('Approved unshipped forfeiture remains in financial reports without shipping allocation or debt',()=>{
  const base=order('forfeit','2026-10-01','c1',{stage:10,orderCode:'HQ-1',cancelledAt:'2026-10-02',cancelType:'deposit_forfeited',shippingFee:85,compensations:[{amount:12}],payments:[]});
  for(const paid of [0,50,85,86,500]){
   const o={...base,payments:[{amount:paid,confirmed:true},{amount:999,confirmed:false}]};
-  assert.equal(totals(o).shippingPaid,Math.min(85,paid));assert.equal(totals(o).revenuePaid,Math.max(0,paid-85));assert.equal(totals(o).debt,0);
+  assert.equal(totals(o).shippingPaid,0);assert.equal(totals(o).revenuePaid,paid);assert.equal(totals(o).debt,0);
   const included=reportOrders({orders:[o,{...o,id:'rejected',orderCode:null,stage:-1,cancelType:'cancelled'}],customers:[]});assert.equal(included.length,1);
-  assert.equal(financialSummary(included).paid,paid);assert.equal(financialSummary(included).shippingPaid,Math.min(85,paid));assert.equal(financialSummary(included).debt,0);
+  assert.equal(financialSummary(included).paid,paid);assert.equal(financialSummary(included).shippingPaid,0);assert.equal(financialSummary(included).debt,0);
   assert.equal(monthlySeries(included,2026,'damages')[9],12);assert.equal(monthlySeries(included,2026,'paid')[9],paid);assert.ok(reportCSV(included,[]).includes('HQ-1'));
  }
 });

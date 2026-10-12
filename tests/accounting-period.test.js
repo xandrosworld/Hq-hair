@@ -16,3 +16,9 @@ test('Confirmed correction requires one-time manager grant and keeps audit witho
  assert.equal(o.payments[0].corrections[0].before.amount,50);assert.equal(o.payments[0].amount,60);assert.equal(o.stage,8);assert.equal(o.payments[0].confirmed,true);
  assert.throws(()=>applyReceiptCorrection(o,accountant,'accounting-correct-receipt',body,()=>{}),{status:403});
 });
+
+test('Cancelled unshipped receipts retain all revenue without shipping; dispatched orders retain allocation',()=>{
+ const o={...order(),cancelledAt:'2026-10-02',cancelType:'deposit_forfeited',stage:10};
+ assert.equal(accountingPeriod([o]).shippingPaid,0);assert.equal(accountingPeriod([o]).revenuePaid,855);
+ assert.equal(accountingPeriod([{...o,shippedDate:'2026-10-01'}]).shippingPaid,85);
+});
