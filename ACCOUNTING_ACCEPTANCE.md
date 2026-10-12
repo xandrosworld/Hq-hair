@@ -31,7 +31,7 @@
 - Khoản thu được bổ sung ngày thực nhận khi xác nhận; chứng từ cũ không tự gán ngày đối soát thành ngày thực nhận.
 - Quản trị cấp quyền riêng một khoản đã xác nhận, dùng một lần. Kế toán sửa tiền/ngày nhận với lý do; giữ lịch sử trước/sau và nguồn cấp quyền. Không mở lại quy trình sản xuất khi sửa khoản thu.
 - Báo cáo theo ngày duyệt / thực nhận mới trong không gian Kế toán và Số liệu Kế toán của quản trị: chọn tháng, tách doanh thu đơn và từng đợt thu, phân bổ ship qua toàn bộ các đợt trước khi lọc tháng, CSV cùng số liệu.
-- Báo cáo doanh thu Sale cũ vẫn là thống kê nhóm đơn theo ngày đặt; không coi bộ lọc đó là báo cáo thu tiền theo ngày. Báo cáo mới là nguồn đối chiếu Kế toán theo cơ chế vừa chốt.
+- Đã đồng bộ màn Doanh thu & công nợ của Sale với báo cáo Kế toán: doanh thu theo ngày duyệt, tiền theo ngày thực nhận. Không loại khoản thu trong kỳ chỉ vì đơn được đặt hoặc duyệt ở kỳ trước.
 - Hủy mất cọc giữ tiền và không còn nợ đã được khách xác nhận. Ship/thiệt hại đơn hủy vẫn chờ chi tiết; chưa bổ sung cơ chế tự động.
 - Thu dư vẫn ghi số thật; không tự hoàn hoặc chuyển tiền giữa đơn.
 
@@ -40,3 +40,10 @@
 - Kế toán nhập thiệt hại thực tế tại tab Thiệt hại của đơn hủy mất cọc. Ghi ngày, lý do và người nhập; tổng cộng vào thống kê Thiệt hại hiện có. Không suy ra thiệt hại từ công nợ thiếu hoặc tự trừ doanh thu.
 - Không mở lại đơn đã đóng, không thay đổi cơ chế bồi thường của đơn không hủy. Nguồn/loại/thời điểm tỷ giá vẫn chờ khách chốt.
 - Đã kiểm tra API và giao diện nhập thiệt hại trên đơn thực sự đi qua duyệt, Xưởng tạm dừng và hủy mất cọc trong cơ sở dữ liệu kiểm thử.
+
+## Đồng bộ báo cáo Sale — 12/10/2026
+- Các ô tổng, biểu đồ theo ngày/tháng/năm, tổng hợp đội Sale và CSV trên màn Doanh thu & công nợ dùng cùng nguồn tính theo sự kiện duyệt/thu như Kế toán.
+- Bộ lọc người phụ trách/từ khóa áp dụng trước khi tổng hợp sự kiện; không lọc đơn theo ngày đặt trước khi tính tiền thu.
+- Giảm giá theo các đơn duyệt trong kỳ; thiệt hại theo ngày ghi nhận, bỏ khoản đã hủy ghi nhận. Công nợ là số dư hiện tại, được ghi nhãn rõ, không giả lập số dư lịch sử cuối tháng.
+- CSV Sale và Kế toán chung định dạng: dòng duyệt đơn, dòng thu tiền, dòng thiệt hại và dòng công nợ hiện tại. Ngày chứng từ cũ được chỉ rõ là nguồn thay thế ngày thực nhận.
+- Kiểm thử đơn đặt tháng 8, duyệt tháng 9, thu tháng 9/10 trên Chromium và WebKit; số liệu các tháng và tổng CSV khớp công thức dùng chung.

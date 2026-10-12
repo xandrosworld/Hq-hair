@@ -1,5 +1,5 @@
 import {compensationTotal} from './compensation-totals.js';
-import {orderLabel} from './order-identity.js';
+import {approvalDate,orderLabel} from './order-identity.js';
 import {totals,round,today} from './shared.js';
 import {aging,agingLabels} from './receivables.js';
 
@@ -30,4 +30,4 @@ export function reportCSV(orders,customers){
  const rows=[['Ma don','Ma khach','Khach hang','Nguoi phu trach','Ngay dat','Han giao hang','Doanh thu USD','Tong thu USD','Da nhan USD (doanh thu sau phi van chuyen)','Tien thuc nhan USD','Phi van chuyen USD','Giam gia USD','Thiet hai USD','Con no USD','So ngay qua han','Nhom tuoi no','Van chuyen da nhan USD'],...orders.filter(o=>isFinancialOrder(o)).map(o=>{const t=totals(o),a=aging(o);return [orderLabel(o),o.customerId,byId.get(o.customerId)?.name||byId.get(o.customerId)?.company,o.sale,o.date,a.due,t.revenue,t.total,t.revenuePaid,t.paid,Number(o.shippingFee)||0,Number(o.discount)||0,compensationTotal(o),t.debt,a.days??'',agingLabels[a.bucket],t.shippingPaid]})];
  return '\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
 }
-export const availableYears=orders=>[...new Set([today().slice(0,4),...orders.filter(o=>validDate(o.date)).map(o=>o.date.slice(0,4))])].sort().reverse();
+export const availableYears=orders=>[...new Set([today().slice(0,4),...orders.flatMap(o=>[o.date,approvalDate(o),...(o.payments||[]).map(p=>p.receivedDate||p.date),...(o.compensations||[]).map(e=>e.date)]).filter(validDate).map(date=>date.slice(0,4))])].sort().reverse();
