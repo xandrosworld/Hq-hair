@@ -110,3 +110,10 @@ Kết quả lượt này: 74/74 unit test đạt; build thành công; factory-in
 ### Điều chỉnh bố cục Xưởng theo yêu cầu 10/10/2026
 
 Sáu mục Tổng quan / Chưa ghi nhận / Đã ghi nhận / Đã gửi Sale Check / Đã gửi văn phòng / Thống kê & phân tích nằm ở thanh bên trái, dùng bố cục sidebar của Sale. Thông báo chuyển thành nút chuông trên thanh trên cùng, có số cập nhật trong kỳ hiện tại (không phải bộ đếm chưa đọc). Điện thoại dùng menu thu gọn ☰ chung với Sale; chọn mục tự đóng menu, hỗ trợ Escape và lớp nền đóng. Nguồn thông báo, quyền truy cập và nghiệp vụ đơn không đổi.
+
+
+## Quản trị tổng — 12/10/2026
+
+Menu quản trị có Thống kê Xưởng, mở mặc định Thống kê & phân tích, dùng chung FactoryBoard và factoryReport với tài khoản Xưởng (sớm/đúng/trễ, sản lượng kg, lọc năm/tháng). Các danh sách sản xuất cho quản trị mở chi tiết, không hiển thị thao tác ghi nhận/tạm dừng/bàn giao dành cho Xưởng. API vẫn giữ quyền nghiệp vụ hiện hành.
+
+Số liệu Kế toán dùng toàn bộ đơn quản trị được xem: tổng thu, tổng đã nhận, doanh thu đã nhận và công nợ trên đơn đã duyệt không hủy; lọc chờ duyệt, chứng từ chưa đối soát, thanh toán cuối, tạm dừng, công nợ, hủy. Mở đơn để đối chiếu chứng từ/lịch sử. Doanh thu & công nợ toàn bộ Sale tiếp tục dùng báo cáo hiện có.
