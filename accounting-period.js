@@ -1,3 +1,4 @@
+import {receiptVND} from './receipt-fx.js';
 import {shippingToAllocate} from './shipping-allocation.js';
 import {approvalDate,orderLabel} from './order-identity.js';
 import {isFinancialOrder} from './reporting.js';
@@ -9,7 +10,7 @@ export function accountingPeriod(orders,period='',asOf=today()){
  if(!approvedOn)undated++;
  let remaining=shippingToAllocate(o);
  const receipts=(o.payments||[]).filter(p=>p.confirmed).map((p,i)=>({...p,index:i,day:p.receivedDate||p.date||''})).sort((a,b)=>a.day.localeCompare(b.day)||a.index-b.index);
- for(const p of receipts){const paid=round(Number(p.amount)||0),shippingPaid=round(Math.min(remaining,Math.max(0,paid)));remaining=round(remaining-shippingPaid);if(!p.day){undated++;continue}if(p.day>asOf||!p.day.startsWith(period))continue;rows.push({id:p.id,orderId:o.id,code:orderLabel(o),date:p.day,legacy:!p.receivedDate,paid,shippingPaid,revenuePaid:round(paid-shippingPaid)})}
+ for(const p of receipts){const paid=round(Number(p.amount)||0),shippingPaid=round(Math.min(remaining,Math.max(0,paid)));remaining=round(remaining-shippingPaid);if(!p.day){undated++;continue}if(p.day>asOf||!p.day.startsWith(period))continue;rows.push({id:p.id,orderId:o.id,code:orderLabel(o),date:p.day,legacy:!p.receivedDate,paid,shippingPaid,revenuePaid:round(paid-shippingPaid),exchangeRate:p.exchangeRate??null,...receiptVND(paid,shippingPaid,p.exchangeRate)})}
  }
- return {approved,rows:rows.sort((a,b)=>b.date.localeCompare(a.date)),undated,revenue:round(approved.reduce((s,r)=>s+r.revenue,0)),...Object.fromEntries(['paid','shippingPaid','revenuePaid'].map(k=>[k,round(rows.reduce((s,r)=>s+r[k],0))]))};
+ return {missingRates:rows.filter(r=>r.exchangeRate==null).length,...Object.fromEntries(['paidVND','shippingPaidVND','revenuePaidVND'].map(k=>[k,rows.reduce((s,r)=>s+(r[k]??0),0)])),approved,rows:rows.sort((a,b)=>b.date.localeCompare(a.date)),undated,revenue:round(approved.reduce((s,r)=>s+r.revenue,0)),...Object.fromEntries(['paid','shippingPaid','revenuePaid'].map(k=>[k,round(rows.reduce((s,r)=>s+r[k],0))]))};
 }

@@ -1,3 +1,4 @@
+import {receiptRate} from './receipt-fx.js';
 import {round,today} from './shared.js';
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})};
 export function receiptDate(value){return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value&&value<=today()}
@@ -13,9 +14,10 @@ export function applyReceiptCorrection(order,user,action,body,event){
  if(manager){p.correctionGrant={by:user.id,name:user.name,time,reason};event('Cấp quyền sửa khoản thu',`${p.id} · ${reason}`);return true}
  if(!p.correctionGrant)fail(403,'Cần quản trị cấp quyền sửa khoản thu này.');
  if(typeof body.amount!=='number'||!Number.isFinite(body.amount)||body.amount<=0||body.amount>10000000||Math.abs(body.amount-round(body.amount))>1e-8||!receiptDate(body.receivedDate))fail(400,'Nhập tiền thực nhận hợp lệ và ngày thực nhận không sau hôm nay.');
- const before={amount:p.amount,receivedDate:p.receivedDate||p.date||null};
- p.corrections=[...(p.corrections||[]),{before,after:{amount:body.amount,receivedDate:body.receivedDate},by:user.id,name:user.name,time,reason,grant:p.correctionGrant}];
- p.amount=body.amount;p.receivedDate=body.receivedDate;delete p.correctionGrant;
+ const exchangeRate=receiptRate(body.exchangeRate===undefined?p.exchangeRate:body.exchangeRate);
+ const before={amount:p.amount,receivedDate:p.receivedDate||p.date||null,exchangeRate:p.exchangeRate??null};
+ p.corrections=[...(p.corrections||[]),{before,after:{amount:body.amount,receivedDate:body.receivedDate,exchangeRate},by:user.id,name:user.name,time,reason,grant:p.correctionGrant}];
+ p.amount=body.amount;p.receivedDate=body.receivedDate;p.exchangeRate=exchangeRate;p.exchangeRateSource=exchangeRate===null?null:'manual';delete p.correctionGrant;
  event('Kế toán điều chỉnh khoản thu',`${p.id} · ${before.amount} → ${p.amount} USD · ${reason}`);
  return true;
 }

@@ -42,7 +42,23 @@ try{
  await action(accountant,'accounting-approve',{paymentStatus:'full',receipts},400);
  assert.equal((await current()).payments[0].confirmed,false);
  await action(accountant,'accounting-cancel',{text:'Cannot cancel a receipt'},400);
- await action(accountant,'accounting-approve',{paymentStatus:'partial',receipts});
+ // Confirm the first receipt through the real accounting UI, including manual FX.
+ const {chromium:fxChromium,expect:fxExpect}=await import('@playwright/test');
+ const fxBrowser=await fxChromium.launch({headless:true,channel:'msedge'});
+ try{
+  const ctx=await fxBrowser.newContext({viewport:{width:1440,height:1000}}),page=await ctx.newPage();
+  await ctx.request.post(base+'/login',{data:{email:'accounting@example.com',password:'Personal-New-Password'}});
+  await page.goto(base.replace('/api/work','/workspace'));
+  await page.locator('table tbody button').first().click();
+  await page.locator('.accounting-receipts input[type=checkbox]').first().check();
+  await page.getByLabel('Tỷ giá '+o.payments[0].id,{exact:true}).fill('25000');
+  await fxExpect(page.locator('.accounting-receipts')).toContainText('750.000');
+  await page.getByRole('button',{name:'Thanh toán một phần',exact:true}).click();
+  await page.getByRole('button',{name:'Xác nhận duyệt',exact:true}).click();
+  await fxExpect(page.locator('.accounting-receipts')).toHaveCount(0);
+  assert.equal((await current()).payments[0].exchangeRate,25000);
+ }finally{await fxBrowser.close()}
+
  assert.equal((await current()).orderCode,c.id+'-1');
  await action(a,'payment',{payment:{sender:'Buyer',amount:70,method:'Wise',date:'2026-10-02',reference:'BALANCE'}});
  o=await current();
@@ -107,11 +123,11 @@ try{
  await a.call(`/orders/${id}/qc`,{version:o.version,qc:q},{status:400});
  await owner.call(`/orders/${id}/qc`,{version:o.version,qc:q},{status:400});
  await owner.call(`/orders/${id}/qc`,{version:o.version,qc:q,reason:'Verified correction after closure'});
- const correction={paymentId:o.payments[0].id,amount:31,receivedDate:'2026-10-02',text:'Correct received amount'};
+ const correction={paymentId:o.payments[0].id,amount:31,exchangeRate:26000,receivedDate:'2026-10-02',text:'Correct received amount'};
  await action(accountant,'accounting-correct-receipt',correction,403);
  await action(owner,'accounting-grant-receipt',correction);
  await action(accountant,'accounting-correct-receipt',correction);
- assert.equal((await current()).payments[0].amount,31);assert.equal((await current()).payments[0].corrections.length,1);
+ assert.equal((await current()).payments[0].amount,31);assert.equal((await current()).payments[0].corrections.length,1);assert.equal((await current()).payments[0].corrections[0].before.exchangeRate,25000);assert.equal((await current()).payments[0].exchangeRate,26000);
  await action(accountant,'accounting-correct-receipt',correction,403);
  const cancelledCreated=await a.call('/orders',{...draft,shippingFee:85,submit:true,payments:[{sender:'Buyer',amount:50,method:'Wise',date:'2026-10-02'}]});
  const cancelledId=cancelledCreated.id;
@@ -123,7 +139,7 @@ try{
  const lossBrowser=await chromium.launch({headless:true,channel:'msedge'});
  try{const ctx=await lossBrowser.newContext(),page=await ctx.newPage();await ctx.request.post(base+'/login',{data:{email:'accounting@example.com',password:'Personal-New-Password'}});await page.goto(base.replace('/api/work','/workspace'));await page.getByRole('combobox').selectOption('cancelled');co=await cancelledCurrent();await page.getByRole('button',{name:co.orderCode,exact:true}).click();await page.getByRole('button',{name:'Thiệt hại',exact:true}).click();await page.getByLabel('Tiền bồi thường (USD)',{exact:true}).fill('20');await page.getByLabel('Lý do bồi thường / hoàn hàng *',{exact:true}).fill('Actual production loss');await page.getByRole('button',{name:'Ghi nhận thiệt hại',exact:true}).click();await expect(page.getByText('Tổng thiệt hại:',{exact:false})).toContainText('$20.00');assert.equal((await cancelledCurrent()).compensations.length,1);}finally{await lossBrowser.close()}
  const audit=await owner.call('/audit');assert.ok(audit.some(x=>x.action==='qc-save'));assert.ok(audit.some(x=>x.action==='accounting-decision'));
- await stop();await start();assert.equal((await current()).qc.note,'Sale reviewed');assert.equal((await current()).orderCode,c.id+'-1');
+ await stop();await start();assert.equal((await current()).payments[0].exchangeRate,26000);assert.equal((await current()).qc.note,'Sale reviewed');assert.equal((await current()).orderCode,c.id+'-1');
  const persisted=await fetch(base+mediaPath,{headers:{Cookie:factory.cookie}});assert.equal(persisted.status,200);assert.equal(Buffer.from(await persisted.arrayBuffer()).toString('base64'),png.split(',')[1]);
  console.log('PASS: sequential handoffs, partial/final payment, Factory/Accounting read-only QC at API/UI, Sale step 8, protected media/ranges, upload retry, stale versions, lock/manager reason, audit and restart persistence.');
 }finally{if(server?.exitCode===null)await stop();if(!path.resolve(dir).startsWith(path.resolve(os.tmpdir())+path.sep))throw Error('Unsafe cleanup path');rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:200})}

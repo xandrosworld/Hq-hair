@@ -1,3 +1,4 @@
+import {receiptRate} from './receipt-fx.js';
 import {receiptDate} from './receipt-corrections.js';
 import {totals,round} from './shared.js';
 
@@ -12,6 +13,7 @@ function confirmReceipts(order,user,receipts,now){
   if(typeof receipt.amount!=='number'||!Number.isFinite(receipt.amount)||receipt.amount<=0||receipt.amount>10000000||Math.abs(receipt.amount-round(receipt.amount))>1e-8)fail(400,'Tiền thực nhận phải lớn hơn 0, tối đa 10.000.000 USD và hai chữ số thập phân.');
   if(receipt.receivedDate!==undefined&&!receiptDate(receipt.receivedDate))fail(400,'Ngày thực nhận không hợp lệ.');
   if(receipt.receivedDate!==undefined)p.receivedDate=receipt.receivedDate;
+  p.exchangeRate=receiptRate(receipt.exchangeRate);p.exchangeRateSource=p.exchangeRate===null?null:'manual';
   seen.add(p.id);p.reportedAmount=p.amount;p.amount=receipt.amount;p.confirmed=true;p.confirmedBy=user.id;p.confirmedName=user.name;p.confirmedAt=now;
  }
  return payments;

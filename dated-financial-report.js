@@ -8,10 +8,10 @@ export function datedFinancialSummary(orders,period='',asOf=today()){
 }
 export function datedFinancialCSV(orders,period='',asOf=today()){
  const r=datedFinancialSummary(orders,period,asOf),byId=new Map(orders.map(o=>[o.id,o]));
- const rows=[['Loai','Ma don','Sale','Ngay','Doanh thu don USD','Tong thuc nhan USD','Van chuyen da nhan USD','Doanh thu da nhan USD','Giam gia USD','Thiet hai USD','Cong no hien tai USD','Nguon ngay'],
+ const rows=[['Loai','Ma don','Sale','Ngay','Doanh thu don USD','Tong thuc nhan USD','Van chuyen da nhan USD','Doanh thu da nhan USD','Giam gia USD','Thiet hai USD','Cong no hien tai USD','Nguon ngay','Ty gia VND/USD','Tong thuc nhan VND','Van chuyen da nhan VND','Doanh thu da nhan VND'],
  ...r.approved.map(x=>['Don duyet',x.code,byId.get(x.id)?.sale,x.date,x.revenue,0,0,0,Number(byId.get(x.id)?.discount)||0,0,0,'Ngay duyet']),
- ...r.rows.map(x=>['Khoan thu',x.code,byId.get(x.orderId)?.sale,x.date,0,x.paid,x.shippingPaid,x.revenuePaid,0,0,0,x.legacy?'Ngay chung tu cu':'Ngay thuc nhan']),
+ ...r.rows.map(x=>['Khoan thu',x.code,byId.get(x.orderId)?.sale,x.date,0,x.paid,x.shippingPaid,x.revenuePaid,0,0,0,x.legacy?'Ngay chung tu cu':'Ngay thuc nhan',x.exchangeRate??'',x.paidVND??'',x.shippingPaidVND??'',x.revenuePaidVND??'']),
  ...r.losses.map(x=>['Thiet hai',x.code,byId.get(x.orderId)?.sale,x.date,0,0,0,0,0,x.amount,0,'Ngay ghi nhan']),
  ...orders.filter(o=>isFinancialOrder(o)&&totals(o).debt>0).map(o=>['Cong no hien tai',o.orderCode,o.sale,asOf,0,0,0,0,0,0,totals(o).debt,'So du hien tai, khong phai lich su'])];
- return '\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
+ return '\uFEFF'+rows.map(row=>Array.from({length:16},(_,i)=>row[i]??'').map(csvCell).join(',')).join('\r\n');
 }

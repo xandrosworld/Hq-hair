@@ -14,13 +14,11 @@
 - Không cho nhập khoản xác nhận mới trong thao tác hủy mất cọc.
 - Hiển thị riêng tổng đã nhận, vận chuyển đã nhận và doanh thu đã nhận.
 
-## Chờ khách xác nhận — chưa nghiệm thu nghiệp vụ
-- Có nhập khoản thu độc lập với chứng từ hay không. Quyền sửa đã chốt: quản trị cấp quyền, Kế toán sửa rồi khóa lại.
-- Hủy mất cọc giữ toàn bộ hay một phần, hoàn tiền, xử lý nợ và phân bổ ship. Hiện hệ thống giữ tiền đã nhận và đóng nợ về 0; đây chưa phải chính sách đã được khách chốt đầy đủ.
-- Bồi thường có giảm nợ/doanh thu không; hiện thống kê riêng.
-- Thu thừa, hoàn tiền và chuyển tiền giữa đơn.
-- Nguồn/loại/thời điểm tỷ giá VietinBank và VND. Ngày báo cáo đã chốt: doanh thu đơn theo ngày duyệt, thực nhận theo từng đợt.
+## Còn chờ để nghiệm thu toàn bộ phân hệ
+- Có nhập khoản thu độc lập với chứng từ hay không.
+- Nghiệp vụ bồi thường/hoàn hàng ngoài đơn hủy: khách chưa chốt, hiện thống kê riêng.
 - Bộ đơn mẫu và kết quả mong muốn của khách.
+- Biểu mẫu, ánh xạ và công thức các kết nối file Kế toán/tài chính/lương theo K03–K05 của hợp đồng; không coi riêng luồng thu tiền là đã hoàn thành toàn bộ phân hệ.
 
 ## Kiểm tra
 - Unit: thu nhiều đợt, tiền thực nhận khác chứng từ, tổng có phí cũ, chứng từ trùng/sai, tính toán báo cáo và hủy mất cọc.
@@ -32,13 +30,13 @@
 - Quản trị cấp quyền riêng một khoản đã xác nhận, dùng một lần. Kế toán sửa tiền/ngày nhận với lý do; giữ lịch sử trước/sau và nguồn cấp quyền. Không mở lại quy trình sản xuất khi sửa khoản thu.
 - Báo cáo theo ngày duyệt / thực nhận mới trong không gian Kế toán và Số liệu Kế toán của quản trị: chọn tháng, tách doanh thu đơn và từng đợt thu, phân bổ ship qua toàn bộ các đợt trước khi lọc tháng, CSV cùng số liệu.
 - Đã đồng bộ màn Doanh thu & công nợ của Sale với báo cáo Kế toán: doanh thu theo ngày duyệt, tiền theo ngày thực nhận. Không loại khoản thu trong kỳ chỉ vì đơn được đặt hoặc duyệt ở kỳ trước.
-- Hủy mất cọc giữ tiền và không còn nợ đã được khách xác nhận. Ship/thiệt hại đơn hủy vẫn chờ chi tiết; chưa bổ sung cơ chế tự động.
+- Hủy mất cọc giữ tiền và không còn nợ đã được khách xác nhận. Ship/thiệt hại đơn hủy đã chốt tại mục cập nhật 15:58 bên dưới.
 - Thu dư vẫn ghi số thật; không tự hoàn hoặc chuyển tiền giữa đơn.
 
 ## Chốt 12/10/2026 15:58 — hủy chưa giao và thiệt hại
 - Đơn hủy chưa giao không phân bổ tiền đã nhận cho ship: ship đã nhận = 0; doanh thu đã nhận bằng tổng tiền đã xác nhận, công nợ = 0. Giữ phí dự kiến trên hồ sơ gốc để đối chiếu, không coi đó là ship đã thu.
 - Kế toán nhập thiệt hại thực tế tại tab Thiệt hại của đơn hủy mất cọc. Ghi ngày, lý do và người nhập; tổng cộng vào thống kê Thiệt hại hiện có. Không suy ra thiệt hại từ công nợ thiếu hoặc tự trừ doanh thu.
-- Không mở lại đơn đã đóng, không thay đổi cơ chế bồi thường của đơn không hủy. Nguồn/loại/thời điểm tỷ giá vẫn chờ khách chốt.
+- Không mở lại đơn đã đóng, không thay đổi cơ chế bồi thường của đơn không hủy. Tỷ giá theo ngày nhận tiền; quyết định cuối về nhập tay/tự động ở mục 18:47 bên dưới.
 - Đã kiểm tra API và giao diện nhập thiệt hại trên đơn thực sự đi qua duyệt, Xưởng tạm dừng và hủy mất cọc trong cơ sở dữ liệu kiểm thử.
 
 ## Đồng bộ báo cáo Sale — 12/10/2026
@@ -47,3 +45,13 @@
 - Giảm giá theo các đơn duyệt trong kỳ; thiệt hại theo ngày ghi nhận, bỏ khoản đã hủy ghi nhận. Công nợ là số dư hiện tại, được ghi nhãn rõ, không giả lập số dư lịch sử cuối tháng.
 - CSV Sale và Kế toán chung định dạng: dòng duyệt đơn, dòng thu tiền, dòng thiệt hại và dòng công nợ hiện tại. Ngày chứng từ cũ được chỉ rõ là nguồn thay thế ngày thực nhận.
 - Kiểm thử đơn đặt tháng 8, duyệt tháng 9, thu tháng 9/10 trên Chromium và WebKit; số liệu các tháng và tổng CSV khớp công thức dùng chung.
+
+## Chốt 12/10/2026 18:47 — làm phần tỷ giá trong hợp đồng
+- Khách chọn triển khai phần nhập tay trong hợp đồng trước. Không kích hoạt kết nối tự động VietinBank, không tạo phí tích hợp.
+- Kế toán nhập tỷ giá VND/1 USD theo ngày nhận tiền riêng cho từng đợt, tối đa hai chữ số thập phân; lưu cùng khoản thu khi xác nhận.
+- Tỷ giá đã xác nhận chỉ sửa theo quyền quản trị cấp một lần; nhật ký lưu tỷ giá trước/sau và lý do. Không thay đổi tỷ giá các khoản khác.
+- Báo cáo Kế toán và Số liệu Kế toán quản trị hiển thị thực nhận/ship/doanh thu đã nhận VND. CSV chung Sale/Kế toán bổ sung tỷ giá và ba cột VND. USD vẫn là đơn vị gốc.
+- Quy đổi từng khoản, làm tròn đến đồng; VND doanh thu nhận bằng VND thực nhận trừ VND ship để đối chiếu đúng tổng. Không lấy tỷ giá hôm nay để quy đổi lịch sử.
+- Cho phép xác nhận USD khi chưa có tỷ giá; hiển thị rõ khoản thiếu, không tự điền tỷ giá và không coi giá trị thiếu là 0 trong chi tiết/CSV. Tổng VND chỉ cộng khoản có tỷ giá và cảnh báo chưa đầy đủ. Bổ sung tỷ giá sau xác nhận cũng cần quyền quản trị.
+- Không quy đổi doanh thu đơn chưa thu/công nợ sang VND bằng một tỷ giá tự chọn; chưa có quy tắc tỷ giá riêng cho hai chỉ tiêu này.
+- Đã kiểm tra 91 unit tests, build, luồng API/giao diện Kế toán nhập tỷ giá, lưu sau restart, sửa được cấp quyền, phân bổ ship xuyên kỳ và CSV.
