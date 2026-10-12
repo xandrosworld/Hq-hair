@@ -12,3 +12,5 @@
 @media(max-width:480px){.factory-topbar{gap:8px}.factory-notification-button{padding:8px}.factory-notification-button>span{display:none}}
 
 .factory-shell .page-title .factory-order-count{display:inline-block;color:#c62828;font-size:26px;font-weight:700;line-height:1.5}
+
+.factory-shell .page-title .factory-order-count{color:#111}.factory-shell .page-title .factory-order-count.waiting{color:#c62828}.factory-all-orders>.panel-head{flex-wrap:wrap;gap:14px}.factory-all-orders>.panel-head .field{margin:0}

@@ -32,6 +32,9 @@ try{
  assert.ok((await get()).every(o=>o.stage===3));
  const page=await factory.ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/workspace');
  await expect(page.locator('.factory-navigation button')).toHaveCount(6);
+ await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
+ await page.getByLabel('Tháng danh sách đơn hàng').fill('2020-01');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(0);
+ await page.getByRole('button',{name:'Tất cả tháng',exact:true}).click();await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
  const navClick=async index=>{const button=page.locator('.factory-navigation button').nth(index);if(page.viewportSize().width<=1119&&!await button.isVisible())await page.getByRole('button',{name:'Mở menu',exact:true}).click();await button.click()};
  await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-overview.png`,fullPage:true,animations:'disabled'});
  await navClick(1);
@@ -112,9 +115,9 @@ try{
  await expect(accountingPage.getByRole('button',{name:'Xác nhận đủ',exact:true})).toBeVisible();
  await expect(accountingPage.getByRole('button',{name:'Hủy đơn mất cọc',exact:true})).toHaveCount(0);
  await page.locator('.factory-topbar').getByRole('button',{name:'Thông báo',exact:true}).click();
- await expect(page.locator('.order-notifications')).toBeVisible();
- await expect(page.locator('.notification-cards article').first()).toBeVisible();
- await page.locator('.notification-cards article').first().getByRole('button').click();
+ await expect(page.getByRole('dialog',{name:'Thông báo'}).locator('.order-notifications')).toBeVisible();
+ await expect(page.getByRole('dialog',{name:'Thông báo'}).locator('.notification-cards article').first()).toBeVisible();
+ await page.getByRole('dialog',{name:'Thông báo'}).locator('.notification-cards article').first().getByRole('button').click();
  await expect(page.locator('.factory-summary')).toBeVisible();
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  const retryPage=await factory.ctx.newPage();let failed=false;
