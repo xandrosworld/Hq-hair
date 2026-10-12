@@ -88,7 +88,7 @@ try{
    const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));
    const login=await ctx.request.post(base+'/login',{data:{email,password:'Personal-New-Password'}});assert.equal(login.status(),200,await login.text());await page.goto(base.replace('/api/work','/workspace'));
    if(role==='factory'){await page.getByRole('button',{name:'Mở menu',exact:true}).tap();await page.locator('.factory-navigation').getByRole('button',{name:'Đã gửi văn phòng',exact:true}).click();}
-   if(role==='accounting'){await page.getByRole('combobox').selectOption('all');await page.getByLabel('Tìm đơn kế toán').fill('NO-MATCH-ACCOUNTING');await expect(page.locator('tbody tr')).toHaveCount(0);await page.getByLabel('Tìm đơn kế toán').fill('');}
+   if(role==='accounting'){await expect(page.locator('.accounting-period')).toContainText('Báo cáo theo ngày duyệt / thực nhận');await page.getByLabel('Tháng kế toán').fill('2026-10');await expect(page.locator('.accounting-period')).toContainText('$100.00');await page.getByRole('combobox').selectOption('all');await page.getByLabel('Tìm đơn kế toán').fill('NO-MATCH-ACCOUNTING');await expect(page.locator('section.panel').filter({has:page.getByLabel('Tìm đơn kế toán')}).locator('tbody tr')).toHaveCount(0);await page.getByLabel('Tìm đơn kế toán').fill('');}
    if(role==='sale'){await page.getByRole('button',{name:'Mở menu',exact:true}).tap();await page.locator('.sidebar').getByRole('button',{name:'Đơn hàng chưa hoàn thành',exact:true}).tap();}
    await page.getByRole('button',{name:(await current()).orderCode,exact:true}).first().click();
    if(role==='accounting'){await expect(page.locator('.qc-summary')).toContainText('Vận chuyển đã nhận');await expect(page.locator('.qc-summary')).toContainText('Doanh thu đã nhận');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));}
@@ -107,6 +107,12 @@ try{
  await a.call(`/orders/${id}/qc`,{version:o.version,qc:q},{status:400});
  await owner.call(`/orders/${id}/qc`,{version:o.version,qc:q},{status:400});
  await owner.call(`/orders/${id}/qc`,{version:o.version,qc:q,reason:'Verified correction after closure'});
+ const correction={paymentId:o.payments[0].id,amount:31,receivedDate:'2026-10-02',text:'Correct received amount'};
+ await action(accountant,'accounting-correct-receipt',correction,403);
+ await action(owner,'accounting-grant-receipt',correction);
+ await action(accountant,'accounting-correct-receipt',correction);
+ assert.equal((await current()).payments[0].amount,31);assert.equal((await current()).payments[0].corrections.length,1);
+ await action(accountant,'accounting-correct-receipt',correction,403);
  const audit=await owner.call('/audit');assert.ok(audit.some(x=>x.action==='qc-save'));assert.ok(audit.some(x=>x.action==='accounting-decision'));
  await stop();await start();assert.equal((await current()).qc.note,'Sale reviewed');assert.equal((await current()).orderCode,c.id+'-1');
  const persisted=await fetch(base+mediaPath,{headers:{Cookie:factory.cookie}});assert.equal(persisted.status,200);assert.equal(Buffer.from(await persisted.arrayBuffer()).toString('base64'),png.split(',')[1]);

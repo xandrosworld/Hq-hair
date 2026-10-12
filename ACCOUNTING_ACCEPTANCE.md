@@ -15,14 +15,22 @@
 - Hiển thị riêng tổng đã nhận, vận chuyển đã nhận và doanh thu đã nhận.
 
 ## Chờ khách xác nhận — chưa nghiệm thu nghiệp vụ
-- Có nhập khoản thu độc lập với chứng từ hay không; quyền sửa/hủy khoản đã xác nhận.
+- Có nhập khoản thu độc lập với chứng từ hay không. Quyền sửa đã chốt: quản trị cấp quyền, Kế toán sửa rồi khóa lại.
 - Hủy mất cọc giữ toàn bộ hay một phần, hoàn tiền, xử lý nợ và phân bổ ship. Hiện hệ thống giữ tiền đã nhận và đóng nợ về 0; đây chưa phải chính sách đã được khách chốt đầy đủ.
 - Bồi thường có giảm nợ/doanh thu không; hiện thống kê riêng.
 - Thu thừa, hoàn tiền và chuyển tiền giữa đơn.
-- USD/VND, tỷ giá, ngày hạch toán báo cáo.
+- Nguồn/loại/thời điểm tỷ giá VietinBank và VND. Ngày báo cáo đã chốt: doanh thu đơn theo ngày duyệt, thực nhận theo từng đợt.
 - Bộ đơn mẫu và kết quả mong muốn của khách.
 
 ## Kiểm tra
 - Unit: thu nhiều đợt, tiền thực nhận khác chứng từ, tổng có phí cũ, chứng từ trùng/sai, tính toán báo cáo và hủy mất cọc.
 - Integration: phân quyền, duyệt một phần/đủ, giao Xưởng và văn phòng, phiên bản cũ, idempotency, nhật ký và dữ liệu sau khởi động lại.
 - Browser: giao diện Kế toán trên điện thoại và đối chiếu bảng thu/chi tiết/báo cáo/CSV.
+
+## Cập nhật sau xác nhận khách
+- Khoản thu được bổ sung ngày thực nhận khi xác nhận; chứng từ cũ không tự gán ngày đối soát thành ngày thực nhận.
+- Quản trị cấp quyền riêng một khoản đã xác nhận, dùng một lần. Kế toán sửa tiền/ngày nhận với lý do; giữ lịch sử trước/sau và nguồn cấp quyền. Không mở lại quy trình sản xuất khi sửa khoản thu.
+- Báo cáo theo ngày duyệt / thực nhận mới trong không gian Kế toán và Số liệu Kế toán của quản trị: chọn tháng, tách doanh thu đơn và từng đợt thu, phân bổ ship qua toàn bộ các đợt trước khi lọc tháng, CSV cùng số liệu.
+- Báo cáo doanh thu Sale cũ vẫn là thống kê nhóm đơn theo ngày đặt; không coi bộ lọc đó là báo cáo thu tiền theo ngày. Báo cáo mới là nguồn đối chiếu Kế toán theo cơ chế vừa chốt.
+- Hủy mất cọc giữ tiền và không còn nợ đã được khách xác nhận. Ship/thiệt hại đơn hủy vẫn chờ chi tiết; chưa bổ sung cơ chế tự động.
+- Thu dư vẫn ghi số thật; không tự hoàn hoặc chuyển tiền giữa đơn.

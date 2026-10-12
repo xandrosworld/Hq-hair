@@ -1,3 +1,4 @@
+import {applyReceiptCorrection} from './receipt-corrections.js';
 import {applyCompensation} from './compensation.js';
 import {cleanCustomer,purchaseHistory} from './customer-fields.js';
 import {assertDraftSlot,fixedDraftCode} from './draft-orders.js';
@@ -131,7 +132,7 @@ business.post('/orders/:id/action',(req,res)=>{
  const o=req.data.orders.find(o=>o.id===req.params.id);req.assertAccess(o);req.assertVersion(o);if(!o)fail('Không tìm thấy đơn hàng.');const {action}=req.body;
  const beforeAccounting=typeof action==='string'&&action.startsWith('accounting-')?{payments:structuredClone(o.payments),approval:o.accountingApproval||null,finalPaymentCheck:o.finalPaymentCheck||null,cancelType:o.cancelType||null,stage:o.stage}:null;
  const beforeException=req.work&&req.user.role==='manager'&&action!=='message'?structuredClone(o):null;
- if(o.cancelledAt&&action!=='message')fail('Đơn đã hủy, không thể thay đổi.');
+ if(o.cancelledAt&&!['message','accounting-grant-receipt','accounting-correct-receipt'].includes(action))fail('Đơn đã hủy, không thể thay đổi.');
  assertContentAction(o,req.user,action,req.body);
  if(action==='delete'){if(o.stage)fail('Chỉ xóa được bản nháp.');req.recordAudit?.('order-delete',o.id,{before:o});req.data.orders=req.data.orders.filter(x=>x.id!==o.id)}
  else if(action==='message'){const t=text(req.body.text,5000);const images=parseChatImages(req.body.images);if(!t&&!images.length)fail('Nhập nội dung hoặc chọn ảnh trao đổi.');if(!req.work&&o.messages.length>=200)fail('Đã đạt giới hạn tin nhắn demo.');for(const image of images)req.imageDb.prepare('INSERT INTO chat_images VALUES (?,?,?)').run(image.id,image.bytes,image.mime);o.messages.push({id:randomUUID(),text:t,images:images.map(({id,name,mime,size})=>({id,name,mime,size})),author:req.user.name+' · '+(req.user.role==='manager'?'Quản lý':req.user.role==='accounting'?'Kế toán':req.user.role==='factory'?'Xưởng':req.user.role==='sales_lead'?'Trưởng nhóm Sale':'Sale'),authorId:req.user.id,time:new Date().toISOString()})}
@@ -149,6 +150,7 @@ business.post('/orders/:id/action',(req,res)=>{
   event(req,o,'Quản trị điều chỉnh thanh toán',`${reason} · ${before.amount} → ${amount} USD · ${before.confirmed?'đã xác nhận':'chờ xác nhận'} → ${payment.confirmed?'đã xác nhận':'chờ xác nhận'}`);
  }
  else if(applyCompensation(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}
+ else if(applyReceiptCorrection(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){req.recordAudit?.('receipt-correction',o.id,{before:beforeAccounting,after:o.payments,action,reason:req.body.text})}
  else if(applyAccounting(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){assignOrderCode(o,req.data.orders);req.recordAudit?.('accounting-decision',o.id,{before:beforeAccounting,after:{payments:o.payments,approval:o.accountingApproval,orderCode:o.orderCode,cancelledAt:o.cancelledAt,finalPaymentCheck:o.finalPaymentCheck,cancelType:o.cancelType,stage:o.stage},reason:req.body.text,receipts:req.body.receipts})}
  else if(applyFactoryWorkflow(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}
  else if(applySaleWorkflow(o,req.user,action,req.body,(title,note)=>event(req,o,title,note))){}
