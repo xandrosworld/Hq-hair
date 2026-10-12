@@ -86,11 +86,12 @@ try{
   const errors=[];
   for(const [role,email] of [['factory','factory@example.com'],['accounting','accounting@example.com'],['sale','sale-a@example.com']]){
    const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));
-   await ctx.request.post(base+'/login',{data:{email,password:'Personal-New-Password'}});await page.goto(base.replace('/api/work','/workspace'));
-   if(role==='factory')await page.locator('.factory-navigation').getByRole('button',{name:'Đã gửi văn phòng',exact:true}).click();
-   if(role==='accounting')await page.getByRole('combobox').selectOption('all');
+   const login=await ctx.request.post(base+'/login',{data:{email,password:'Personal-New-Password'}});assert.equal(login.status(),200,await login.text());await page.goto(base.replace('/api/work','/workspace'));
+   if(role==='factory'){await page.getByRole('button',{name:'Mở menu',exact:true}).tap();await page.locator('.factory-navigation').getByRole('button',{name:'Đã gửi văn phòng',exact:true}).click();}
+   if(role==='accounting'){await page.getByRole('combobox').selectOption('all');await page.getByLabel('Tìm đơn kế toán').fill('NO-MATCH-ACCOUNTING');await expect(page.locator('tbody tr')).toHaveCount(0);await page.getByLabel('Tìm đơn kế toán').fill('');}
    if(role==='sale'){await page.getByRole('button',{name:'Mở menu',exact:true}).tap();await page.locator('.sidebar').getByRole('button',{name:'Đơn hàng chưa hoàn thành',exact:true}).tap();}
    await page.getByRole('button',{name:(await current()).orderCode,exact:true}).first().click();
+   if(role==='accounting'){await expect(page.locator('.qc-summary')).toContainText('Vận chuyển đã nhận');await expect(page.locator('.qc-summary')).toContainText('Doanh thu đã nhận');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));}
    await page.getByRole('button',{name:'Phiếu kiểm định',exact:true}).click();
    await expect(page.getByRole('heading',{name:'KIỂM ĐỊNH ĐƠN HÀNG (QC)'})).toBeVisible();
    if(role==='sale')await expect(page.getByLabel('Đánh giá sản phẩm 1',{exact:true})).toBeEditable();

@@ -37,3 +37,22 @@ test('QC image limit stays 5 MiB independently of the larger chat limit',()=>{
  assert.equal(qcMedia(input(image.subarray(0,-1))).size,5*1024*1024);
  assert.throws(()=>qcMedia(input(image)),{status:400,message:'Ảnh kiểm định tối đa 5 MiB.'});
 });
+
+test('Accounting multiple receipts are atomic, preserve submitted amounts and include legacy fees',()=>{
+ const o={...order(),shippingFee:10,paymentFee:5,payments:[{id:'p',amount:40,confirmed:false},{id:'p2',amount:75,confirmed:false}]};
+ const original=structuredClone(o);
+ for(const receipts of [[{id:'p',amount:40},{id:'p',amount:40}],[{id:'p',amount:40},{id:'p2',amount:NaN}],[{id:'p',amount:40},{id:'p2',amount:70}]]){
+ assert.throws(()=>applyAccounting(o,accountant,'accounting-approve',{paymentStatus:'full',receipts},()=>{}),{status:400});assert.deepEqual(o,original);
+ }
+ applyAccounting(o,accountant,'accounting-approve',{paymentStatus:'partial',receipts:[{id:'p',amount:35}]},()=>{});
+ assert.equal(o.payments[0].reportedAmount,40);assert.equal(o.payments[0].amount,35);assert.equal(o.payments[0].confirmedBy,'a');
+ o.orderCode='HQ-1';o.stage=7;o.officeDispatch={time:new Date().toISOString()};
+ assert.throws(()=>applyAccounting(o,accountant,'accounting-final',{receipts:[{id:'p',amount:35}]},()=>{}),{status:400});
+ applyAccounting(o,accountant,'accounting-final',{receipts:[{id:'p2',amount:80}]},()=>{});
+ assert.equal(o.stage,8);assert.equal(o.finalPaymentCheck.paid,115);assert.equal(o.payments[1].reportedAmount,75);
+});
+
+test('Forfeiture cannot silently discard receipt confirmation inputs',()=>{
+ const o={...order(),stage:4,orderCode:'HQ-1',production:{status:'paused'},payments:[{id:'p',amount:30,confirmed:true},{id:'p2',amount:20,confirmed:false}]};const original=structuredClone(o);
+ assert.throws(()=>applyAccounting(o,accountant,'accounting-forfeit',{text:'Stop',receipts:[{id:'p2',amount:20}]},()=>{}),{status:400});assert.deepEqual(o,original);
+});

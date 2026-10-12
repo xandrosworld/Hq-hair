@@ -9,7 +9,7 @@ function confirmReceipts(order,user,receipts,now){
   const p=payments.find(p=>p.id===receipt?.id);
   if(!p||p.confirmed||seen.has(p.id))fail(400,'Chứng từ không hợp lệ, bị lặp hoặc đã xác nhận.');
   if(typeof receipt.amount!=='number'||!Number.isFinite(receipt.amount)||receipt.amount<=0||receipt.amount>10000000||Math.abs(receipt.amount-round(receipt.amount))>1e-8)fail(400,'Tiền thực nhận phải lớn hơn 0, tối đa 10.000.000 USD và hai chữ số thập phân.');
-  seen.add(p.id);p.amount=receipt.amount;p.confirmed=true;p.confirmedBy=user.id;p.confirmedAt=now;
+  seen.add(p.id);p.reportedAmount=p.amount;p.amount=receipt.amount;p.confirmed=true;p.confirmedBy=user.id;p.confirmedName=user.name;p.confirmedAt=now;
  }
  return payments;
 }
@@ -23,6 +23,7 @@ export function applyAccounting(order,user,action,body,event){
   if(action==='accounting-forfeit'&&!canForfeitPaused(order))fail(400,'Chỉ hủy mất cọc khi Xưởng đang tạm dừng sản xuất.');
   if(action==='accounting-final'&&(![6,7].includes(order.stage)||!order.orderCode||(!order.officeDispatch&&!order.history?.some(h=>['Đã gửi đến văn phòng','Gửi đến văn phòng'].includes(h.title)))))fail(400,'Xưởng phải xác nhận gửi đến văn phòng trước bước kiểm tra thanh toán lần cuối.');
   if(action==='accounting-forfeit'){
+   if(body.receipts?.length)fail(400,'Không xác nhận thêm chứng từ trong thao tác hủy mất cọc.');
    const total=totals(order);
    if(total.paid<=0||total.debt<=0)fail(400,'Hủy mất cọc chỉ áp dụng khi đã nhận cọc và còn khoản chưa thanh toán.');
    if(!note)fail(400,'Nhập lý do hủy đơn mất cọc.');
