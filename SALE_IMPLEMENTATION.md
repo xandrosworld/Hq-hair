@@ -80,3 +80,7 @@ Trưởng nhóm Sale đã có vai trò riêng mặc định chỉ đọc toàn �
 - Xưởng hiển thị ngày duyệt lần đầu, hạn gửi văn phòng, số ngày kế hoạch, ngày gửi và số ngày thực tế. Cả hai khoảng thời gian tính từ ngày duyệt; sớm/đúng/trễ so ngày gửi với hạn chốt khi bàn giao. Thiếu ngày hiện “—”.
 - Cộng gram rồi đổi tổng sang kg; đơn vị khác giữ riêng. Đơn mẫu và kết quả nghiệm thu từ khách vẫn đang chờ.
 - Chi tiết quy tắc và bằng chứng: FACTORY_IMPLEMENTATION.md. Xác nhận này thay thế các mô tả cũ cho phép hủy mất cọc ở bước thanh toán cuối.
+
+## Financial reporting update — 2026-10-12
+
+Approved deposit-forfeited orders remain in financial report totals, charts, team summaries and CSV. Preapproval cancellations are excluded. Closed cancelled orders have zero outstanding debt. Confirmed receipts allocate shipping first: shipping received = min(max(received, 0), max(shipping fee, 0)); received revenue = max(0, received - shipping fee). Pending receipts do not count. Manager accounting includes shipping received and non-void compensation totals. Revenue reporting labels net receipts as Doanh thu đã nhận and exposes Vận chuyển đã nhận separately.

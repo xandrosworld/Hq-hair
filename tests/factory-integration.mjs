@@ -140,7 +140,7 @@ try{
  await expect(adminPage.getByRole('checkbox')).toHaveCount(0);
  await adminPage.locator('#workspace-navigation').getByRole('button',{name:'Số liệu Kế toán',exact:true}).click();
  await expect(adminPage.getByRole('heading',{name:'Số liệu Kế toán',exact:true})).toBeVisible();
- await expect(adminPage.locator('.factory-kpi strong')).toHaveCount(4);
+ await expect(adminPage.locator('.factory-kpi strong')).toHaveCount(6);
  await adminPage.getByLabel('Trạng thái Kế toán',{exact:true}).selectOption('approval');
  await expect(adminPage.locator('.factory-order-table tbody tr')).toHaveCount(1);
  await adminPage.locator('.factory-order-table .order-link').first().click();

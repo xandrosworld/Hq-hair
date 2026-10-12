@@ -24,8 +24,9 @@ try{
  await page.getByRole('button',{name:'In hóa đơn',exact:true}).click();await expect(page.locator('.invoice-payment-note')).not.toContainText('$');await expect(page.locator('.invoice-totals>div').last()).toHaveText('TOTAL USD$855.00');await page.evaluate(()=>document.fonts.ready);
  if(engine===chromium&&process.env.PRINT_PDF==='1')await page.pdf({path:`${output}/invoice.pdf`,format:'A4',printBackground:true});
  await page.getByRole('button',{name:'Đóng',exact:true}).click();await page.getByRole('button',{name:'Doanh thu & công nợ',exact:true}).click();
- for(const [index,value] of [[0,'$770.00'],[1,'$415.00'],[2,'$355.00'],[3,'$30.00'],[4,'$12.50']])await expect(page.locator('.metric-middle strong').nth(index)).toContainText(value);
- await expect(page.locator('.revenue-visual svg title').first()).toContainText('Đã nhận $415.00');await page.screenshot({path:`${output}/${engine.name()}-report.png`,fullPage:true});
+ for(const [index,value] of [[0,'$770.00'],[1,'$415.00'],[2,'$85.00'],[3,'$355.00'],[4,'$30.00'],[5,'$12.50']])await expect(page.locator('.metric-middle strong').nth(index)).toContainText(value);
+ await expect(page.locator('.revenue-visual svg title').first()).toContainText('Doanh thu đã nhận $415.00');await page.screenshot({path:`${output}/${engine.name()}-report.png`,fullPage:true});
+ for(const width of [320,390,1440]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await page.screenshot({path:`${output}/${engine.name()}-report-${width}.png`,fullPage:true})}
  const downloadEvent=page.waitForEvent('download');await page.getByRole('button',{name:'Xuất báo cáo CSV',exact:true}).click();const download=await downloadEvent;const chunks=[];for await(const chunk of await download.createReadStream())chunks.push(chunk);assert.ok(Buffer.concat(chunks).toString().includes('"770","855","415","500","85","30","12.5","355"'));
  assert.deepEqual(errors,[]);console.log(`PASS ${engine.name()}: sample financial rows, order, mobile widths, invoice total, report cards/chart and CSV`);
  }finally{await browser.close()}

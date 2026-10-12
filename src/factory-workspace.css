@@ -20,3 +20,5 @@
 @media(max-width:1119px){.factory-layout .factory-topbar{min-height:64px}.factory-layout main{padding:14px}.factory-layout .factory-kpis{gap:10px}.factory-layout .factory-kpi{padding:12px}.factory-layout .factory-order-table .btn{min-height:44px}.factory-layout .factory-filters input,.factory-layout .factory-filters select,.factory-layout .filters select{min-height:44px}.factory-layout .factory-state-tabs button{min-height:44px}}
 
 .manager-operations{min-height:0;background:transparent}.manager-operations>nav{margin-bottom:16px}.manager-operations .factory-kpi strong{font-size:24px;overflow-wrap:anywhere}.sidebar{overflow-y:auto}.sidebar .sidebar-bottom{flex-shrink:0}
+
+.financial-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}@media(max-width:700px){.financial-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}}@media(max-width:380px){.financial-metrics{grid-template-columns:1fr!important}}
