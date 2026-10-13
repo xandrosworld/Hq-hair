@@ -1,0 +1,12 @@
+/* Department layout uses the existing Sale/Factory navigation shell. */
+.accounting-shell .accounting-period h2{font-size:17px;line-height:1.4}
+.accounting-shell .accounting-period .filters{padding:10px 0;margin:8px 0;gap:12px}
+.accounting-shell .qc-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.accounting-shell .qc-summary>span{padding:12px;border:1px solid #e2e8ef;border-radius:8px;background:#f8fafc;font-size:11px}
+.accounting-shell .qc-summary b{font-size:21px;margin-top:5px;overflow-wrap:anywhere}
+.accounting-shell .accounting-period p{font-size:12px;line-height:1.6;margin:8px 0}
+.accounting-shell .accounting-period details{margin-top:12px}
+.accounting-shell .accounting-period summary{cursor:pointer;min-height:36px;padding:8px 0}
+.accounting-shell .table-scroll th,.accounting-shell .table-scroll td{padding:10px 12px}
+.accounting-shell .filters{padding:12px 16px}
+@media(max-width:600px){.accounting-shell .qc-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.accounting-shell .qc-summary>span{padding:9px;font-size:10px}.accounting-shell .qc-summary b{font-size:18px}}
