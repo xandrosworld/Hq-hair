@@ -14,7 +14,18 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/api/state',async route=>{const response=await route.fetch(),data=await response.json(),o=data.orders.find(o=>o.orderCode&&o.stage>2&&!o.cancelledAt);
  assert.ok(o);Object.assign(o,{date:'2026-08-01',approvedAt:'2026-09-01',history:[],accountingApproval:{time:'2026-09-01'},due:'2026-10-20',stage:3,discount:30,shippingFee:85,paymentFee:0,compensations:[{amount:12.5,date:'2026-10-01'},{amount:99,voidedAt:'2026-10-02'}],items:[{name:'Bulk',kind:'base',qty:500,price:160,priceBasis:'100g',unit:'Gram',origin:'Raw Hair',lengthCm:50,texture:'Natural Straight',segment:'Premium',color:'1B'}],payments:[{id:'received-first',amount:50,confirmed:true,receivedDate:'2026-09-01'},{id:'received',amount:450,confirmed:true,receivedDate:'2026-10-01'},{id:'pending',amount:999,confirmed:false}]});data.orders=[o];await route.fulfill({response,json:data})});
- await page.goto(base+'/demo');await page.locator('main').waitFor();await page.getByRole('button',{name:'Đơn hàng chưa hoàn thành',exact:true}).click();await page.locator('.order-link').first().click();await page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true}).click();
+ await page.goto(base+'/demo');await page.locator('main').waitFor();await page.getByRole('button',{name:'Đơn hàng chưa hoàn thành',exact:true}).click();await page.locator('.order-link').first().click();for(const width of [320,390,430]){
+ await page.setViewportSize({width,height:900});
+ const table=page.locator('.product-read-view').first();
+ assert.ok(await table.locator('.hair-table-scroll').evaluate(e=>e.scrollWidth<=e.clientWidth+2));
+ await table.screenshot({path:`${output}/${engine.name()}-compact-products-${width}.png`});
+ await table.getByRole('button',{name:'Phóng to bảng',exact:true}).click();
+ assert.ok(await table.locator('.hair-table-scroll').evaluate(e=>e.scrollWidth>e.clientWidth));
+ await table.getByRole('button',{name:'Thu gọn bảng',exact:true}).click();
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+ }
+ await page.setViewportSize({width:1440,height:1000});
+ await page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true}).click();
  const financial=page.locator('.financial');
  await expect(financial.locator('div').filter({has:page.locator('span',{hasText:/^Tổng thu$/})})).toContainText('$855.00');
  await expect(financial).not.toContainText('Dự kiến theo chứng từ');
