@@ -26,6 +26,13 @@ try{
  }
  await page.setViewportSize({width:1440,height:1000});
  await page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true}).click();
+ await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.copiedShipping=text}}}));
+ await page.getByRole('button',{name:'Sao chép thông tin giao hàng',exact:true}).click();
+ await expect(page.getByRole('status')).toContainText('Đã sao chép thông tin giao hàng.');
+ const copied=await page.evaluate(()=>window.copiedShipping);assert.ok(copied.includes('Người nhận:'));assert.ok(copied.includes('Địa chỉ:'));assert.ok(!copied.includes('Công nợ'));assert.ok(!copied.includes('Hạn thanh toán'));
+ await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('denied')}}}));
+ await page.getByRole('button',{name:'Sao chép thông tin giao hàng',exact:true}).click();
+ await expect(page.getByLabel('Nội dung giao hàng để sao chép')).toHaveValue(copied);
  const financial=page.locator('.financial');
  await expect(financial.locator('div').filter({has:page.locator('span',{hasText:/^Tổng thu$/})})).toContainText('$855.00');
  await expect(financial).not.toContainText('Dự kiến theo chứng từ');
