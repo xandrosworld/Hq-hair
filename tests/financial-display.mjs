@@ -41,7 +41,14 @@ try{
  for(const width of [320,390,1440]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await financial.screenshot({path:`${output}/${engine.name()}-summary-${width}.png`})}
  await page.getByRole('button',{name:'In hóa đơn',exact:true}).click();await expect(page.locator('.invoice-payment-note')).not.toContainText('$');await expect(page.locator('.invoice-totals>div').last()).toHaveText('TOTAL USD$855.00');await page.evaluate(()=>document.fonts.ready);
  if(engine===chromium&&process.env.PRINT_PDF==='1')await page.pdf({path:`${output}/invoice.pdf`,format:'A4',printBackground:true});
- await page.getByRole('button',{name:'Đóng',exact:true}).click();await page.getByRole('button',{name:'Doanh thu & công nợ',exact:true}).click();
+ await page.getByRole('button',{name:'Đóng',exact:true}).click();
+ await page.getByRole('button',{name:'Tổng quan đơn hàng',exact:true}).last().click();await page.getByRole('button',{name:'Tạo đơn hàng',exact:true}).first().click();
+ await page.getByRole('button',{name:'In hóa đơn',exact:true}).first().click();
+ assert.equal(await page.locator('#invoice').evaluate(e=>e.closest('.overlay').parentElement===document.body),true);
+ await page.emulateMedia({media:'print'});await expect(page.locator('#invoice')).toBeVisible();
+ if(engine===chromium)await page.pdf({path:`${output}/draft-invoice.pdf`,format:'A4',printBackground:true});
+ await page.emulateMedia({media:'screen'});await page.getByRole('button',{name:'Đóng',exact:true}).click();
+ await page.getByRole('button',{name:'Doanh thu & công nợ',exact:true}).click();
  for(const [index,value] of [[0,'$770.00'],[1,'$415.00'],[2,'$85.00'],[3,'$355.00'],[4,'$30.00'],[5,'$12.50']])await expect(page.locator('.metric-middle strong').nth(index)).toContainText(value);
  await expect(page.locator('.revenue-visual svg title').first()).toContainText('Doanh thu đã nhận $415.00');await page.screenshot({path:`${output}/${engine.name()}-report.png`,fullPage:true});
  for(const width of [320,390,1440]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await page.screenshot({path:`${output}/${engine.name()}-report-${width}.png`,fullPage:true})}
