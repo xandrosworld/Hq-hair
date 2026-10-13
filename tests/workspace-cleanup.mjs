@@ -35,6 +35,21 @@ try{
  assert.ok((await admin.call('/audit')).some(a=>a.action==='workspace-cleanup'));assert.deepEqual(errors,[]);
  // A repeated request cannot delete records created after the confirmed snapshot.
  await sale.call('/customers',{...c,name:'Live Customer'});await admin.call('/cleanup',{...p,password:'Owner-New-Password-2026'},409);assert.equal((await admin.call('/state')).customers.length,1);
+ const users=await admin.call('/users'),victim=users.find(u=>u.role==='sale'),owner=users.find(u=>u.role==='manager');
+ await sale.call('/users/'+owner.id+'/delete',{confirmEmail:owner.email},403);
+ await admin.call('/users/'+owner.id+'/delete',{confirmEmail:owner.email},400);
+ await admin.call('/users/'+victim.id+'/delete',{confirmEmail:'wrong'},400);
+ const beforeDelete=await admin.call('/state');
+ await page.reload();await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Tài khoản & đội ngũ',exact:true}).first().click();
+ const row=page.getByRole('row').filter({hasText:'sale@example.com'});await expect(row).toBeVisible();
+ page.once('dialog',d=>d.dismiss());await row.getByRole('button',{name:'Xóa tài khoản',exact:true}).click();assert.equal((await admin.call('/users')).length,2);
+ page.once('dialog',d=>d.accept());await row.getByRole('button',{name:'Xóa tài khoản',exact:true}).click();await expect(row).toHaveCount(0);
+ assert.equal((await admin.call('/users')).length,1);assert.ok(!(await admin.call('/sales-roster')).some(u=>u.id===victim.id));
+ await sale.call('/state',undefined,401);await sale.call('/login',{email:victim.email,password:'Sale-New-Password-2026'},401);
+ await admin.call('/users',{id:victim.id,active:true},404);
+ const afterDelete=await admin.call('/state');assert.deepEqual(afterDelete.customers,beforeDelete.customers);assert.deepEqual(afterDelete.orders,beforeDelete.orders);
+ assert.ok((await admin.call('/audit')).some(a=>a.action==='user-delete'&&a.target===victim.id));
+ console.log('PASS: account deletion UI confirm/cancel, role/self guards, session revocation, login/re-enable blocked, preserved customer records and audit.');
  console.log('PASS: real API permissions, CSRF/password, stale preview, linked customer guard, mobile confirmation, snapshot, audit and retry safety. Isolated test database only.');
 }finally{await browser?.close();if(server.exitCode===null){const stopped=new Promise(r=>server.once('exit',r));server.kill();await stopped}if(!path.resolve(dir).startsWith(path.resolve(os.tmpdir())+path.sep))throw Error('Unsafe cleanup');rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:200})}
 

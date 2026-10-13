@@ -39,6 +39,7 @@ export async function createWorkspace(dir){
  CREATE TABLE IF NOT EXISTS requests(user_id TEXT NOT NULL,key TEXT NOT NULL,hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(user_id,key));
  CREATE TABLE IF NOT EXISTS login_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,reset INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS sequences(key TEXT PRIMARY KEY,value INTEGER NOT NULL);`);
+ if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='deleted_at'))db.exec('ALTER TABLE users ADD COLUMN deleted_at TEXT');
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='phone'))db.exec("ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''");
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='factory_view'))db.exec("ALTER TABLE users ADD COLUMN factory_view TEXT NOT NULL DEFAULT 'full'");
  db.prepare('INSERT OR IGNORE INTO workspace VALUES (1,?)').run(JSON.stringify({customers:[],orders:[],catalog:[]}));
@@ -119,22 +120,36 @@ export async function createWorkspace(dir){
  setupCleanup(router,db,dir,manager,verify,audit);
  setupPricing(router,db,audit);
  setupStandards(router);
- router.get('/sales-roster',(req,res)=>{if(req.user.role!=='manager'&&!(req.user.role==='sales_lead'&&req.user.lead_assign))return res.status(403).json({error:'Chưa được cấp quyền phân công.'});res.json(db.prepare("SELECT id,name,code,role,active FROM users WHERE role IN ('sale','manager')").all())});
+ router.get('/sales-roster',(req,res)=>{if(req.user.role!=='manager'&&!(req.user.role==='sales_lead'&&req.user.lead_assign))return res.status(403).json({error:'Chưa được cấp quyền phân công.'});res.json(db.prepare("SELECT id,name,code,role,active FROM users WHERE deleted_at IS NULL AND role IN ('sale','manager')").all())});
  router.post('/users/:id/lead-permissions',manager,(req,res)=>{
   const u=db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
   if(!u||u.role!=='sales_lead'||typeof req.body.leadEdit!=='boolean'||typeof req.body.leadAssign!=='boolean')reject(400,'Chọn trưởng nhóm và quyền hợp lệ.');
   db.exec('BEGIN IMMEDIATE');try{db.prepare('UPDATE users SET lead_edit=?,lead_assign=? WHERE id=?').run(+req.body.leadEdit,+req.body.leadAssign,u.id);audit(req.user,'lead-permissions',u.id,{before:{leadEdit:!!u.lead_edit,leadAssign:!!u.lead_assign},after:req.body});db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}res.json({ok:true});
  });
 
- router.get('/users',manager,(req,res)=>res.json(db.prepare('SELECT * FROM users ORDER BY name').all().map(safeUser)));
+ router.get('/users',manager,(req,res)=>res.json(db.prepare('SELECT * FROM users WHERE deleted_at IS NULL ORDER BY name').all().map(safeUser)));
+ router.post('/users/:id/delete',manager,(req,res)=>{
+  if(req.params.id===req.user.id)reject(400,'Không thể xóa tài khoản đang đăng nhập.');
+  const user=db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
+  if(!user||user.deleted_at)reject(404,'Không tìm thấy tài khoản.');
+  if(req.body.confirmEmail!==user.email)reject(400,'Xác nhận đúng tài khoản cần xóa.');
+  db.exec('BEGIN IMMEDIATE');try{
+   db.prepare('UPDATE users SET active=0,deleted_at=? WHERE id=?').run(new Date().toISOString(),user.id);
+   db.prepare('DELETE FROM auth_sessions WHERE user_id=?').run(user.id);
+   audit(req.user,'user-delete',user.id,{name:user.name,email:user.email,code:user.code,role:user.role});
+   db.exec('COMMIT');
+  }catch(e){db.exec('ROLLBACK');throw e}
+  res.json(db.prepare('SELECT * FROM users WHERE deleted_at IS NULL ORDER BY name').all().map(safeUser));
+ });
  router.post('/users',manager,async(req,res)=>{
   const b=req.body;
   if(b.id){
-   const old=db.prepare('SELECT * FROM users WHERE id=?').get(b.id);if(!old)reject(404,'Không tìm thấy tài khoản.');
+   const old=db.prepare('SELECT * FROM users WHERE id=?').get(b.id);if(!old||old.deleted_at)reject(404,'Không tìm thấy tài khoản.');
    if(b.id===req.user.id)reject(400,'Không thể tự khóa hoặc đặt lại mật khẩu của chính mình tại đây.');
    const password=b.password?await hashPassword(b.password):null;
    // Authorization must still hold after hashing.
    if(!db.prepare('SELECT token FROM auth_sessions WHERE token=?').get(req.session.token))reject(401,'Phiên đã kết thúc.');
+   if(db.prepare('SELECT deleted_at FROM users WHERE id=?').get(b.id)?.deleted_at)reject(404,'Tài khoản đã bị xóa.');
    db.prepare('UPDATE users SET active=?,password=COALESCE(?,password),must_change=CASE WHEN ? IS NULL THEN must_change ELSE 1 END WHERE id=?').run(b.active===false?0:1,password,password,b.id);
    db.prepare('DELETE FROM auth_sessions WHERE user_id=?').run(b.id);audit(req.user,password?'user-reset':'user-status',b.id);
   }else{
@@ -151,9 +166,9 @@ export async function createWorkspace(dir){
    if(db.prepare('SELECT id FROM users WHERE code=?').get(code))reject(409,'Mã tài khoản đã được sử dụng. Chọn mã khác.');
    db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(id,email,name,code,b.role,password);audit(req.user,'user-create',id,{name,email,role:b.role,code});
   }
-  res.json(db.prepare('SELECT * FROM users ORDER BY name').all().map(safeUser));
+  res.json(db.prepare('SELECT * FROM users WHERE deleted_at IS NULL ORDER BY name').all().map(safeUser));
  });
- router.post('/users/:id/visibility',manager,(req,res)=>{const user=db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);if(!user||user.role!=='factory')reject(400,'Chọn tài khoản Xưởng.');if(!['full','products'].includes(req.body.factoryView))reject(400,'Phạm vi xem không hợp lệ.');db.prepare('UPDATE users SET factory_view=? WHERE id=?').run(req.body.factoryView,user.id);audit(req.user,'factory-visibility',user.id,{before:user.factory_view,after:req.body.factoryView});res.json(db.prepare('SELECT * FROM users ORDER BY name').all().map(safeUser))});
+ router.post('/users/:id/visibility',manager,(req,res)=>{const user=db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);if(!user||user.role!=='factory')reject(400,'Chọn tài khoản Xưởng.');if(!['full','products'].includes(req.body.factoryView))reject(400,'Phạm vi xem không hợp lệ.');db.prepare('UPDATE users SET factory_view=? WHERE id=?').run(req.body.factoryView,user.id);audit(req.user,'factory-visibility',user.id,{before:user.factory_view,after:req.body.factoryView});res.json(db.prepare('SELECT * FROM users WHERE deleted_at IS NULL ORDER BY name').all().map(safeUser))});
  router.get('/audit',manager,(req,res)=>res.json(db.prepare('SELECT audit.*,users.name AS actorName FROM audit LEFT JOIN users ON users.id=audit.actor ORDER BY audit.id DESC LIMIT 200').all()));
  const backupDir=process.env.BACKUP_DIR||path.join(dir,'backups');mkdirSync(backupDir,{recursive:true});
  let backingUp=false,lastBackup=null,backupError=null;
