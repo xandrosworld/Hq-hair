@@ -90,3 +90,10 @@ Railway cũ giữ bản dữ liệu trước chuyển máy chủ và chuyển h�
 Không commit cơ sở dữ liệu, cookie phiên, `.env`, khóa SSH hoặc token. Tài khoản và mật khẩu quản trị giữ nguyên sau chuyển máy chủ. Cookie theo tên miền nên cần đăng nhập lại ở địa chỉ mới; dữ liệu demo cũ được giữ trong DB, nhưng trình duyệt ở tên miền mới có cookie demo riêng.
 
 Kiểm tra giao diện (tùy chọn): `npx playwright install chromium`, khởi động server, rồi chạy `node tests/smoke.mjs` và `node tests/design.mjs`.
+
+## Dọn dữ liệu trước vận hành (Admin)
+Trong **Tài khoản & đội ngũ → Dọn dữ liệu**, quản trị chọn xóa khách hàng, xóa đơn hàng hoặc xóa tất cả (khách hàng + đơn hàng). Xóa khách hàng bị chặn khi còn đơn. Xóa đơn bao gồm thanh toán, chứng từ nằm trên đơn, trao đổi và media/QC. Tài khoản, quyền, danh mục/bảng giá, quy chuẩn, bộ đếm khách hàng, nhật ký và lịch sử idempotency vẫn giữ nguyên.
+
+Trước khi xóa phải xem số lượng, nhập đúng cụm xác nhận và mật khẩu hiện tại. Máy chủ kiểm tra lại phiên và dấu vân tay dữ liệu; nếu dữ liệu đổi phải xem lại phạm vi. Sao lưu SQLite đầy đủ và kiểm tra integrity bắt buộc trước giao dịch xóa; thất bại thì giữ nguyên dữ liệu. Các snapshot trước xóa nằm tại `DATA_DIR/cleanup-backups`, tách khỏi bản hằng ngày để không bị dọn trong ngày. Nhật ký `workspace-cleanup` ghi tên snapshot và số lượng. Khôi phục do người vận hành thực hiện từ snapshot, không có nút hoàn tác trực tiếp; snapshot chứa dữ liệu/tài khoản nên chỉ người vận hành được truy cập. Chưa tự đặt chính sách xóa các snapshot này.
+
+Kiểm thử bằng `node --test tests/workspace-cleanup.test.js` và `node tests/workspace-cleanup.mjs`; chỉ dùng DB tạm, không gọi xóa dữ liệu production.

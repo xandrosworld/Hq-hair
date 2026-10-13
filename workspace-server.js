@@ -1,3 +1,4 @@
+import {setupCleanup} from './workspace-cleanup.js';
 import {freezeDraftCodes} from './draft-orders.js';
 import {migrateOrderIdentity} from './order-identity.js';
 import {setupStandards} from './standards-server.js';
@@ -115,6 +116,7 @@ export async function createWorkspace(dir){
   audit(req.user,'password-change');res.json(issue({...req.user,must_change:0},res));
  });
  const manager=(req,res,next)=>req.user.role==='manager'?next():res.status(403).json({error:'Chỉ quản lý được thực hiện thao tác này.'});
+ setupCleanup(router,db,dir,manager,verify,audit);
  setupPricing(router,db,audit);
  setupStandards(router);
  router.get('/sales-roster',(req,res)=>{if(req.user.role!=='manager'&&!(req.user.role==='sales_lead'&&req.user.lead_assign))return res.status(403).json({error:'Chưa được cấp quyền phân công.'});res.json(db.prepare("SELECT id,name,code,role,active FROM users WHERE role IN ('sale','manager')").all())});
