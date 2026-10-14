@@ -102,7 +102,7 @@ function App({user={name:'Judy',code:'HQ-JD',role:'sale'},onLogout}){
  const active=data?.orders.filter(isOfficialOrder)||[];
  const order=data?.orders.find(o=>o.id===selected);
  const titles={factoryReport:'Thống kê Xưởng',accountingReport:'Số liệu Kế toán',orderOverview:'Tổng quan đơn hàng',overview:'Tổng quan',orders:'Danh sách đơn hàng',customers:'Khách hàng',revenue:'Doanh thu & công nợ',create:'Tạo đơn hàng',detail:'Chi tiết đơn hàng',settings:'Tài khoản & đội ngũ',prices:'Bảng giá & màu',standards:'Quy chuẩn sản phẩm'};
- if(isWorkspace&&user.role==='accounting')return <AccountingWorkspace user={user} onLogout={onLogout} Payments={Payments}/>;
+ if(isWorkspace&&user.role==='accounting')return <AccountingWorkspace user={user} onLogout={onLogout} Payments={Payments} Modal={Modal}/>;
  if(isWorkspace&&user.role==='factory')return <FactoryWorkspace onLogout={onLogout} Modal={Modal} Payments={Payments}/>;
  if(isWorkspace&&!['sale','manager','sales_lead'].includes(user.role))return <div className="loading"><div className="brand-mark">HQ</div><h2>{user.name} · {roleName(user.role)}</h2><p>Phân hệ của bạn sẽ được mở ở giai đoạn tương ứng.</p><Button onClick={onLogout}>Đăng xuất</Button></div>;
  if(!data)return <div className="loading"><div className="brand-mark">HQ</div><h2>Không gian làm việc HQ Hair</h2><p>{error||'Đang mở không gian làm việc…'}</p>{!error&&<div className="loading-track"><span/></div>}{error&&<Button onClick={()=>location.reload()}>Thử lại</Button>}</div>;

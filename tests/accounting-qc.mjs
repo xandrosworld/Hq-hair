@@ -50,10 +50,11 @@ try{
   await ctx.request.post(base+'/login',{data:{email:'accounting@example.com',password:'Personal-New-Password'}});
   await page.goto(base.replace('/api/work','/workspace'));
   await fxExpect(page.getByRole('navigation',{name:'Menu Kế toán'})).toBeVisible();await page.screenshot({path:'data/accounting-orders-desktop.png',fullPage:true});
-  await page.getByRole('button',{name:'Thông báo',exact:true}).click();
+  await page.getByRole('button',{name:/Thông báo ·/}).click();
   await fxExpect(page.locator('.order-notifications')).toBeVisible();
+  await page.getByRole('button',{name:'Đóng',exact:true}).click();
   await page.getByRole('button',{name:'Đã duyệt cần theo dõi',exact:true}).click();
-  await page.getByRole('tab',{name:/Có chứng từ mới/}).click();
+  await page.getByLabel('Chỉ hiện đơn có chứng từ mới').check();
   await fxExpect(page.locator('table tbody button')).toHaveCount(0);
   await page.getByRole('button',{name:'Lịch sử đơn hàng',exact:true}).click();
   await fxExpect(page.getByLabel('Tháng lịch sử đơn hàng')).toBeVisible();
@@ -68,9 +69,10 @@ try{
   await fxExpect(page.locator('.accounting-receipts')).toHaveCount(0);
   assert.equal((await current()).payments[0].exchangeRate,25000);
   await page.getByRole('button',{name:'Đã duyệt cần theo dõi',exact:true}).click();
-  await page.getByRole('tab',{name:/Thanh toán một phần/}).click();
+  await page.getByRole('tab',{name:/Chưa kiểm tra thanh toán lần cuối/}).click();
+  await page.getByLabel('Chỉ hiện đơn có chứng từ mới').uncheck();
   await fxExpect(page.locator('table tbody button')).toHaveCount(1);
-  await page.getByRole('tab',{name:/Thanh toán đủ/}).click();
+  await page.getByRole('tab',{name:/Đã kiểm tra lần cuối/}).click();
   await fxExpect(page.locator('table tbody button')).toHaveCount(0);
  }finally{await fxBrowser.close()}
 
@@ -119,7 +121,7 @@ try{
    const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));
    const login=await ctx.request.post(base+'/login',{data:{email,password:'Personal-New-Password'}});assert.equal(login.status(),200,await login.text());await page.goto(base.replace('/api/work','/workspace'));
    if(role==='factory'){await page.getByRole('button',{name:'Mở menu',exact:true}).tap();await page.locator('.factory-navigation').getByRole('button',{name:'Đã gửi văn phòng',exact:true}).click();}
-   if(role==='accounting'){await expect(page.locator('.accounting-period')).toHaveCount(0);await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Báo cáo thu tiền',exact:true}).click();await expect(page.locator('.accounting-period')).toContainText('Báo cáo theo ngày duyệt / thực nhận');await page.getByLabel('Tháng kế toán').fill('2026-10');await expect(page.locator('.accounting-period')).toContainText('$100.00');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await page.screenshot({path:'data/accounting-report-mobile.png',fullPage:true});await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Đơn đợi duyệt',exact:true}).click();await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Lịch sử đơn hàng',exact:true}).click();await page.getByLabel('Tìm đơn kế toán').fill('NO-MATCH-ACCOUNTING');await expect(page.locator('section.panel').filter({has:page.getByLabel('Tìm đơn kế toán')}).locator('tbody')).toContainText('Không có đơn phù hợp');await page.getByLabel('Tìm đơn kế toán').fill('');}
+   if(role==='accounting'){await expect(page.locator('.accounting-period')).toHaveCount(0);await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Báo cáo thu tiền',exact:true}).click();await expect(page.locator('.accounting-period')).toContainText('Báo cáo theo ngày duyệt / thực nhận');await page.getByLabel('Tháng kế toán').fill('2026-10');await expect(page.getByLabel('Sale báo cáo')).toBeVisible();await expect(page.getByRole('heading',{name:'Báo cáo theo Sale'})).toBeVisible();await expect(page.locator('.accounting-period')).toContainText('$100.00');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await page.screenshot({path:'data/accounting-report-mobile.png',fullPage:true});await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Đơn đợi duyệt',exact:true}).click();await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Lịch sử đơn hàng',exact:true}).click();await page.getByLabel('Tìm đơn kế toán').fill('NO-MATCH-ACCOUNTING');await expect(page.locator('section.panel').filter({has:page.getByLabel('Tìm đơn kế toán')}).locator('tbody')).toContainText('Không có đơn phù hợp');await page.getByLabel('Tìm đơn kế toán').fill('');}
    if(role==='sale'){await page.getByRole('button',{name:'Mở menu',exact:true}).tap();await page.locator('.sidebar').getByRole('button',{name:'Đơn hàng chưa hoàn thành',exact:true}).tap();}
    await page.getByRole('button',{name:(await current()).orderCode,exact:true}).first().click();
    if(role==='accounting'){await expect(page.locator('.qc-summary')).toContainText('Vận chuyển đã nhận');await expect(page.locator('.qc-summary')).toContainText('Doanh thu đã nhận');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));}
