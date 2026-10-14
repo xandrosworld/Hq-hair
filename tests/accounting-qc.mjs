@@ -50,6 +50,12 @@ try{
   await ctx.request.post(base+'/login',{data:{email:'accounting@example.com',password:'Personal-New-Password'}});
   await page.goto(base.replace('/api/work','/workspace'));
   await fxExpect(page.getByRole('navigation',{name:'Menu Kế toán'})).toBeVisible();await page.screenshot({path:'data/accounting-orders-desktop.png',fullPage:true});
+  await page.getByRole('button',{name:'Chứng từ thanh toán mới',exact:true}).click();
+  await fxExpect(page.locator('table tbody')).toContainText('chứng từ chưa xác nhận');
+  await page.getByRole('button',{name:'Lịch sử đơn hàng',exact:true}).click();
+  await fxExpect(page.getByLabel('Tháng lịch sử đơn hàng')).toBeVisible();
+  await fxExpect(page.locator('table tbody button')).toHaveCount(1);
+  await page.getByRole('button',{name:'Duyệt đơn',exact:true}).click();
   await page.locator('table tbody button').first().click();
   await page.locator('.accounting-receipts input[type=checkbox]').first().check();
   await page.getByLabel('Tỷ giá '+o.payments[0].id,{exact:true}).fill('25000');
