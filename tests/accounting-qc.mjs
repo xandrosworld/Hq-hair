@@ -66,7 +66,7 @@ try{
   await fxExpect(page.locator('.accounting-receipts')).toHaveCount(0);
   assert.equal((await current()).payments[0].exchangeRate,25000);
   await page.getByRole('button',{name:'Đã duyệt cần theo dõi',exact:true}).click();
-  await page.getByRole('tab',{name:/Thanh toán 1 phần/}).click();
+  await page.getByRole('tab',{name:/Thanh toán một phần/}).click();
   await fxExpect(page.locator('table tbody button')).toHaveCount(1);
   await page.getByRole('tab',{name:/Thanh toán đủ/}).click();
   await fxExpect(page.locator('table tbody button')).toHaveCount(0);
