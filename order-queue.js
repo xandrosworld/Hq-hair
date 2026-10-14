@@ -13,8 +13,8 @@ export const orderQueues=[
  {key:'sale',label:'Chờ Sale kiểm tra',stage:5},
  {key:'office',label:'Chờ Xưởng gửi văn phòng',stage:6},
  {key:'payment',label:'Chờ Kế toán kiểm tra cuối',stage:7},
- {key:'inspection',label:'Chờ Sale kiểm định và đặt ship',stage:8},
- {key:'delivery',label:'Chờ Sale xác nhận khách đã nhận',stage:9},
+ {key:'inspection',label:'Chờ kiểm định và đặt ship',stage:8},
+ {key:'delivery',label:'Chờ nhận hàng',stage:9},
  {key:'complete',label:'Chờ Sale hoàn thành đơn',stage:10},
 ];
 export function orderQueue(order){

@@ -63,6 +63,7 @@ import {ProductEditorTable,ProductReadTable} from './product-table.jsx';
 import {FactoryWorkspace} from './factory-workspace.jsx';
 import {OrderChat} from './order-chat.jsx';
 import './mobile.css';
+import './compact-order-editor.css';
 const ValidationContext=React.createContext({errors:{},touch:()=>{}});
 const API=async(path,body)=>{if(isWorkspace)return workspaceAPI(path,body);const r=await fetch('/api'+path,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const v=await r.json();if(!r.ok)throw Error(v.error||'Không thể kết nối.');return v};
 const cx=(...v)=>v.filter(Boolean).join(' ');
