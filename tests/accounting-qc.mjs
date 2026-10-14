@@ -50,12 +50,13 @@ try{
   await ctx.request.post(base+'/login',{data:{email:'accounting@example.com',password:'Personal-New-Password'}});
   await page.goto(base.replace('/api/work','/workspace'));
   await fxExpect(page.getByRole('navigation',{name:'Menu Kế toán'})).toBeVisible();await page.screenshot({path:'data/accounting-orders-desktop.png',fullPage:true});
-  await page.getByRole('button',{name:'Chứng từ thanh toán mới',exact:true}).click();
-  await fxExpect(page.locator('table tbody')).toContainText('chứng từ chưa xác nhận');
+  await page.getByRole('button',{name:'Đã duyệt cần theo dõi',exact:true}).click();
+  await page.getByRole('tab',{name:/Có chứng từ mới/}).click();
+  await fxExpect(page.locator('table tbody button')).toHaveCount(0);
   await page.getByRole('button',{name:'Lịch sử đơn hàng',exact:true}).click();
   await fxExpect(page.getByLabel('Tháng lịch sử đơn hàng')).toBeVisible();
   await fxExpect(page.locator('table tbody button')).toHaveCount(1);
-  await page.getByRole('button',{name:'Duyệt đơn',exact:true}).click();
+  await page.getByRole('button',{name:'Đơn đợi duyệt',exact:true}).click();
   await page.locator('table tbody button').first().click();
   await page.locator('.accounting-receipts input[type=checkbox]').first().check();
   await page.getByLabel('Tỷ giá '+o.payments[0].id,{exact:true}).fill('25000');
@@ -64,6 +65,11 @@ try{
   await page.getByRole('button',{name:'Xác nhận duyệt',exact:true}).click();
   await fxExpect(page.locator('.accounting-receipts')).toHaveCount(0);
   assert.equal((await current()).payments[0].exchangeRate,25000);
+  await page.getByRole('button',{name:'Đã duyệt cần theo dõi',exact:true}).click();
+  await page.getByRole('tab',{name:/Thanh toán 1 phần/}).click();
+  await fxExpect(page.locator('table tbody button')).toHaveCount(1);
+  await page.getByRole('tab',{name:/Thanh toán đủ/}).click();
+  await fxExpect(page.locator('table tbody button')).toHaveCount(0);
  }finally{await fxBrowser.close()}
 
  assert.equal((await current()).orderCode,c.id+'-1');
@@ -111,7 +117,7 @@ try{
    const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));
    const login=await ctx.request.post(base+'/login',{data:{email,password:'Personal-New-Password'}});assert.equal(login.status(),200,await login.text());await page.goto(base.replace('/api/work','/workspace'));
    if(role==='factory'){await page.getByRole('button',{name:'Mở menu',exact:true}).tap();await page.locator('.factory-navigation').getByRole('button',{name:'Đã gửi văn phòng',exact:true}).click();}
-   if(role==='accounting'){await expect(page.locator('.accounting-period')).toHaveCount(0);await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Báo cáo thu tiền',exact:true}).click();await expect(page.locator('.accounting-period')).toContainText('Báo cáo theo ngày duyệt / thực nhận');await page.getByLabel('Tháng kế toán').fill('2026-10');await expect(page.locator('.accounting-period')).toContainText('$100.00');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await page.screenshot({path:'data/accounting-report-mobile.png',fullPage:true});await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Duyệt đơn',exact:true}).click();await page.getByRole('combobox').selectOption('all');await page.getByLabel('Tìm đơn kế toán').fill('NO-MATCH-ACCOUNTING');await expect(page.locator('section.panel').filter({has:page.getByLabel('Tìm đơn kế toán')}).locator('tbody')).toContainText('Không có đơn phù hợp');await page.getByLabel('Tìm đơn kế toán').fill('');}
+   if(role==='accounting'){await expect(page.locator('.accounting-period')).toHaveCount(0);await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Báo cáo thu tiền',exact:true}).click();await expect(page.locator('.accounting-period')).toContainText('Báo cáo theo ngày duyệt / thực nhận');await page.getByLabel('Tháng kế toán').fill('2026-10');await expect(page.locator('.accounting-period')).toContainText('$100.00');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await page.screenshot({path:'data/accounting-report-mobile.png',fullPage:true});await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Đơn đợi duyệt',exact:true}).click();await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.getByRole('button',{name:'Lịch sử đơn hàng',exact:true}).click();await page.getByLabel('Tìm đơn kế toán').fill('NO-MATCH-ACCOUNTING');await expect(page.locator('section.panel').filter({has:page.getByLabel('Tìm đơn kế toán')}).locator('tbody')).toContainText('Không có đơn phù hợp');await page.getByLabel('Tìm đơn kế toán').fill('');}
    if(role==='sale'){await page.getByRole('button',{name:'Mở menu',exact:true}).tap();await page.locator('.sidebar').getByRole('button',{name:'Đơn hàng chưa hoàn thành',exact:true}).tap();}
    await page.getByRole('button',{name:(await current()).orderCode,exact:true}).first().click();
    if(role==='accounting'){await expect(page.locator('.qc-summary')).toContainText('Vận chuyển đã nhận');await expect(page.locator('.qc-summary')).toContainText('Doanh thu đã nhận');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));}
@@ -144,7 +150,7 @@ try{
  await cancelAction(factory,'factory-status',{status:'producing'});await cancelAction(factory,'factory-status',{status:'paused'});await cancelAction(accountant,'accounting-forfeit',{text:'Customer cancelled production'});
  await cancelAction(a,'compensation-add',{amount:20,date:'2026-10-02',text:'Actual loss'},400);
  const lossBrowser=await chromium.launch({headless:true,channel:'msedge'});
- try{const ctx=await lossBrowser.newContext(),page=await ctx.newPage();await ctx.request.post(base+'/login',{data:{email:'accounting@example.com',password:'Personal-New-Password'}});await page.goto(base.replace('/api/work','/workspace'));await page.getByRole('combobox').selectOption('cancelled');co=await cancelledCurrent();await page.getByRole('button',{name:co.orderCode,exact:true}).click();await page.getByRole('button',{name:'Thiệt hại',exact:true}).click();await page.getByLabel('Tiền bồi thường (USD)',{exact:true}).fill('20');await page.getByLabel('Lý do bồi thường / hoàn hàng *',{exact:true}).fill('Actual production loss');await page.getByRole('button',{name:'Ghi nhận thiệt hại',exact:true}).click();await expect(page.getByText('Tổng thiệt hại:',{exact:false})).toContainText('$20.00');assert.equal((await cancelledCurrent()).compensations.length,1);}finally{await lossBrowser.close()}
+ try{const ctx=await lossBrowser.newContext(),page=await ctx.newPage();await ctx.request.post(base+'/login',{data:{email:'accounting@example.com',password:'Personal-New-Password'}});await page.goto(base.replace('/api/work','/workspace'));await page.getByRole('button',{name:'Lịch sử đơn hàng',exact:true}).click();co=await cancelledCurrent();await page.getByRole('button',{name:co.orderCode,exact:true}).click();await page.getByRole('button',{name:'Thiệt hại',exact:true}).click();await page.getByLabel('Tiền bồi thường (USD)',{exact:true}).fill('20');await page.getByLabel('Lý do bồi thường / hoàn hàng *',{exact:true}).fill('Actual production loss');await page.getByRole('button',{name:'Ghi nhận thiệt hại',exact:true}).click();await expect(page.getByText('Tổng thiệt hại:',{exact:false})).toContainText('$20.00');assert.equal((await cancelledCurrent()).compensations.length,1);}finally{await lossBrowser.close()}
  const audit=await owner.call('/audit');assert.ok(audit.some(x=>x.action==='qc-save'));assert.ok(audit.some(x=>x.action==='accounting-decision'));
  await stop();await start();assert.equal((await current()).payments[0].exchangeRate,26000);assert.equal((await current()).qc.note,'Sale reviewed');assert.equal((await current()).orderCode,c.id+'-1');
  const persisted=await fetch(base+mediaPath,{headers:{Cookie:factory.cookie}});assert.equal(persisted.status,200);assert.equal(Buffer.from(await persisted.arrayBuffer()).toString('base64'),png.split(',')[1]);
