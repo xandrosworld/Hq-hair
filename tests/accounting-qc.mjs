@@ -50,6 +50,8 @@ try{
   await ctx.request.post(base+'/login',{data:{email:'accounting@example.com',password:'Personal-New-Password'}});
   await page.goto(base.replace('/api/work','/workspace'));
   await fxExpect(page.getByRole('navigation',{name:'Menu Kế toán'})).toBeVisible();await page.screenshot({path:'data/accounting-orders-desktop.png',fullPage:true});
+  await page.getByRole('button',{name:'Thông báo',exact:true}).click();
+  await fxExpect(page.locator('.order-notifications')).toBeVisible();
   await page.getByRole('button',{name:'Đã duyệt cần theo dõi',exact:true}).click();
   await page.getByRole('tab',{name:/Có chứng từ mới/}).click();
   await fxExpect(page.locator('table tbody button')).toHaveCount(0);
