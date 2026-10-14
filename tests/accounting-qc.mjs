@@ -61,6 +61,10 @@ try{
   await fxExpect(page.locator('table tbody button')).toHaveCount(1);
   await page.getByRole('button',{name:'Đơn đợi duyệt',exact:true}).click();
   await page.locator('table tbody button').first().click();
+  await page.getByLabel('Nội dung trao đổi').fill('Kế toán đối soát chứng từ');
+  await page.getByRole('button',{name:'Gửi',exact:true}).click();
+  await fxExpect(page.locator('.messages')).toContainText('Kế toán đối soát chứng từ');
+  assert.ok((await current()).messages.some(m=>m.text==='Kế toán đối soát chứng từ'&&m.author.includes('Kế toán')));
   await page.locator('.accounting-receipts input[type=checkbox]').first().check();
   await page.getByLabel('Tỷ giá '+o.payments[0].id,{exact:true}).fill('25000');
   await fxExpect(page.locator('.accounting-receipts')).toContainText('750.000');
