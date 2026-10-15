@@ -40,3 +40,14 @@ test('Factory duration starts at approval, respects Vietnam date and frozen dead
  const legacy=factoryTiming(order({history:[{title:'Kế toán duyệt',time:'2026-10-03'},{title:'Đã gửi đến văn phòng',time:'2026-10-07'}]}));
  assert.equal(legacy.plannedDays,7);assert.equal(legacy.actualDays,4);
 });
+
+test('Factory compact date modes use approval and Sale Check dates independently',()=>{
+ const a=order({stage:5,approvedAt:'2026-10-01T18:00:00Z',production:{checkAt:'2026-10-05T18:00:00Z'}});
+ const missing=order({stage:5,orderCode:'MISSING'});
+ const rows=[a,missing];
+ assert.equal(filterFactoryOrders(rows,{tab:'review',dateBasis:'all',from:'2030-01-01'}).length,2);
+ assert.deepEqual(filterFactoryOrders(rows,{tab:'review',dateBasis:'approval',from:'2026-10-02',to:'2026-10-02'}),[a]);
+ assert.deepEqual(filterFactoryOrders(rows,{tab:'review',dateBasis:'sale_check',from:'2026-10-06',to:'2026-10-06'}),[a]);
+ assert.equal(filterFactoryOrders(rows,{tab:'review',dateBasis:'sale_check',to:'2026-10-02'}).length,0);
+ assert.equal(filterFactoryOrders(rows,{tab:'review',dateBasis:'approval',from:'2026-10-06'}).length,0);
+});

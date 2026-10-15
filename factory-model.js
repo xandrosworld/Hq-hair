@@ -38,15 +38,15 @@ export function factoryReport(orders,year){
  }
  return rows;
 }
-export function filterFactoryOrders(orders,{tab='waiting',query='',state='all',from='',to='',dueFrom='',dueTo='',urgency='all',sort='due',timing='all',customers=[]}={}){
+export function filterFactoryOrders(orders,{tab='waiting',dateBasis='tab',query='',state='all',from='',to='',dueFrom='',dueTo='',urgency='all',sort='due',timing='all',customers=[]}={}){
  const q=query.trim().toLocaleLowerCase('vi');
  const names=new Map(customers.map(c=>[c.id,`${c.name||''} ${c.company||''}`]));
  return factoryOrders(orders).filter(o=>{
   if(factoryGroup(o)!==tab)return false;
   if(q&&!`${o.orderCode} ${o.sale} ${names.get(o.customerId)||''} ${o.note||''} ${o.production?.note||''} ${o.saleReview?.note||''} ${(o.items||[]).map(i=>`${i.name} ${i.productNote||''}`).join(' ')}`.toLocaleLowerCase('vi').includes(q))return false;
   if(state!=='all'&&factoryState(o)!==state)return false;
-  const date=factoryDate(o,tab);
-  if(from&&(!date||date<from)||to&&(!date||date>to))return false;
+  const date=dateBasis==='approval'?approvalDate(o):dateBasis==='sale_check'?deliveryDate(checkAt(o)):factoryDate(o,tab);
+  if(dateBasis!=='all'&&((from&&(!date||date<from))||(to&&(!date||date>to))))return false;
   const t=deliveryTiming(o);
   if(dueFrom&&(!t.due||t.due<dueFrom)||dueTo&&(!t.due||t.due>dueTo))return false;
   if(urgency==='overdue'&&!(t.days<0)||urgency==='urgent'&&!(t.days!=null&&t.days>=0&&t.days<=3))return false;
