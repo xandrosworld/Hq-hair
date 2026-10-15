@@ -24,3 +24,9 @@ test('Forfeiture preserves official code and receipts, requires deposit, debt an
  assert.throws(()=>applyAccounting(o,accountant,'accounting-final',{},()=>{}));
  for(const payments of [[],[{amount:100,confirmed:true}]])assert.throws(()=>applyAccounting({...order(),stage:4,officeDispatch:null,production:{status:'paused'},payments},accountant,'accounting-forfeit',{text:'reason'},()=>{}));
 });
+
+test('Fully paid order can finish final check without a new receipt',()=>{
+ const o=order();o.payments=[{id:'paid',amount:100,confirmed:true}];
+ applyAccounting(o,accountant,'accounting-final',{receipts:[]},()=>{});
+ assert.equal(o.stage,8);assert.equal(o.finalPaymentCheck.status,'full');assert.equal(o.payments.length,1);
+});

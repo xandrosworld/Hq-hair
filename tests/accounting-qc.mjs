@@ -55,12 +55,12 @@ try{
   await page.getByRole('button',{name:'Đóng',exact:true}).click();
   await page.getByRole('button',{name:'Đã duyệt cần theo dõi',exact:true}).click();
   await page.getByLabel('Chỉ hiện đơn có chứng từ mới').check();
-  await fxExpect(page.locator('table tbody button')).toHaveCount(0);
+  await fxExpect(page.locator('table tbody .order-link')).toHaveCount(0);
   await page.getByRole('button',{name:'Lịch sử đơn hàng',exact:true}).click();
   await fxExpect(page.getByLabel('Tháng lịch sử đơn hàng')).toBeVisible();
-  await fxExpect(page.locator('table tbody button')).toHaveCount(1);
+  await fxExpect(page.locator('table tbody .order-link')).toHaveCount(1);
   await page.getByRole('button',{name:'Đơn đợi duyệt',exact:true}).click();
-  await page.locator('table tbody button').first().click();
+  await page.locator('table tbody .order-link').first().click();
   await page.getByLabel('Nội dung trao đổi').fill('Kế toán đối soát chứng từ');
   await page.getByRole('button',{name:'Gửi',exact:true}).click();
   await fxExpect(page.locator('.messages')).toContainText('Kế toán đối soát chứng từ');
@@ -75,9 +75,9 @@ try{
   await page.getByRole('button',{name:'Đã duyệt cần theo dõi',exact:true}).click();
   await page.getByRole('tab',{name:/Chưa kiểm tra thanh toán lần cuối/}).click();
   await page.getByLabel('Chỉ hiện đơn có chứng từ mới').uncheck();
-  await fxExpect(page.locator('table tbody button')).toHaveCount(1);
+  await fxExpect(page.locator('table tbody .order-link')).toHaveCount(1);
   await page.getByRole('tab',{name:/Đã kiểm tra lần cuối/}).click();
-  await fxExpect(page.locator('table tbody button')).toHaveCount(0);
+  await fxExpect(page.locator('table tbody .order-link')).toHaveCount(0);
  }finally{await fxBrowser.close()}
 
  assert.equal((await current()).orderCode,c.id+'-1');
