@@ -1,6 +1,6 @@
 import {applyReceiptCorrection} from './receipt-corrections.js';
 import {applyCompensation} from './compensation.js';
-import {cleanCustomer,purchaseHistory} from './customer-fields.js';
+import {cleanCustomer,purchaseHistory,assertUniqueCustomerPhone} from './customer-fields.js';
 import {assertDraftSlot,fixedDraftCode} from './draft-orders.js';
 import {applyFactoryWorkflow} from './factory-workflow.js';
 import {migrateOrderIdentity,assignOrderCode} from './order-identity.js';
@@ -62,6 +62,7 @@ business.post('/customers',(req,res)=>{
  if(!b.id&&req.data.customers.length>=(req.work?10000:200))fail('Bản demo hỗ trợ tối đa 200 khách hàng.');
  const existing=req.data.customers.find(x=>x.id===b.id);
  if(b.id){req.assertAccess(existing);req.assertVersion(existing)}
+ assertUniqueCustomerPhone(c,req.data.customers,existing);
  if(existing)Object.assign(existing,c,{version:(existing.version||0)+1});else req.data.customers.push({...c,ownerId:req.user.id,version:1,id:req.work?`${req.user.code}-${req.nextCode('customer:'+req.user.id)}`:`HQ-JD-${Math.max(0,...req.data.customers.map(x=>Number(x.id.split('-').at(-1))))+1}`,sale:req.user.name,created:today()});
  req.save();res.json(req.view());
 });

@@ -13,3 +13,16 @@ export function cleanCustomer(body,previous){
  }
  return c;
 }
+
+// Formatting only: do not guess international country codes from an address.
+export function customerPhoneKey(phone){
+ const value=String(phone||'').normalize('NFKC').replace(/[\s().\-‐‑‒–—]/gu,'');
+ return /^\+?\d+$/.test(value)?value.replace(/^\+/,''):'';
+}
+export function assertUniqueCustomerPhone(customer,customers,previous){
+ const key=customerPhoneKey(customer.phone);
+ // Existing duplicate/legacy numbers can remain while unrelated fields are edited.
+ if(previous&&key===customerPhoneKey(previous.phone)&&customer.phone===previous.phone)return;
+ if(!key)throw Object.assign(new Error('Số điện thoại khách hàng chỉ gồm chữ số, có thể kèm dấu +, khoảng trắng, dấu chấm hoặc dấu gạch.'),{status:400});
+ if(customers.some(c=>c.id!==previous?.id&&customerPhoneKey(c.phone)===key))throw Object.assign(new Error('Số điện thoại này đã có trên hệ thống. Vui lòng kiểm tra khách hàng đã tồn tại.'),{status:409});
+}
