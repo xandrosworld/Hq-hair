@@ -2,6 +2,16 @@
 
 ## Cập nhật ngày 16/10/2026
 
+### Khách tự quản lý bảng giá và màu
+
+- Quản trị có sẵn quyền quản lý. Để giao cho Sale: **Tài khoản & đội ngũ → Nhân sự & quyền truy cập**, bật riêng **Thêm / sửa bảng giá** và/hoặc **Thêm / sửa mẫu màu**. Tài khoản chưa được cấp quyền chỉ tra cứu; không tự mở quyền cho toàn bộ nhân viên.
+- **Bảng giá & màu → Thêm mức giá**: nhập bảng giá, sản phẩm, quy cách, chiều dài, tông, đơn vị và số tiền. **Sửa giá** trên mỗi dòng cập nhật số tiền và ghi chú; giữ nguyên quy cách của dòng đó. Không nhập trùng một tổ hợp sản phẩm/quy cách/chiều dài/tông.
+- **Danh mục màu → Thêm mẫu màu**: nhập mã, loại màu; màu phối chọn ít nhất hai màu đơn. Mã mới dùng mức giá của tông tương ứng (Đen/Nâu/Sáng). Màu phối dùng tông cao nhất. Thêm mã màu không yêu cầu nhập lại giá nếu tông đã có mức giá phù hợp.
+- Lịch sử ghi người thao tác, thời gian, giá trước/sau và ghi chú. Các đơn đã lưu giữ nguyên đơn giá. API `/pricing/entries` dùng cùng phân quyền, phiên bản danh mục và cơ chế chống ghi lặp như điều chỉnh giá theo phần trăm.
+- Kiểm tra bổ sung: `node tests/pricing-security.mjs`, `node tests/pricing-self-service.mjs` (thêm/sửa, giá trùng, retry mất mạng, chọn màu/giá vào đơn, cấp/thu hồi quyền, điện thoại).
+
+### Quốc gia, ngày tháng, bộ lọc Xưởng và mã khách
+
 - Danh sách dùng chung có 80 quốc gia, nhãn tiếng Việt, giữ nguyên giá trị lưu của các quốc gia cũ.
 - Tổng quan Xưởng lọc đồng thời trạng thái đang hiển thị trên đơn, tháng đặt hàng và khoảng hạn gửi văn phòng (bao gồm hai ngày đầu/cuối). Đơn đã gửi dùng hạn đã chốt khi bàn giao.
 - Các ô ngày/tháng dùng bộ chọn tiếng Việt, hiển thị ngày/tháng/năm hoặc tháng/năm, API vẫn nhận ISO. Có thể gõ trực tiếp hoặc mở lịch.

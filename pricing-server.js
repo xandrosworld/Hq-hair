@@ -3,6 +3,7 @@ import {migrateBrightColors} from './color-confirmations.js';
 import {fileURLToPath} from 'node:url';
 import {randomUUID,createHash} from 'node:crypto';
 import {highestTone,adjustedPrice,matchingPrices,toneNames} from './pricing-domain.js';
+import {cleanPriceEntry,priceEntryKey} from './price-entry.js';
 const seed=JSON.parse(readFileSync(new URL('./resources/pricing-seed.json',import.meta.url),'utf8'));
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})};
 export function setupPricing(router,db,audit){
@@ -44,6 +45,19 @@ export function setupPricing(router,db,audit){
   if(prior){if(prior.hash!==hash)fail(409,'Mã thao tác đã được sử dụng.');return res.json(view(req.user))}
   db.exec('BEGIN IMMEDIATE');try{const data=read();if(req.body.version!==data.version)fail(409,'Danh mục đã thay đổi. Tải lại trước khi tiếp tục.');fn(data);data.version++;db.prepare('UPDATE pricing SET data=? WHERE id=1').run(JSON.stringify(data));db.prepare('INSERT INTO pricing_requests VALUES(?,?,?,?)').run(req.user.id,key,hash,'{}');db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}res.json(view(req.user));
  }
+ router.post('/pricing/entries',(req,res)=>write(req,res,'price_edit',data=>{
+  const existing=req.body.id&&data.prices.find(p=>p.id===req.body.id);
+  if(req.body.id&&!existing)fail(404,'Không tìm thấy mức giá.');
+  const cleaned=cleanPriceEntry(req.body,existing);
+  if(!existing&&data.prices.some(p=>priceEntryKey(p)===priceEntryKey(cleaned)))fail(409,'Mức giá cho sản phẩm, quy cách, chiều dài và tông này đã có. Chọn Sửa giá ở dòng hiện có.');
+  if(!existing&&data.prices.length>=20000)fail(400,'Danh mục đã đạt giới hạn 20.000 mức giá.');
+  const before=existing?structuredClone(existing):null,time=new Date().toISOString();
+  const row={...cleaned,id:existing?.id||randomUUID(),source:existing?.source||{file:'',sheet:'Nhập trực tiếp',cell:''},updatedAt:time,updatedBy:req.user.name};
+  if(existing)Object.assign(existing,row);else data.prices.push(row);
+  const historyId=randomUUID(),kind=existing?'entry-update':'entry-create';
+  db.prepare('INSERT INTO pricing_history VALUES(?,?,?,?,?)').run(historyId,time,req.user.id,req.user.name,JSON.stringify({kind,version:data.version+1,row,beforeRow:before,note:row.note,changes:[{id:row.id,before:before?.price??null,after:row.price}]}));
+  audit(req.user,kind,row.id,{before,after:row});
+ }));
  router.post('/pricing/adjust',(req,res)=>write(req,res,'price_edit',data=>{
   const change=adjustment(data,req.body);const map=new Map(change.changes.map(c=>[c.id,c.after]));for(const p of data.prices)if(map.has(p.id))p.price=map.get(p.id);
   const id=randomUUID();db.prepare('INSERT INTO pricing_history VALUES(?,?,?,?,?)').run(id,new Date().toISOString(),req.user.id,req.user.name,JSON.stringify({...change,version:data.version+1,kind:'adjust'}));audit(req.user,'price-adjust',id,{percent:change.percent,scope:change.scope,count:change.changes.length});
@@ -57,7 +71,9 @@ export function setupPricing(router,db,audit){
   const b=req.body,code=String(b.code||'').trim(),category=b.category;
   if(!code||code.length>120||!['Black','Brown','Blonde','Other','Ombre','Piano','Balayage'].includes(category))fail(400,'Kiểm tra mã và loại màu.');
   const existing=b.id&&data.colors.find(c=>c.id===b.id);if(b.id&&!existing)fail(404,'Không tìm thấy màu.');
-  if(data.colors.some(c=>c.id!==b.id&&c.code.toLowerCase()===code.toLowerCase()))fail(400,'Mã màu đã có trong danh mục.');
+  const colorKey=value=>value.trim().replace(/^#/,'').toLowerCase();
+  if(!colorKey(code))fail(400,'Nhập mã màu sau dấu #.');
+  if(data.colors.some(c=>c.id!==b.id&&colorKey(c.code)===colorKey(code)))fail(400,'Mã màu đã có trong danh mục.');
   const components=Array.isArray(b.components)?[...new Set(b.components)]:[];
   const mix=['Ombre','Piano','Balayage'].includes(category);
   if(mix&&components.length<2)fail(400,'Màu phối cần ít nhất hai màu thành phần.');

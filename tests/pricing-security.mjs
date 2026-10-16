@@ -22,6 +22,7 @@ try{
  for(const [c,email] of [[sale,'sale-a@example.com'],[factory,'factory@example.com']]){await c.call('/login',{email,password:'Sale-Initial-Password'});await c.call('/password',{currentPassword:'Sale-Initial-Password',password:'Personal-New-Password'})}
  await factory.call('/pricing',undefined,{status:403});
  let prices=await sale.call('/pricing');assert.equal(prices.prices.length,2874);assert.equal(prices.colors.length,96);assert.equal(prices.canEditPrices,false);
+ await sale.call('/pricing/entries',{version:prices.version,price:50},{status:403});
  const change={version:2,percent:5,scope:{tier:'Basic',product:'Bulk'}};
  await sale.call('/pricing/adjust',change,{status:403});await sale.call('/pricing/colors',{version:2,code:'#TEST',category:'Other'},{status:403});
  const u=users.find(u=>u.role==='sale');await sale.call('/pricing/permissions/'+u.id,{priceEdit:true,colorEdit:true},{status:403});
@@ -41,14 +42,28 @@ try{
  prices=await sale.call('/pricing/restore',{version:3,historyId:h[0].id});assert.equal(prices.version,4);assert.equal(prices.prices.find(p=>p.id===row.id).price,98.5);
  await sale.call('/pricing/restore',{version:4,historyId:h[0].id},{status:409});
  const black=prices.colors.find(c=>c.category==='Black'),brown=prices.colors.find(c=>c.category==='Brown'),blonde=prices.colors.find(c=>c.category==='Blonde');
+ await sale.call('/pricing/colors',{version:4,code:black.code.replace(/^#/,''),category:'Black'},{status:400});
+ await sale.call('/pricing/colors',{version:4,code:'#',category:'Black'},{status:400});
  prices=await sale.call('/pricing/colors',{version:4,code:'#TEST MIX',category:'Ombre',components:[black.id,brown.id,blonde.id]});assert.equal(prices.colors.at(-1).tone,'blonde');
  await sale.call('/pricing/colors',{version:5,code:'#BAD',category:'Ombre',components:['unknown']},{status:400});
  prices=await sale.call('/pricing/colors',{version:5,code:'#NEW-TEST',category:'Blonde'});assert.equal(prices.colors.find(c=>c.code==='#Ombre Grey-9C').tone,'blonde');
+ const entry={version:prices.version,tier:'Basic',product:'QA custom weft',segment:'Super Double Drawn',variant:'',lengthCm:55,inches:22,tone:'brown',priceBasis:'100g',price:88.5,note:'Customer managed rate'};
+ await sale.call('/pricing/entries',{...entry,price:1.234},{status:400});assert.equal((await sale.call('/pricing')).version,entry.version);
+ const entryKey=randomUUID();prices=await sale.call('/pricing/entries',entry,{key:entryKey});const added=prices.prices.find(p=>p.product===entry.product);assert.ok(added);assert.equal(added.source.sheet,'Nhập trực tiếp');
+ assert.equal((await sale.call('/pricing/entries',entry,{key:entryKey})).version,prices.version);
+ await sale.call('/pricing/entries',{...entry,price:90},{key:entryKey,status:409});
+ await sale.call('/pricing/entries',{...entry,version:prices.version,product:' qa CUSTOM weft ',priceBasis:'unit'},{status:409});
+ const previousVersion=prices.version;prices=await sale.call('/pricing/entries',{...added,version:previousVersion,price:91.25,note:'Revised rate'});assert.equal(prices.prices.find(p=>p.id===added.id).price,91.25);
+ await sale.call('/pricing/entries',{id:added.id,version:previousVersion,price:99},{status:409});
+ await sale.call('/pricing/entries',{id:'missing',version:prices.version,price:99},{status:404});
+ const manualHistory=await sale.call('/pricing/history');assert.equal(manualHistory[0].kind,'entry-update');assert.equal(manualHistory[0].changes[0].before,88.5);assert.equal(manualHistory[0].changes[0].after,91.25);assert.equal(manualHistory[1].kind,'entry-create');
+ assert.equal((await sale.call('/state')).orders.find(o=>o.id===saved.id).items[0].price,98.5);
+ await owner.call('/pricing/permissions/'+u.id,{priceEdit:false,colorEdit:true});await sale.call('/pricing/entries',{...entry,version:prices.version},{status:403});
  await owner.call('/pricing/permissions/'+u.id,{priceEdit:false,colorEdit:false});
  await sale.call('/pricing/adjust',{...change,version:6},{status:403});await sale.call('/pricing/colors',{version:6,code:'#DENIED',category:'Other'},{status:403});
  const image=prices.colors.find(c=>c.images.length).images[0].id;
  let r=await fetch(base+'/pricing/images/'+image,{headers:{Cookie:sale.cookie}});assert.equal(r.status,200);assert.equal(r.headers.get('content-type'),'image/webp');
  r=await fetch(base+'/pricing/images/'+image);assert.equal(r.status,401);
- await stop();await start();await owner.call('/login',{email:'owner@example.com',password:'Owner-New-Password-2026'});assert.equal((await owner.call('/pricing')).version,6);
+ await stop();await start();await owner.call('/login',{email:'owner@example.com',password:'Owner-New-Password-2026'});const persisted=await owner.call('/pricing');assert.equal(persisted.version,prices.version);assert.equal(persisted.prices.find(p=>p.id===added.id).price,91.25);
  console.log('PASS: 2874 imported prices, 96 colors, auth/CSRF/permissions, preview, scoped adjustment, rounding, stale/retry/rollback protection, history restore, fixed order prices, color mix/unknown resolution, protected images and restart persistence.');
 }finally{if(server)await stop();rmSync(dir,{recursive:true,force:true})}
