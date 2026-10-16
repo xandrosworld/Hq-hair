@@ -51,7 +51,7 @@ test('pending/cancelled requests never count as purchases; first and repeat appr
  const first=orders[1];first.stage=3;first.accountingApproval={status:'partial',time:'2026-10-01T08:00:00+07:00'};assignOrderCode(first,orders);
  assert.equal(first.orderCode,'c-1');assert.equal(buyerStatistics(customers,orders,'2026-10-02').total,1);
  const second={...first,id:'other',orderCode:null,accountingApproval:{status:'full',time:'2026-10-02T08:00:00+07:00'}};orders.push(second);assignOrderCode(second,orders);
- assert.equal(second.orderCode,'c-2');assert.equal(buyerStatistics(customers,orders,'2026-10-02').repeat,1);
+ assert.equal(second.orderCode,'c-2');assert.equal(buyerStatistics(customers,orders,'2026-10-02').repeat,0);
  assert.equal(monthlySeries(orders,2026,'count')[9],2);assert.equal(financialSummary(orders).revenue,200);
  assert.ok(reportCSV(orders,customers).includes('"c-2"'));assert.equal(reportOrders({customers,orders},{query:'c-2'}).length,1);
 });

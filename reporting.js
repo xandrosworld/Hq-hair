@@ -11,9 +11,9 @@ export function monthlySeries(orders,year,key){
  return values.map(round);
 }
 export {customerActivity} from './customer-statistics.js';
-export function reportOrders(data,{month='all',owner='all',query='',bucket='all',overdue=false,debtOnly=false}={}){
+export function reportOrders(data,{month='all',owner='all',query='',bucket='all',overdue=false,debtOnly=false,includeHistorical=false}={}){
  const customers=new Map(data.customers.map(c=>[c.id,c]));const q=query.trim().toLocaleLowerCase('vi');
- return data.orders.filter(o=>isFinancialOrder(o)&&(month==='all'||o.date.startsWith(month))&&(owner==='all'||(o.ownerId||o.sale)===owner)&&(!q||`${orderLabel(o)} ${o.customerId} ${customers.get(o.customerId)?.name||customers.get(o.customerId)?.company||''} ${o.sale}`.toLocaleLowerCase('vi').includes(q))&&(!debtOnly||totals(o).debt>0)&&(!overdue||aging(o).days>0)&&(bucket==='all'||aging(o).bucket===bucket));
+ return data.orders.filter(o=>(isFinancialOrder(o)||includeHistorical&&o.orderCode&&approvalDate(o))&&(month==='all'||o.date.startsWith(month))&&(owner==='all'||(o.ownerId||o.sale)===owner)&&(!q||`${orderLabel(o)} ${o.customerId} ${customers.get(o.customerId)?.name||customers.get(o.customerId)?.company||''} ${o.sale}`.toLocaleLowerCase('vi').includes(q))&&(!debtOnly||totals(o).debt>0)&&(!overdue||aging(o).days>0)&&(bucket==='all'||aging(o).bucket===bucket));
 }
 export function financialSummary(orders){
  const result={revenue:0,receive:0,total:0,paid:0,revenuePaid:0,shippingPaid:0,pending:0,debt:0,overdue:0,unscheduled:0,debtCustomers:new Set(orders.filter(o=>isFinancialOrder(o)&&totals(o).debt>0).map(o=>o.customerId)).size};

@@ -15,10 +15,10 @@ test('new versus not-returned ratio matches 4/10 and follows selected month',()=
  // Filters apply to both parts of the same comparison.
  assert.deepEqual(customerRatio(buyerStatistics(customers.slice(0,4),orders,'2026-02-28')),{notReturned:4,ratio:1});
 });
-test('zero denominator is undefined, including when every new customer already bought twice',()=>{
+test('empty population has undefined ratio; same-month second purchases remain new customers',()=>{
  assert.deepEqual(customerRatio(buyerStatistics([],[])),{notReturned:0,ratio:null});
  const customers=[{id:'a',created:'2026-02-01'}],orders=[order('1','a','2026-02-02'),order('2','a','2026-02-03')];
- assert.deepEqual(customerRatio(buyerStatistics(customers,orders,'2026-02-28')),{notReturned:0,ratio:null});
+ assert.deepEqual(customerRatio(buyerStatistics(customers,orders,'2026-02-28')),{notReturned:1,ratio:1});
 });
 test('customer example: Jan first purchase, Feb repeat, March absent, April return',()=>{
  const customers=[{id:'a',created:'2026-01-01'}],orders=[order('1','a','2026-01-04'),order('2','a','2026-02-02'),order('3','a','2026-02-09'),order('4','a','2026-04-02')];
@@ -28,14 +28,14 @@ test('customer example: Jan first purchase, Feb repeat, March absent, April retu
  assert.equal(stats('2026-03').total,1);assert.equal(stats('2026-03').newCustomers,0);
  assert.deepEqual(customerActivity(orders,2026,customers,'2026-04-30').slice(0,4).map(m=>m.returning),[0,1,0,1]);
 });
-test('new profiles need approval; two first purchases same month qualify for both new and returning',()=>{
+test('first approval defines new buyers; same-month repeat purchases do not qualify as returning',()=>{
  const customers=[{id:'a',created:'2026-02-01'},{id:'b',created:'2026-02-01'},{id:'c',created:'2026-01-01'}];
  const orders=[order('1','a','2026-02-04'),order('2','a','2026-02-05'),order('3','c','2026-02-06'),{...order('4','b','2026-02-07'),stage:2,orderCode:null}];
  const stats=buyerStatistics(customers,orders,'2026-02-28');
- assert.deepEqual(stats,{total:2,newCustomers:1,repeat:1,rate:50,growth:null});
+ assert.deepEqual(stats,{total:2,newCustomers:2,repeat:0,rate:0,growth:null});
  assert.equal(buyerStatistics(customers,orders,'2026-02-03').total,0);
  assert.equal(buyerStatistics(customers,orders,'2026-02-04').repeat,0);
- assert.equal(buyerStatistics(customers,orders,'2026-02-05').repeat,1);
+ assert.equal(buyerStatistics(customers,orders,'2026-02-05').repeat,0);
  assert.equal(buyerStatistics(customers,orders,'2026-02-28','2026-01').newCustomers,0);
 });
 test('approval month uses Vietnam time and first approval even after balance confirmation',()=>{

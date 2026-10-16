@@ -1,0 +1,13 @@
+import React from 'react';
+import {periodDashboard} from '../period-dashboard.js';
+import {percentageOf,percentageText} from '../report-percentages.js';
+import {money} from '../shared.js';
+export function PeriodKpis({orders,period=''}){
+ const r=periodDashboard(orders,period);
+ const previousPeriod=period.length===7?new Date(Date.UTC(Number(period.slice(0,4)),Number(period.slice(5))-2,1)).toISOString().slice(0,7):period.length===4?String(Number(period)-1):'';
+ const previous=previousPeriod?periodDashboard(orders,previousPeriod):null;
+ const changes={discount:'discount',revenue:'revenue',cash:'revenuePaid',current:'currentReceipts',recovered:'recoveredDebt',debt:'debt'};
+ const comparison=(key,value)=>{const old=previous?.[changes[key]];return !previous||value===null||old===null?null:old===0?(value===0?'Không đổi so với kỳ trước':'Kỳ trước: '+money(0)):`${value>old?'+':''}${percentageText((value-old)/Math.abs(old)*100)} so với ${period.length===7?'tháng':'năm'} trước`};
+ const cards=[['discount','Giảm giá',r.discount,'Theo ngày kế toán duyệt'],['revenue','Doanh thu thuần',r.revenue,`${r.approved.length} đơn duyệt trong kỳ`],['cash','Dòng tiền thu vào',r.revenuePaid,'Tiền nhận trong kỳ, đã trừ vận chuyển'],['current','Doanh thu thực thu',r.currentReceipts,'Thu trong tháng từ đơn duyệt cùng tháng'],['recovered','Thu hồi công nợ',r.recoveredDebt,'Thu trong tháng từ đơn duyệt tháng trước'],['debt','Công nợ phải thu',r.debt,r.historical?`Số dư cuối kỳ ${r.cutoff.split('-').reverse().join('/')}`:'Số dư hiện tại']];
+ return <><div className="metrics refined-metrics financial-metrics">{cards.map(([key,label,value,note])=><section className={'metric period-kpi metric-'+key} data-testid={'period-kpi-'+key} key={key}><div className="metric-top"><span>{label}</span></div><div className="metric-middle"><strong>{value===null?'—':money(value)}</strong></div>{key!=='revenue'&&<p className="metric-share">{value===null?'Chưa có số liệu xác định':r.revenue>0?`${percentageText(percentageOf(value,r.revenue))} so với doanh thu thuần`:'— · Chưa có doanh thu thuần để tính %'}</p>}{comparison(key,value)&&<p className="period-change">{comparison(key,value)}</p>}<div className="metric-bottom"><span>{value===null&&['current','recovered'].includes(key)?'Chưa chốt cách phân loại ở chế độ này':note}</span><span>USD</span></div></section>)}</div>{r.debtMissing>0&&<p role="status">Có {r.debtMissing} đơn thiếu ngày thu hoặc lịch sử chỉnh sửa để xác định số dư cuối kỳ; tổng công nợ chưa đầy đủ.</p>}{r.unclassified!==0&&<p role="status">Có {money(r.unclassified)} tiền thu chưa phân loại do thiếu ngày duyệt hoặc thu trước kỳ duyệt; đã nằm trong dòng tiền thu vào.</p>}</>;
+}

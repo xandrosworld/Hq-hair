@@ -1,4 +1,4 @@
-import {datedFinancialSummary} from '../dated-financial-report.js';
+import {periodDashboard} from '../period-dashboard.js';
 import {isFinancialOrder} from '../reporting.js';
 import {isOfficialOrder} from '../order-identity.js';
 import React from 'react';
@@ -10,11 +10,11 @@ export function SalesTeamSummary({orders,customers,revenueBasis=false,period}){
  for(const c of customers)get(c.ownerId||c.sale,c.sale).customers.add(c.id);
  for(const order of orders){
   const row=get(order.ownerId||order.sale,order.sale);
-  if(!(revenueBasis?isFinancialOrder(order):isOfficialOrder(order)))continue;
-  const dated=period!==undefined?datedFinancialSummary([order],period):null;row.orders+=dated?dated.approved.length:1;
-  const total=dated||totals(order);row.revenue+=total.revenue;row.paid+=revenueBasis?total.revenuePaid:total.paid;row.debt+=total.debt;
+  if(period===undefined&&!(revenueBasis?isFinancialOrder(order):isOfficialOrder(order)))continue;
+  const dated=period!==undefined?periodDashboard([order],period):null;row.orders+=dated?dated.approved.length:1;
+  const total=dated||totals(order);row.revenue+=total.revenue;row.paid+=revenueBasis?total.revenuePaid:total.paid;row.debt=row.debt===null||total.debt===null?null:row.debt+total.debt;
   if(order.stage<10&&(period===undefined||total.approved.length))row.active++;
  }
  const rows=[...groups.values()].sort((a,b)=>b.revenue-a.revenue);
- return <section className="panel" aria-label="Tổng hợp đội Sale"><div className="panel-head"><div><h3>Tổng hợp theo người phụ trách</h3><p>Doanh thu theo ngày duyệt · Thực nhận theo ngày nhận · Công nợ hiện tại</p></div></div>{rows.length?<div className="table-scroll"><table><thead><tr><th>Người phụ trách</th><th className="numeric">Khách hàng</th><th className="numeric">Đơn hàng</th><th className="numeric">Đang xử lý</th><th className="numeric">Doanh thu</th><th className="numeric">{revenueBasis?'Doanh thu đã nhận':'Đã nhận'}</th><th className="numeric">Công nợ</th></tr></thead><tbody>{rows.map(row=><tr key={row.id}><td><b>{row.name||'Chưa phân công'}</b></td><td className="numeric">{row.customers.size}</td><td className="numeric">{row.orders}</td><td className="numeric">{row.active}</td><td className="numeric">{money(row.revenue)}</td><td className="numeric">{money(row.paid)}</td><td className="numeric">{money(row.debt)}</td></tr>)}</tbody></table></div>:<div className="inline-empty">Chưa có khách hàng hoặc đơn trong kỳ này.</div>}</section>;
+ return <section className="panel" aria-label="Tổng hợp đội Sale"><div className="panel-head"><div><h3>Tổng hợp theo người phụ trách</h3><p>Doanh thu theo ngày duyệt · Thực nhận theo ngày nhận · Công nợ tại cuối kỳ đã chọn</p></div></div>{rows.length?<div className="table-scroll"><table><thead><tr><th>Người phụ trách</th><th className="numeric">Khách hàng</th><th className="numeric">Đơn hàng</th><th className="numeric">Đang xử lý</th><th className="numeric">Doanh thu</th><th className="numeric">{revenueBasis?'Dòng tiền thu vào':'Đã nhận'}</th><th className="numeric">Công nợ</th></tr></thead><tbody>{rows.map(row=><tr key={row.id}><td><b>{row.name||'Chưa phân công'}</b></td><td className="numeric">{row.customers.size}</td><td className="numeric">{row.orders}</td><td className="numeric">{row.active}</td><td className="numeric">{money(row.revenue)}</td><td className="numeric">{money(row.paid)}</td><td className="numeric">{row.debt===null?'—':money(row.debt)}</td></tr>)}</tbody></table></div>:<div className="inline-empty">Chưa có khách hàng hoặc đơn trong kỳ này.</div>}</section>;
 }

@@ -23,9 +23,8 @@ export function buyerStatistics(customers,orders,asOf=today(),month=asOf.slice(0
  let repeat=0,newCustomers=0,previous=0;
  for(const [id,dates] of history){
   dates.sort();
-  if(dates.slice(1).some(date=>date>=start))repeat++;
-  const created=profiles.get(id).created?.slice(0,10);
-  if(validDate(created)&&created>=start&&created<=cutoff)newCustomers++;
+  if(mode==='all'?dates.length>1:dates[0]<start&&dates.some(date=>date>=start))repeat++;
+  if(dates[0]>=start)newCustomers++;
   if(dates[0]<start)previous++;
  }
  const total=history.size;

@@ -117,3 +117,16 @@ Vào **Bảng giá & màu → Nhập Excel**. Quản lý hoặc Sale được c�
 - Giới hạn mỗi file 5 MB, 10.000 dòng, 50 sheet; danh mục tối đa 20.000 mức giá và 5.000 màu. Dùng số thực trong Excel; công thức cần tính và lưu trước khi nhập. File bố cục mới dùng mẫu chuẩn; không tự nhận mọi kiểu bảng tính.
 
 Kiểm thử: `npm test`, `npm run build`, `node tests/pricing-import.mjs`. Đặt `HQ_PRICE_SOURCE_DIR` để đối chiếu thêm ba file gốc tại máy kiểm thử. Dữ liệu kiểm thử dùng thư mục tạm; không ghi dữ liệu production. Ba file nguồn hiện tại khớp 2.874 mức giá seed (Basic 2.004, Premium 468, Baby 402).
+
+
+## Báo cáo theo kỳ đã xác nhận (16/10/2026)
+
+- Sale có sáu thẻ: giảm giá, doanh thu thuần, dòng tiền thu vào, doanh thu thực thu, thu hồi công nợ, công nợ phải thu. Vận chuyển đã nhận và thiệt hại hiển thị trong báo cáo Kế toán.
+- Doanh thu/giảm giá theo lần Kế toán duyệt đầu tiên. Dòng tiền theo ngày thực nhận đã xác nhận, trừ vận chuyển phân bổ một lần qua các khoản thu; khoản cũ dùng ngày chứng từ khi thiếu ngày thực nhận riêng.
+- Theo tháng: thực thu = thu trong tháng từ đơn duyệt cùng tháng; thu hồi công nợ = thu trong tháng từ đơn duyệt trước tháng đó. Khoản thu thiếu ngày duyệt hoặc thu trước kỳ duyệt được nêu riêng, không tự xếp loại. Theo năm và đến hiện tại: vẫn có tổng doanh thu/dòng tiền/công nợ; hai chỉ tiêu phân loại thu để trống và ghi chưa chốt quy tắc, chờ câu trả lời khách.
+- Công nợ tháng/năm cũ lấy cuối kỳ, kỳ hiện tại lấy hôm nay. Chỉ trừ khoản đã xác nhận có ngày thu đến mốc đó; điều chỉnh khoản thu dùng dữ liệu đã sửa hiện có. Đơn hủy sau mốc vẫn có công nợ tại mốc. Khi có phiên bản trước chỉnh sửa, dùng điều khoản tiền của phiên bản tại mốc; thiếu lịch sử chỉnh sửa hoặc ngày thu cần thiết thì không hiển thị tổng công nợ như số hoàn chỉnh. CSV dùng cùng công thức và ghi rõ mốc.
+- Khách đã mua và bốn nhóm: lũy kế đến cuối kỳ, mỗi khách một lần. Khách mới theo lần duyệt đầu tiên, không theo ngày tạo hồ sơ. Khách quay lại tháng/năm phải mua trước kỳ và có đơn duyệt trong kỳ; hai đơn đầu tiên cùng kỳ không tính quay lại. Đến hiện tại giữ thống kê tổng khách có từ hai đơn duyệt. Biểu đồ nhóm dùng khách đã mua thay vì hồ sơ chưa mua.
+- Báo cáo Sale/Kế toán/Xưởng thống nhất Đến hiện tại / Theo tháng / Theo năm. Xưởng theo ngày thực tế gửi văn phòng; chọn tháng không cộng các tháng trước. So sánh kỳ trước khi có dữ liệu. Danh sách công nợ cần thu/tiến độ xử lý vẫn là trạng thái hiện tại và được ghi rõ.
+- Chưa đổi hai ô lọc ngày ở tổng quan Xưởng: chờ xác nhận ngày tạo đơn hay ngày xưởng ghi nhận, cùng giới hạn từ/đến. Chưa tự áp quy tắc phân loại thu tháng cho chế độ năm/đến hiện tại.
+
+Kiểm thử: `npm test`, `npm run build`, `node tests/period-dashboard.mjs`, `node tests/report-percentages.mjs`. Trường hợp kiểm thử gồm đơn đặt năm trước nhưng duyệt trong kỳ, thu qua nhiều tháng, snapshot trước sửa tiền, hủy sau mốc, thiếu ngày, khách mua hai lần cùng kỳ, năm trước, CSV và giao diện điện thoại. Không di trú hoặc ghi lại dữ liệu kinh doanh.
