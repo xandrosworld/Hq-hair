@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {randomUUID,createHash} from 'node:crypto';
 import {highestTone,adjustedPrice,matchingPrices,toneNames} from './pricing-domain.js';
 import {cleanPriceEntry,priceEntryKey} from './price-entry.js';
+import {planPricingImport} from './pricing-import.js';
 const seed=JSON.parse(readFileSync(new URL('./resources/pricing-seed.json',import.meta.url),'utf8'));
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})};
 export function setupPricing(router,db,audit){
@@ -14,7 +15,7 @@ export function setupPricing(router,db,audit){
  db.prepare('INSERT OR IGNORE INTO pricing VALUES(1,?)').run(JSON.stringify(seed));
  migrateBrightColors(db,audit);
  const read=()=>JSON.parse(db.prepare('SELECT data FROM pricing WHERE id=1').get().data);
- const can=(u,key)=>u.role==='manager'||(u.role==='sale'&&!!u[key]);
+ const can=(u,key)=>u.role==='manager'||(u.role==='sale'&&(key==='catalog_import'?(!!u.price_edit||!!u.color_edit):!!u[key]));
  const view=u=>({...read(),canEditPrices:can(u,'price_edit'),canEditColors:can(u,'color_edit')});
  router.use('/pricing',(req,res,next)=>['manager','sale','sales_lead'].includes(req.user.role)?next():res.status(403).json({error:'Bảng giá dành cho kinh doanh và quản trị.'}));
  router.get('/pricing',(req,res)=>res.json(view(req.user)));
@@ -45,6 +46,30 @@ export function setupPricing(router,db,audit){
   if(prior){if(prior.hash!==hash)fail(409,'Mã thao tác đã được sử dụng.');return res.json(view(req.user))}
   db.exec('BEGIN IMMEDIATE');try{const data=read();if(req.body.version!==data.version)fail(409,'Danh mục đã thay đổi. Tải lại trước khi tiếp tục.');fn(data);data.version++;db.prepare('UPDATE pricing SET data=? WHERE id=1').run(JSON.stringify(data));db.prepare('INSERT INTO pricing_requests VALUES(?,?,?,?)').run(req.user.id,key,hash,'{}');db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}res.json(view(req.user));
  }
+ const importPlan=(req,data)=>planPricingImport(data,req.body,{prices:can(req.user,'price_edit'),colors:can(req.user,'color_edit')});
+ router.post('/pricing/import/preview',(req,res)=>{
+  if(!can(req.user,'catalog_import'))fail(403,'Bạn chưa được cấp quyền nhập giá hoặc màu.');
+  res.json(importPlan(req,read()));
+ });
+ router.post('/pricing/import',(req,res)=>write(req,res,'catalog_import',data=>{
+  const plan=importPlan(req,data);if(plan.errors.length)fail(400,`${plan.errors[0].location}: ${plan.errors[0].message}`);
+  const changed=plan.changes.filter(c=>['create','update'].includes(c.action));if(!changed.length)fail(400,'Không có thay đổi cần lưu.');
+  const time=new Date().toISOString(),changes=[];
+  for(const c of changed){
+   const list=c.kind==='price'?data.prices:data.colors,existing=list.find(p=>p.id===c.existingId);
+   const row={...(existing||{}),...c.row,id:existing?.id||randomUUID(),updatedAt:time,updatedBy:req.user.name};
+   if(c.kind==='price')row.source={file:String(req.body.fileName||'Excel').slice(0,180),sheet:c.location,cell:''};
+   else {row.images=existing?.images||[];row.components=existing?.components||[];row.unlistedComponents=existing?.unlistedComponents||[];}
+   changes.push({id:row.id,before:c.before,after:c.kind==='price'?row.price:row.code,kind:c.kind,beforeRow:existing?structuredClone(existing):null,afterRow:row});
+   if(existing)Object.assign(existing,row);else list.push(row);
+  }
+  for(const c of data.colors){
+   if(c.unlistedComponents?.length){for(const code of [...c.unlistedComponents]){const base=data.colors.find(x=>!['Ombre','Piano','Balayage'].includes(x.category)&&x.code.replace(/^#/,'').toLowerCase()===code.replace(/^#/,'').toLowerCase());if(base){c.components=[...new Set([...c.components,base.id])];c.unlistedComponents=c.unlistedComponents.filter(x=>x!==code)}}}
+   if(c.components?.length){const tones=c.components.map(id=>data.colors.find(x=>x.id===id)?.tone);c.tone=tones.includes('blonde')?'blonde':c.unlistedComponents?.length?null:highestTone(tones)}
+  }
+  const id=randomUUID();db.prepare('INSERT INTO pricing_history VALUES(?,?,?,?,?)').run(id,time,req.user.id,req.user.name,JSON.stringify({kind:'import',version:data.version+1,counts:plan.counts,changes}));
+  audit(req.user,'pricing-import',id,{fileName:String(req.body.fileName||'').slice(0,180),counts:plan.counts});
+ }));
  router.post('/pricing/entries',(req,res)=>write(req,res,'price_edit',data=>{
   const existing=req.body.id&&data.prices.find(p=>p.id===req.body.id);
   if(req.body.id&&!existing)fail(404,'Không tìm thấy mức giá.');

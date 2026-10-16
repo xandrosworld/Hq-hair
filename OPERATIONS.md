@@ -102,3 +102,18 @@ Nguồn kỹ thuật: [Node SQLite](https://nodejs.org/docs/latest-v22.x/api/sql
 - Xưởng hiển thị ngày duyệt lần đầu, hạn gửi văn phòng, số ngày kế hoạch, ngày gửi và số ngày thực tế. Cả hai khoảng thời gian tính từ ngày duyệt; sớm/đúng/trễ so ngày gửi với hạn chốt khi bàn giao. Thiếu ngày hiện “—”.
 - Cộng gram rồi đổi tổng sang kg; đơn vị khác giữ riêng. Đơn mẫu và kết quả nghiệm thu từ khách vẫn đang chờ.
 - Chi tiết quy tắc và bằng chứng: FACTORY_IMPLEMENTATION.md. Xác nhận này thay thế các mô tả cũ cho phép hủy mất cọc ở bước thanh toán cuối.
+
+
+## Nhập bảng giá Excel (16/10/2026)
+
+Vào **Bảng giá & màu → Nhập Excel**. Quản lý hoặc Sale được cấp quyền sửa giá/màu có thể nhập phần dữ liệu tương ứng. Quyền được kiểm tra lại tại máy chủ.
+
+- **Tải mẫu Excel**: sheet `BangGia` (mỗi dòng một mức giá) và `MauSac` (màu đơn), kèm `HuongDan`. Sheet không dùng có thể để trống. Giữ tên sheet và tiêu đề cột.
+- **Xuất Excel hiện tại**: xuất giá và màu đơn vào cùng định dạng, sửa hàng loạt rồi nhập lại. Màu phối và ảnh vẫn quản lý tại Danh mục màu.
+- **File gốc**: hỗ trợ Bảng giá Basic so9, Premium HQ so 9 và BABY THIN HAIR + BAO TẨY theo bố cục đã đối chiếu. Baby mặc định lấy dãy bên phải (M–O ở Baby Bulk Hair), theo xác nhận khách ngày 16/10; Bao tẩy lấy I. Tên sheet Baby được ánh xạ sang tên sản phẩm hiện có để tránh sinh trùng.
+- **Chỉ thêm mới** là mặc định, bỏ qua dữ liệu đã có. **Thêm mới và cập nhật** thay giá/ghi chú khi khóa sản phẩm, quy cách, kích thước, cm và tông khớp. Đơn vị hoặc inch khác sẽ báo lỗi; không tự đổi ý nghĩa giá.
+- Màu nhập hàng loạt hỗ trợ Black/Brown/Blonde/Other. Tạo màu phối tại màn hình màu để chọn thành phần. Không đổi loại màu cũ qua import.
+- Xem trước phân biệt thêm mới/cập nhật/bỏ qua/không đổi và báo nguồn từng lỗi. Có lỗi thì không ghi bất kỳ dòng nào. Xác nhận lưu cả đợt trong transaction, kiểm tra phiên bản, chống gửi lặp và lưu lịch sử. Không xóa dòng vắng trong file; không đổi giá trên đơn đã lưu.
+- Giới hạn mỗi file 5 MB, 10.000 dòng, 50 sheet; danh mục tối đa 20.000 mức giá và 5.000 màu. Dùng số thực trong Excel; công thức cần tính và lưu trước khi nhập. File bố cục mới dùng mẫu chuẩn; không tự nhận mọi kiểu bảng tính.
+
+Kiểm thử: `npm test`, `npm run build`, `node tests/pricing-import.mjs`. Đặt `HQ_PRICE_SOURCE_DIR` để đối chiếu thêm ba file gốc tại máy kiểm thử. Dữ liệu kiểm thử dùng thư mục tạm; không ghi dữ liệu production. Ba file nguồn hiện tại khớp 2.874 mức giá seed (Basic 2.004, Premium 468, Baby 402).
