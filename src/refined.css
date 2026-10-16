@@ -374,3 +374,8 @@ footer { color: #a4b0bf; font-size: 8px; padding-top: 18px; margin: 0 32px; }
 .report-range-filter{display:flex;gap:12px;align-items:flex-start}.report-range-filter>label{display:grid;gap:6px;flex:1;min-width:150px}.report-range-filter>[role="alert"]{flex-basis:100%;font-size:12px;color:#9d3434}
 
 .report-range-filter>small{flex-basis:100%;font-size:12px;color:#647b89}
+
+.revenue-report-heading{flex-wrap:wrap;align-items:flex-start}
+.revenue-report-heading>div{flex:1 1 360px;min-width:0}
+.revenue-report-heading>.btn{flex:0 0 auto;max-width:100%;white-space:normal}
+.revenue-report-heading>.btn svg{flex-shrink:0}

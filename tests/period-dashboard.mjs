@@ -16,6 +16,13 @@ try{
  await nav('Doanh thu & công nợ');await expect(page.locator('.period-kpi')).toHaveCount(6);await expect(page.getByText('Thiệt hại',{exact:true})).toHaveCount(0);await expect(page.getByText('Vận chuyển đã nhận',{exact:true})).toHaveCount(0);await money('current','$200.00');await money('recovered','$300.00');
  await page.getByLabel('Báo cáo từ tháng',{exact:true}).fill('10/2026');await page.getByLabel('Báo cáo đến tháng',{exact:true}).fill('10/2026');await money('revenue','$200.00');await money('cash','$500.00');await money('current','$200.00');await money('recovered','$300.00');await money('debt','$500.00');
  await page.getByLabel('Báo cáo từ tháng',{exact:true}).fill('09/2026');await page.getByLabel('Báo cáo đến tháng',{exact:true}).fill('09/2026');await money('revenue','$900.00');await money('debt','$800.00');await money('cash','$100.00');await money('current','$100.00');
+ for(const width of [390,768,1024,1440,1885]){
+ await page.setViewportSize({width,height:1050});
+ const button=page.getByRole('button',{name:'Xuất báo cáo CSV',exact:true});
+ await expect(button).toBeVisible();
+ assert.ok(await button.evaluate(el=>{const r=el.getBoundingClientRect();const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect();return text.left>=r.left&&text.right<=r.right&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth+1}));
+ }
+ await page.setViewportSize({width:1440,height:1050});
  const promise=page.waitForEvent('download');await page.getByRole('button',{name:'Xuất báo cáo CSV',exact:true}).click();const download=await promise,file=path.join(dir,'report.csv');await download.saveAs(file);assert.ok(readFileSync(file,'utf8').includes('2026-09-30'));assert.ok(readFileSync(file,'utf8').includes('"800"'));
  mkdirSync('screenshots/periods',{recursive:true});await page.screenshot({path:'screenshots/periods/sale.png',fullPage:true});await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:'screenshots/periods/sale-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1050});
  await nav('Khách hàng');await page.getByRole('button',{name:'Thống kê khách hàng',exact:true}).click();await page.getByLabel('Kỳ thống kê khách hàng').selectOption('month');await page.getByLabel('Tháng thống kê khách',{exact:true}).fill('10/2026');
