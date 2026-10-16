@@ -66,3 +66,10 @@ test('overview approval-from and deadline-to use inclusive boundaries, not creat
  const rows=[order({orderCode:'A',approvedAt:'2026-10-05',production:{recordedAt:'2026-10-09'}}),order({orderCode:'B',approvedAt:'2026-10-04',production:{recordedAt:'2026-10-09'}}),order({orderCode:'C',approvedAt:'2026-10-06',due:'2026-10-11'}),order({orderCode:'D'})];
  assert.deepEqual(filterFactoryOrders(rows,{tab:'overview',dateBasis:'approval',from:'2026-10-05',dueTo:'2026-10-10'}).map(o=>o.orderCode),['A']);
 });
+
+test('waiting queue uses first accounting approval, not creation or workshop acknowledgement',()=>{
+ const o=order({date:'2026-09-01',approvedAt:'2026-10-15T18:04:57Z',production:{recordedAt:'2026-10-17'},due:'2026-10-20'});
+ assert.equal(filterFactoryOrders([o],{tab:'waiting',from:'2026-10-16',to:'2026-10-16'}).length,1);
+ assert.equal(filterFactoryOrders([o],{tab:'waiting',from:'2026-09-01',to:'2026-09-30'}).length,0);
+ assert.equal(factoryTiming(o).approved,'2026-10-16');assert.equal(factoryTiming(o).plannedDays,4);
+});

@@ -26,7 +26,7 @@ export const quantityText=o=>Object.entries(quantities(o)).map(([unit,n])=>`${n.
 export const recordedAt=o=>o.production?.recordedAt||o.history?.find(h=>h.title==='Xưởng ghi nhận')?.time||o.production?.time||'';
 export const checkAt=o=>o.production?.checkAt||o.history?.findLast(h=>h.title==='Xưởng ghi nhận'&&h.note?.includes('Sale Check'))?.time||(o.stage===5?o.production?.time:'')||'';
 export const waitingDays=(o,asOf=today())=>{const date=deliveryDate(checkAt(o)),end=o.stage===5?asOf:deliveryDate(o.saleReview?.time);const days=deliveryDays(date,end);return days==null?null:Math.max(0,-days)};
-export const factoryDate=(o,tab)=>deliveryDate(tab==='waiting'?o.date:tab==='production'?recordedAt(o):tab==='review'?checkAt(o):deliveryTiming(o).actual);
+export const factoryDate=(o,tab)=>deliveryDate(tab==='waiting'?approvalDate(o):tab==='production'?recordedAt(o):tab==='review'?checkAt(o):deliveryTiming(o).actual);
 export function factoryReport(orders,year){
  const rows=Array.from({length:12},(_,i)=>({month:`${year}-${String(i+1).padStart(2,'0')}`,total:0,early:0,onTime:0,late:0,unknown:0,grams:0,units:{}}));
  for(const o of factoryOrders(orders)){

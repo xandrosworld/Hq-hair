@@ -39,5 +39,10 @@ try{
  await nav('Tổng quan');await money('current','$200.00');await money('recovered','$300.00');
  await page.getByLabel('Báo cáo từ tháng',{exact:true}).fill('09/2026');await money('current','$300.00');await money('recovered','$300.00');
  await page.getByLabel('Báo cáo đến tháng',{exact:true}).fill('08/2026');await expect(page.getByRole('alert')).toContainText('Số liệu vẫn theo khoảng hợp lệ');await money('recovered','$300.00');
+ data.user={...data.user,role:'factory',factoryView:'full'};await page.reload();
+ await page.getByLabel('Tháng danh sách đơn hàng',{exact:true}).fill('10/2026');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(2);
+ await expect(page.locator('.factory-all-orders')).toContainText('Ngày duyệt đơn');
+ await page.getByLabel('Tháng danh sách đơn hàng',{exact:true}).fill('01/2025');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(0);
+ await page.getByLabel('Tháng duyệt đơn',{exact:true}).fill('10/2026');await expect(page.locator('.factory-state-bars')).toContainText('Đã gửi văn phòng2');
  assert.deepEqual(errors,[]);console.log('PASS shared financial month ranges, defaults, invalid range, Sale/accounting/Home, historical debt, CSV, customer/factory regression and mobile.');
 }finally{await browser?.close();if(server.exitCode===null){const stop=new Promise(r=>server.once('exit',r));server.kill();await stop}rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:200})}

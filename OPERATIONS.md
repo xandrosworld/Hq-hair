@@ -156,3 +156,5 @@ Kiểm thử: `npm test`, `npm run build`, `node tests/period-dashboard.mjs`, `n
 - Công nợ cuối kỳ chỉ trừ khoản được xác nhận đến cuối kỳ. Công nợ hiện tại gồm mọi đơn cũ/mới còn nợ; khoản cũ thiếu timestamp vẫn được tính vào tổng đã trả hiện tại, nhưng báo cáo tiền thu cảnh báo thiếu ngày và công nợ lịch sử hiện chưa đủ dữ liệu.
 - Doanh thu và giảm giá vẫn theo ngày kế toán duyệt đơn lần đầu. Tiền thu theo từng lần xác nhận; không lấy ngày duyệt đơn đầu tiên thay cho các lần thu sau.
 - Hồi quy HQ-JD-2-1: gửi 28/9, ngân hàng về 3/10, kế toán xác nhận 16/10, tiền 746,40 trừ ship 60 = 686,40 vào tháng 10, không vào tháng 9.
+
+- Xưởng: bộ lọc tháng, nhóm tháng và cột ngày trên tổng quan/chưa ghi nhận dùng ngày kế toán duyệt lần đầu; bỏ ngày tạo đơn khỏi các mốc này. Thời gian kế hoạch/thực tế bắt đầu từ ngày duyệt; hạn theo đơn (hạn đã chốt lúc gửi văn phòng với đơn đã gửi), thực tế theo sự kiện gửi văn phòng. Ngày ghi nhận và Sale Check vẫn là các sự kiện riêng có nhãn rõ.
