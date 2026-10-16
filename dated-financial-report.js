@@ -1,9 +1,10 @@
+import {inReportPeriod} from './report-range.js';
 import {accountingPeriod} from './accounting-period.js';
 import {isFinancialOrder,csvCell} from './reporting.js';
 import {totals,round,today} from './shared.js';
 export function datedFinancialSummary(orders,period='',asOf=today()){
  const financial=orders.filter(isFinancialOrder),report=accountingPeriod(financial,period,asOf),ids=new Set(report.approved.map(r=>r.id));
- const losses=financial.flatMap(o=>(o.compensations||[]).filter(e=>!e.voidedAt&&e.date&&e.date<=asOf&&e.date.startsWith(period)).map(e=>({...e,orderId:o.id,code:o.orderCode})));
+ const losses=financial.flatMap(o=>(o.compensations||[]).filter(e=>!e.voidedAt&&e.date&&e.date<=asOf&&inReportPeriod(e.date,period)).map(e=>({...e,orderId:o.id,code:o.orderCode})));
  return {...report,discount:round(financial.filter(o=>ids.has(o.id)).reduce((s,o)=>s+(Number(o.discount)||0),0)),damages:round(losses.reduce((s,e)=>s+Number(e.amount||0),0)),losses,debt:round(financial.reduce((s,o)=>s+totals(o).debt,0)),debtCount:financial.filter(o=>totals(o).debt>0).length};
 }
 export function datedFinancialCSV(orders,period='',asOf=today()){

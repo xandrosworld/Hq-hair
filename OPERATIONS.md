@@ -130,3 +130,13 @@ Kiểm thử: `npm test`, `npm run build`, `node tests/pricing-import.mjs`. Đ�
 - Khách xác nhận 16/10 lúc 22:58–23:01: tổng quan Xưởng dùng ngày kế toán duyệt làm mốc từ ngày, giữ hạn gửi văn phòng làm mốc đến ngày. Chưa tự áp quy tắc phân loại thu tháng cho chế độ năm.
 
 Kiểm thử: `npm test`, `npm run build`, `node tests/period-dashboard.mjs`, `node tests/report-percentages.mjs`. Trường hợp kiểm thử gồm đơn đặt năm trước nhưng duyệt trong kỳ, thu qua nhiều tháng, snapshot trước sửa tiền, hủy sau mốc, thiếu ngày, khách mua hai lần cùng kỳ, năm trước, CSV và giao diện điện thoại. Không di trú hoặc ghi lại dữ liệu kinh doanh.
+
+
+### Cập nhật chốt khoảng ngày cho 6 thẻ Sale / Kế toán
+- Thay bộ chọn tháng/năm/đến hiện tại của 6 thẻ bằng Từ ngày – Đến ngày; mặc định đầu tháng hiện tại đến hôm nay, bao gồm hai ngày biên.
+- Doanh thu thuần và giảm giá theo ngày duyệt trong khoảng. Dòng tiền theo ngày nhận trong khoảng, trừ vận chuyển được phân bổ một lần trên toàn bộ lịch sử thu.
+- Thực thu: tiền nhận trong khoảng từ đơn duyệt trong khoảng. Thu hồi công nợ: tiền nhận trong khoảng từ đơn duyệt trước ngày bắt đầu.
+- Công nợ là số dư đến hết ngày kết thúc, bao gồm các đơn duyệt trước ngày bắt đầu còn nợ. Bảng theo Sale và CSV dùng cùng khoảng; vận chuyển, thiệt hại kế toán cũng theo khoảng này.
+- Khoảng thiếu ngày, ngày không tồn tại, đảo chiều hoặc vượt hôm nay không áp dụng; giao diện giữ số liệu khoảng hợp lệ trước đó và báo rõ.
+- Quy tắc này thay thế trạng thái Không áp dụng/chờ chốt năm ở 6 thẻ. Thống kê khách hàng và Xưởng giữ cơ chế riêng đã chốt.
+- Biểu đồ doanh thu dùng cùng khoảng; danh sách công nợ cần thu hiện tại vẫn là phần riêng, có tiêu đề phân biệt.

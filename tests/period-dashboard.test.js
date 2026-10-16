@@ -35,3 +35,21 @@ test('all-time CSV exports cumulative net receipts without inventing a recovery 
  assert.equal(rows.reduce((n,row)=>n+Number(row[5]||0),0),900);
  assert.ok(rows.every(row=>!row[6]));
 });
+
+test('arbitrary inclusive ranges split by approval boundary and preserve lifetime shipping allocation',()=>{
+ const range={from:'2026-09-15',to:'2026-10-05'},r=periodDashboard([order],range,'2026-10-16');
+ assert.equal(r.revenue,0);assert.equal(r.discount,0);assert.equal(r.revenuePaid,800);assert.equal(r.shippingPaid,0);
+ assert.equal(r.currentReceipts,0);assert.equal(r.recoveredDebt,800);assert.equal(r.debt,0);
+ const day=periodDashboard([order],{from:'2026-08-10',to:'2026-08-10'},'2026-10-16');
+ assert.equal(day.currentReceipts,100);assert.equal(day.recoveredDebt,0);assert.equal(day.revenue,900);assert.equal(day.discount,100);assert.equal(day.debt,800);
+ const csv=periodDashboardCSV([order],range,'2026-10-16',true);
+ const rows=csv.trim().split('\r\n').slice(1).map(l=>l.slice(1,-1).split('","'));
+ for(const [key,col]of [['revenue',3],['revenuePaid',4],['currentReceipts',5],['recoveredDebt',6],['discount',7],['debt',8]])assert.equal(rows.reduce((n,row)=>n+Number(row[col]),0),r[key]);
+});
+test('cross-year ranges classify old approvals and reject invalid or future dates',()=>{
+ const old={...order,approvedAt:'2025-12-31',payments:[{confirmed:true,amount:1000,receivedDate:'2026-01-01'}]};
+ const current={...old,id:'new',approvedAt:'2026-01-01'};
+ const r=periodDashboard([old,current],{from:'2026-01-01',to:'2026-01-01'},'2026-10-16');
+ assert.equal(r.currentReceipts,900);assert.equal(r.recoveredDebt,900);assert.equal(r.revenuePaid,1800);
+ for(const range of [{from:'2026-10-02',to:'2026-10-01'},{from:'',to:'2026-10-01'},{from:'2026-02-30',to:'2026-10-01'},{from:'2026-10-01',to:'2026-10-17'}])assert.throws(()=>periodDashboard([order],range,'2026-10-16'),/không hợp lệ/);
+});

@@ -1,3 +1,4 @@
+import {ReportRangeSelect,defaultReportRange} from './report-range-select.jsx';
 import React,{useState} from 'react';
 import {saleKey} from '../accounting-sales.js';
 import {periodDashboard,periodDashboardCSV} from '../period-dashboard.js';
@@ -7,15 +8,14 @@ import {PeriodKpis} from './period-kpis.jsx';
 import {money,today} from '../shared.js';
 import {vnd} from '../receipt-fx.js';
 export function AccountingPeriod({orders}){
- const [mode,setMode]=useState('all'),[year,setYear]=useState(today().slice(0,4)),[month,setMonth]=useState(today().slice(0,7)),[sale,setSale]=useState('');
- const period=mode==='all'?'':mode==='year'?year:month;
+ const [period,setPeriod]=useState(defaultReportRange),[sale,setSale]=useState('');
  const groups=new Map();for(const o of orders){const key=saleKey(o);if(!groups.has(key))groups.set(key,{key,name:o.sale||'Chưa xác định',orders:[]});groups.get(key).orders.push(o)}
  const sales=[...groups.values()].map(s=>({...s,...periodDashboard(s.orders,period)})).sort((a,b)=>a.name.localeCompare(b.name,'vi'));
  const selected=orders.filter(o=>!sale||saleKey(o)===sale),report=periodDashboard(selected,period);
  const download=()=>{const url=URL.createObjectURL(new Blob([periodDashboardCSV(selected,period,today(),true)],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='HQ-Hair-ke-toan-theo-ky.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
  const show=v=>v===null?'—':money(v);
  return <section className="panel panel-body accounting-period"><div className="accounting-report-heading"><h2>Báo cáo theo ngày duyệt / thực nhận</h2><button className="btn" onClick={download}>Xuất CSV theo kỳ</button></div>
- <div className="filters accounting-report-filters"><label>Sale<select aria-label="Sale báo cáo" value={sale} onChange={e=>setSale(e.target.value)}><option value="">Toàn bộ Sale</option>{sales.map(s=><option key={s.key} value={s.key}>{s.name}</option>)}</select></label><ReportPeriodSelect mode={mode} setMode={setMode} month={month} setMonth={setMonth} year={year} setYear={setYear} years={availableYears(orders)} label="Chế độ báo cáo"/></div>
+ <div className="filters accounting-report-filters"><label>Sale<select aria-label="Sale báo cáo" value={sale} onChange={e=>setSale(e.target.value)}><option value="">Toàn bộ Sale</option>{sales.map(s=><option key={s.key} value={s.key}>{s.name}</option>)}</select></label><ReportRangeSelect value={period} onChange={setPeriod}/></div>
  <PeriodKpis orders={selected} period={period}/>
  <h3>Vận chuyển và thiệt hại</h3><div className="qc-summary">{[['Vận chuyển đã nhận',report.shippingPaid],['Thiệt hại',report.damages]].map(([k,v])=><span key={k}>{k}<b>{money(v)}</b></span>)}</div>
  <div className="qc-summary">{[['Tổng thực nhận VND',report.paidVND],['Vận chuyển đã nhận VND',report.shippingPaidVND],['Dòng tiền thu vào VND (trừ vận chuyển)',report.revenuePaidVND]].map(([k,v])=><span key={k}>{k}<b>{vnd(v)}</b></span>)}</div>
