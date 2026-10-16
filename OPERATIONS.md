@@ -1,5 +1,14 @@
 # Vận hành HQ Hair Workspace
 
+## Cập nhật ngày 16/10/2026
+
+- Danh sách dùng chung có 80 quốc gia, nhãn tiếng Việt, giữ nguyên giá trị lưu của các quốc gia cũ.
+- Tổng quan Xưởng lọc đồng thời trạng thái đang hiển thị trên đơn, tháng đặt hàng và khoảng hạn gửi văn phòng (bao gồm hai ngày đầu/cuối). Đơn đã gửi dùng hạn đã chốt khi bàn giao.
+- Các ô ngày/tháng dùng bộ chọn tiếng Việt, hiển thị ngày/tháng/năm hoặc tháng/năm, API vẫn nhận ISO. Có thể gõ trực tiếp hoặc mở lịch.
+- Theo yêu cầu đổi cả mã khách và mã đơn: migration `judy-customer-numbering-20261016` chạy một lần khi khởi động. Chuỗi khách Judy bắt đầu ở `HQ-JD-3` được đánh lại từ 1; mã đơn và mã nháp tương ứng được cập nhật. ID nội bộ của đơn, chứng từ, media và dữ liệu tài chính giữ nguyên. Các chuỗi khác không thay đổi.
+- Trước đổi mã, tạo và kiểm tra bản sao SQLite trong `DATA_DIR/identity-backups`. Ghi đối chiếu vào audit `customer-numbering-migration` và lịch sử đơn. Cập nhật bộ đếm Judy theo số khách sau đổi mã. Thu hồi phiên đăng nhập để tránh biểu mẫu cũ sửa nhầm khách do mã được đánh lại; người dùng đăng nhập lại sau deploy. Nếu phát hiện chuỗi không liên tục hoặc liên kết không khớp, dừng migration để kiểm tra.
+- Kiểm tra: `npm test`, `npm run build`, `node tests/security.mjs`, `node tests/factory-integration.mjs`, `node tests/accounting-qc.mjs`, `node tests/navigation-audit.mjs`.
+
 ## Khởi tạo
 
 Node >=22.18. `npm ci`, `npm run build`, `npm start`.

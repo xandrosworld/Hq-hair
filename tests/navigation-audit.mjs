@@ -60,13 +60,17 @@ try{
  assert.equal(await form.getByLabel('Tên khách hàng',{exact:true}).getAttribute('required'),null);
  await form.getByLabel('Email người nhận',{exact:true}).waitFor();
  await form.getByLabel('Trang web',{exact:true}).waitFor();
+ await form.getByLabel('Quốc gia khách hàng').selectOption('Netherlands');await form.getByLabel('Quốc gia giao hàng').selectOption('Poland');
+ assert.equal(await form.getByLabel('Quốc gia khách hàng').locator('option').count(),81);
+ assert.equal(await form.getByLabel('Quốc gia khách hàng').locator('option:checked').innerText(),'Hà Lan');
+
  assert.equal(await form.getByLabel('Lịch sử mua hàng · tự động').getAttribute('readonly'),'');
  await page.getByRole('button',{name:'Đóng',exact:true}).click();
  assert.ok(await page.getByLabel('Tìm khách hàng').isVisible());assert.equal(await page.locator('.customer-overview').count(),0);
  await page.getByLabel('Tìm khách hàng').fill('nobodymatches');await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();assert.equal(await page.getByLabel('Tìm khách hàng').inputValue(),'');
  await page.getByRole('button',{name:'Thống kê khách hàng',exact:true}).click();await page.getByTestId('buyers-total').waitFor();
  await page.locator('.buyer-period select').first().selectOption('month');
- await page.locator('.buyer-period input[type=month]').waitFor();
+ await page.getByLabel('Tháng thống kê khách',{exact:true}).waitFor();
  await page.locator('.buyer-period select').first().selectOption('year');
  assert.equal(await page.locator('.buyer-period select').count(),2);
  await page.locator('.buyer-period select').first().selectOption('all');await page.screenshot({path:'screenshots/audit-customer-summary.png',fullPage:true});
@@ -75,6 +79,9 @@ try{
  await nav('Doanh thu & công nợ');
  await page.getByLabel('Kỳ báo cáo',{exact:true}).selectOption('month');
  await page.getByLabel('Tháng báo cáo',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'Mở lịch Tháng báo cáo',exact:true}).click();
+ await page.getByLabel('Tháng trong lịch',{exact:true}).selectOption('9');await page.getByLabel('Năm trong lịch',{exact:true}).fill('2026');await page.getByRole('button',{name:'Chọn tháng 9/2026',exact:true}).click();assert.equal(await page.getByLabel('Tháng báo cáo',{exact:true}).inputValue(),'09/2026');
+
  await page.getByLabel('Kỳ báo cáo',{exact:true}).selectOption('year');
  await page.getByLabel('Năm báo cáo',{exact:true}).waitFor();
  await page.getByLabel('Kỳ báo cáo',{exact:true}).selectOption('all');

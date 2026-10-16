@@ -108,9 +108,9 @@ try{
  await a.call('/orders',draft,{key,status:404});
  assert.equal((await a.call('/customers',customer,{key:customerKey})).customers.length,0);
  assert.ok((await owner.call('/audit')).some(e=>e.action==='customer-assign'));
- const extraCustomerState=await b.call('/customers',{...customer,name:'Independent draft buyer'});draft.customerId=extraCustomerState.customers.at(-1).id;
+ const extraCustomerState=await b.call('/customers',{...customer,name:'Independent draft buyer',phone:'+123456790'});draft.customerId=extraCustomerState.customers.at(-1).id;
  const specimen=await b.call('/orders',{...draft,items:[{...product,qty:800}]});assert.equal(specimen.state.orders.find(o=>o.id===specimen.id).items[0].priceBasis,'100g');assert.equal(specimen.state.orders.find(o=>o.id===specimen.id).items[0].lengthCm,55);await b.call(`/orders/${specimen.id}/action`,{version:1,action:'delete'});
- const secondCustomerState=await b.call('/customers',{...customer,name:'Second concurrent buyer'});
+ const secondCustomerState=await b.call('/customers',{...customer,name:'Second concurrent buyer',phone:'+123456791'});
  const pair=await Promise.all([b.call('/orders',draft),b.call('/orders',{...draft,customerId:secondCustomerState.customers.at(-1).id})]);assert.notEqual(pair[0].id,pair[1].id);
  const concurrent=await Promise.all([1,2].map(n=>fetch(base+`/orders/${pair[0].id}/action`,{method:'POST',headers:{Cookie:b.cookie,'Content-Type':'application/json','X-CSRF-Token':b.csrf,'Idempotency-Key':randomUUID()},body:JSON.stringify({version:1,action:'message',text:'Concurrent '+n})})));
  assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,409]);

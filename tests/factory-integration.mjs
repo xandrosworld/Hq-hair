@@ -35,8 +35,18 @@ try{
  const page=await factory.ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/workspace');
  await expect(page.locator('.factory-navigation button')).toHaveCount(6);
  await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
- await page.getByLabel('Tháng danh sách đơn hàng').fill('2020-01');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(0);
- await page.getByRole('button',{name:'Tất cả tháng',exact:true}).click();await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
+ await page.getByLabel('Tháng danh sách đơn hàng',{exact:true}).fill('2020-01');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(0);
+ await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
+ await page.getByLabel('Trạng thái đơn tổng quan',{exact:true}).selectOption('Xưởng đang sản xuất');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(0);
+ await page.getByLabel('Trạng thái đơn tổng quan',{exact:true}).selectOption('Chờ Xưởng ghi nhận');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
+ await page.getByLabel('Hạn giao từ ngày',{exact:true}).fill('11/10/2026');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(0);
+ await page.getByLabel('Hạn giao từ ngày',{exact:true}).fill('10/10/2026');await page.getByLabel('Hạn giao đến ngày',{exact:true}).fill('10/10/2026');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
+ await page.getByRole('button',{name:'Mở lịch Hạn giao đến ngày',exact:true}).click();await expect(page.getByRole('dialog',{name:'Chọn Hạn giao đến ngày'})).toBeVisible();await expect(page.getByRole('button',{name:'09/10/2026',exact:true})).toBeDisabled();await page.getByRole('button',{name:'Đóng',exact:true}).click();
+ await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();
+ await page.getByRole('button',{name:'Mở lịch Tháng danh sách đơn hàng',exact:true}).click();await page.getByLabel('Tháng trong lịch',{exact:true}).selectOption('10');await page.getByLabel('Năm trong lịch',{exact:true}).fill('2026');await page.getByRole('button',{name:'Chọn tháng 10/2026',exact:true}).click();await expect(page.getByLabel('Tháng danh sách đơn hàng',{exact:true})).toHaveValue('10/2026');
+ await expect(page.locator('input[type=date],input[type=month]')).toHaveCount(0);
+ await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();
+ console.log('PASS overview state/deadline filters and Vietnamese calendar in English browser');
  const navClick=async index=>{const button=page.locator('.factory-navigation button').nth(index);if(page.viewportSize().width<=1119&&!await button.isVisible())await page.getByRole('button',{name:'Mở menu',exact:true}).click();await button.click()};
  await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-overview.png`,fullPage:true,animations:'disabled'});
  await navClick(1);
@@ -90,10 +100,14 @@ try{
  await expect(page.locator('.factory-summary')).toContainText('Thực tế');
  await expect(page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true})).toHaveCount(0);
  await admin.call(`/users/${factoryUser.id}/visibility`,{factoryView:'full'});
- await page.reload();await navClick(4);await page.getByLabel('Tìm đơn Xưởng').fill('Factory Buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
- await page.getByLabel('Tìm đơn Xưởng').fill('No such buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(0);
+ await page.reload();await navClick(4);await page.getByLabel('Tìm đơn Xưởng',{exact:true}).fill('Factory Buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
+ await page.getByLabel('Tìm đơn Xưởng',{exact:true}).fill('No such buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(0);
  await navClick(5);await expect(page.locator('.factory-kpi strong').first()).toHaveText('2');await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-analytics.png`,fullPage:true,animations:'disabled'});
  await page.setViewportSize({width:390,height:844});await navClick(0);await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-mobile.png`,fullPage:true,animations:'disabled'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ await page.getByRole('button',{name:'Mở lịch Hạn giao từ ngày',exact:true}).click();
+ const calendarBox=await page.getByRole('dialog',{name:'Chọn Hạn giao từ ngày',exact:true}).boundingBox();assert.ok(calendarBox.x>=0&&calendarBox.x+calendarBox.width<=390&&calendarBox.y>=0&&calendarBox.y+calendarBox.height<=844);
+ await page.screenshot({path:'data/factory-calendar-mobile.png',fullPage:false});await page.getByRole('button',{name:'Đóng',exact:true}).click();
+ const filterBoxes=await page.locator('.factory-all-orders .factory-filters .field').evaluateAll(nodes=>nodes.map(n=>({width:n.getBoundingClientRect().width,x:n.getBoundingClientRect().x})));assert.ok(filterBoxes.every(r=>r.width>250&&r.x+r.width<=390));
  await navClick(4);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
  await expect(page.locator('.factory-duration').first()).toContainText('Kế hoạch:');
  await expect(page.locator('.factory-duration').first()).toContainText('Thực tế:');
@@ -105,7 +119,7 @@ try{
  const partial=await sale.call('/orders',draft);let partialOrder=partial.state.orders.find(o=>o.id===partial.id);
  let next=await accountant.call(`/orders/${partial.id}/action`,{version:partialOrder.version,action:'accounting-approve',paymentStatus:'partial',receipts:[{id:partialOrder.payments[0].id,amount:3}]});partialOrder=next.orders.find(o=>o.id===partial.id);
  for(const status of ['producing','paused']){next=await factory.call(`/orders/${partial.id}/action`,{version:partialOrder.version,action:'factory-status',status});partialOrder=next.orders.find(o=>o.id===partial.id)}
- const accountingPage=await accountant.ctx.newPage();await accountingPage.goto(base+'/workspace');
+ const accountingPage=await accountant.ctx.newPage();await accountingPage.goto(base+'/workspace');await accountingPage.getByRole('button',{name:'Lịch sử đơn hàng',exact:true}).click();
  await accountingPage.locator('.order-link').filter({hasText:partialOrder.orderCode}).click();
  await expect(accountingPage.getByRole('button',{name:'Hủy đơn mất cọc',exact:true})).toBeEnabled();
  next=await factory.call(`/orders/${partial.id}/action`,{version:partialOrder.version,action:'factory-status',status:'producing'});partialOrder=next.orders.find(o=>o.id===partial.id);

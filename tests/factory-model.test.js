@@ -2,6 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {factoryOrders,factoryGroup,factoryState,factoryReport,filterFactoryOrders,waitingDays,factoryTiming} from '../factory-model.js';
 const order=(extra={})=>({orderCode:'HQ-1',stage:3,date:'2026-10-01',due:'2026-10-10',items:[{qty:150,unit:'Gram'},{qty:2,unit:'Piece'}],...extra});
+test('Overview combines current state with inclusive office deadline boundaries across queues',()=>{
+ const rows=[order(),order({orderCode:'B',stage:4,due:'2026-10-11'}),order({orderCode:'C',stage:6,due:'2026-12-01',officeDispatch:{dueDate:'2026-10-12',time:'2026-10-10'}}),order({orderCode:'D',stage:2}),order({orderCode:'E',due:''})];
+ assert.equal(filterFactoryOrders(rows,{tab:'overview',dateBasis:'all'}).length,4);
+ assert.deepEqual(filterFactoryOrders(rows,{tab:'overview',dateBasis:'all',dueFrom:'2026-10-10',dueTo:'2026-10-12'}).map(o=>o.orderCode),['HQ-1','B','C']);
+ assert.deepEqual(filterFactoryOrders(rows,{tab:'overview',state:'producing',dueFrom:'2026-10-11',dueTo:'2026-10-11'}).map(o=>o.orderCode),['B']);
+ assert.equal(filterFactoryOrders(rows,{tab:'overview',dueFrom:'2026-10-12',dueTo:'2026-10-10'}).length,0);
+ assert.deepEqual(filterFactoryOrders(rows,{tab:'overview',currentStatus:'Chờ Xưởng ghi nhận',dueTo:'2026-10-10'}).map(o=>o.orderCode),['HQ-1']);
+ const final=[order({orderCode:'QC',stage:8}),order({orderCode:'DELIVERY',stage:8,inspection:{completedAt:'2026-10-10'}})];
+ assert.deepEqual(filterFactoryOrders(final,{tab:'overview',currentStatus:'Chờ nhận hàng'}).map(o=>o.orderCode),['DELIVERY']);
+});
 test('Factory queues exclude unapproved orders and retain rework and forfeiture',()=>{
  assert.equal(factoryOrders([order(),order({stage:2}),order({orderCode:null})]).length,1);
  assert.equal(factoryGroup(order({stage:4,saleReview:{result:'rework'}})),'review');

@@ -1,3 +1,5 @@
+import {DateInput} from './date-input.jsx';
+function FormInput(props){return props.type==='date'?<DateInput {...props}/>:<input {...props}/>;}
 import {feedbackLabels} from '../workflow-state.js';
 import React,{useState} from 'react';
 import {contentLocked} from '../order-workflow.js';
@@ -9,7 +11,7 @@ export function WorkflowActions({order,user,busy,onAction,Modal}){
  const open=action=>{setForm({version:order.version,carrier:order.carrier||'DHL',service:order.service||'',tracking:order.tracking||'',shippedDate:today(),reference:'',text:'',checked:false,feedback:order.customerFeedback?.status||'',stage:order.stage,paymentId:order.payments[0]?.id||'',amount:order.payments[0]?.amount||'',confirmed:!!order.payments[0]?.confirmed});setAction(action)};
  const set=(key,value)=>setForm(v=>({...v,[key]:value}));
  const titles={inspection:'Hoàn tất kiểm định & đặt ship',received:'Xác nhận khách đã nhận hàng',complete:'Xác nhận hoàn thành đơn','manager-payment':'Điều chỉnh thanh toán ngoại lệ'};
- const field=(key,label,type='text',required=false)=><label className="field"><span>{label}</span><input aria-label={label} type={type} required={required} maxLength={200} value={form[key]||''} onChange={e=>set(key,e.target.value)}/></label>;
+ const field=(key,label,type='text',required=false)=><label className="field"><span>{label}</span><FormInput aria-label={label} type={type} required={required} maxLength={200} value={form[key]||''} onChange={e=>set(key,e.target.value)}/></label>;
  const needsReason=action==='manager-payment'||action==='complete'&&totals(order).debt>0;
  return <>
   {locked&&<div className="notice"><div><b>Nội dung đã khóa sau bước 8</b><p>Sale tiếp tục trao đổi, xác nhận đã nhận và đóng đơn. Chỉnh sửa ngoại lệ của quản trị được lưu lịch sử.</p></div></div>}

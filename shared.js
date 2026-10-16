@@ -3,7 +3,7 @@ import {orderQueue} from './order-queue.js';
 import {rawProductAmount} from './product-fields.js';
 export const steps = ['Nhập đơn','Chờ duyệt','Đã duyệt','Xưởng ghi nhận','Sale tiếp nhận','Đã gửi đến văn phòng','Kiểm tra thanh toán lần cuối','Phiếu kiểm định và đặt ship','Đã nhận','Hoàn thành'];
 export const groups = ['Khách lẻ','Start Business','Salon','Wholesale'];
-export const countries = ['United States','United Kingdom','France','Germany','Australia','Canada','Nigeria','South Africa','Vietnam'];
+export {countries} from './countries.js';
 export const catalog = [
  {name:'Bulk Hair',spec:'24” · Natural Black · Straight',unit:'Gram',price:8},
  {name:'Genius Weft',spec:'22” · #60 · Body Wave',unit:'Gram',price:10},

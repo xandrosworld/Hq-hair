@@ -1,4 +1,5 @@
 import {setupCleanup} from './workspace-cleanup.js';
+import {migrateCustomerNumbering} from './customer-numbering.js';
 import {freezeDraftCodes} from './draft-orders.js';
 import {migrateOrderIdentity} from './order-identity.js';
 import {setupStandards} from './standards-server.js';
@@ -62,6 +63,7 @@ export async function createWorkspace(dir){
    db.prepare('INSERT INTO app_migrations VALUES (?)').run('official-order-code-20261002');db.exec('COMMIT');
   }catch(e){db.exec('ROLLBACK');throw e}
  }
+ migrateCustomerNumbering(db,dir,audit);
  const draftData=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
  if(freezeDraftCodes(draftData.orders))db.prepare('UPDATE workspace SET data=? WHERE id=1').run(JSON.stringify(draftData));
  if(!db.prepare('SELECT id FROM users LIMIT 1').get()&&process.env.HQ_ADMIN_EMAIL&&process.env.HQ_ADMIN_PASSWORD){

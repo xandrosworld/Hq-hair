@@ -1,6 +1,6 @@
 import {approvalDate} from './order-identity.js';
 import {deliveryDate,deliveryDays,deliveryTiming} from './delivery-days.js';
-import {today,round} from './shared.js';
+import {today,round,status} from './shared.js';
 export const factoryTabs={overview:'Tổng quan',waiting:'Chưa ghi nhận',production:'Đã ghi nhận',review:'Đã gửi Sale Check',office:'Đã gửi văn phòng',analytics:'Thống kê & phân tích',notifications:'Thông báo'};
 export const factoryOrders=orders=>orders.filter(o=>o.orderCode&&o.stage>=3);
 export function factoryGroup(o){
@@ -38,13 +38,14 @@ export function factoryReport(orders,year){
  }
  return rows;
 }
-export function filterFactoryOrders(orders,{tab='waiting',dateBasis='tab',query='',state='all',from='',to='',dueFrom='',dueTo='',urgency='all',sort='due',timing='all',customers=[]}={}){
+export function filterFactoryOrders(orders,{tab='waiting',dateBasis='tab',query='',state='all',currentStatus='all',from='',to='',dueFrom='',dueTo='',urgency='all',sort='due',timing='all',customers=[]}={}){
  const q=query.trim().toLocaleLowerCase('vi');
  const names=new Map(customers.map(c=>[c.id,`${c.name||''} ${c.company||''}`]));
  return factoryOrders(orders).filter(o=>{
-  if(factoryGroup(o)!==tab)return false;
+  if(tab!=='overview'&&factoryGroup(o)!==tab)return false;
   if(q&&!`${o.orderCode} ${o.sale} ${names.get(o.customerId)||''} ${o.note||''} ${o.production?.note||''} ${o.saleReview?.note||''} ${(o.items||[]).map(i=>`${i.name} ${i.productNote||''}`).join(' ')}`.toLocaleLowerCase('vi').includes(q))return false;
   if(state!=='all'&&factoryState(o)!==state)return false;
+  if(currentStatus!=='all'&&status(o)!==currentStatus)return false;
   const date=dateBasis==='approval'?approvalDate(o):dateBasis==='sale_check'?deliveryDate(checkAt(o)):factoryDate(o,tab);
   if(dateBasis!=='all'&&((from&&(!date||date<from))||(to&&(!date||date>to))))return false;
   const t=deliveryTiming(o);
