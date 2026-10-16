@@ -1,3 +1,4 @@
+import {receiptReportDate} from './receipt-report-date.js';
 import {inReportPeriod,validReportRange,receiptPartition} from './report-range.js';
 import {datedFinancialSummary} from './dated-financial-report.js';
 import {approvalDate,orderLabel} from './order-identity.js';
@@ -20,11 +21,11 @@ export function receivablesAt(orders,cutoff,asOf=today()){
   const source=historical&&snapshots.length?{...o,...snapshots[0].snapshot}:o;
   // Preserve corrected receipt data, selecting by the actual receipt date.
   const payments=(o.payments||[]).filter(p=>p.confirmed);
-  if(historical&&payments.some(p=>!p.receivedDate&&!p.date)){missing++;continue;}
+  if(historical&&payments.some(p=>!receiptReportDate(p))){missing++;continue;}
   if(historical&&(o.history||[]).some(h=>h.title==='Quản trị chỉnh sửa ngoại lệ'&&deliveryDate(h.time)>cutoff)&&!snapshots.length){missing++;continue;}
   const cancelled=deliveryDate(o.cancelledAt);
   if(historical&&o.cancelledAt&&!cancelled){missing++;continue;}
-  const debt=totals({...source,cancelledAt:!historical?o.cancelledAt:cancelled&&cancelled<=cutoff?o.cancelledAt:null,payments:payments.filter(p=>!historical&&!p.receivedDate&&!p.date||(p.receivedDate||p.date)<=cutoff)}).debt;
+  const debt=totals({...source,cancelledAt:!historical?o.cancelledAt:cancelled&&cancelled<=cutoff?o.cancelledAt:null,payments:payments.filter(p=>!historical&&!receiptReportDate(p)||receiptReportDate(p)<=cutoff)}).debt;
   if(debt>0)rows.push({id:o.id,code:orderLabel(o),date:cutoff,debt});
  }
  return {debt:missing?null:round(rows.reduce((s,r)=>s+r.debt,0)),debtCount:rows.length,debtRows:rows,debtMissing:missing};

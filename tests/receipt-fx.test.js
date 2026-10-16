@@ -14,7 +14,7 @@ test('Manual rate confirmation validates atomically and stores accounting rate',
  const o=sample();confirm(o,[{id:'a',amount:500,exchangeRate:25000,receivedDate:'2026-09-01'}]);assert.equal(o.payments[0].exchangeRate,25000);assert.equal(o.payments[0].exchangeRateSource,'manual');
 });
 test('Receipt rates differ across periods, shipping allocated once, CSV reconciles in VND',()=>{
- const o={...sample(),stage:8,orderCode:'HQ-1',approvedAt:'2026-08-01',payments:[{id:'a',amount:500,confirmed:true,exchangeRate:25000,receivedDate:'2026-09-01'},{id:'b',amount:355,confirmed:true,exchangeRate:26000,receivedDate:'2026-10-01'}]};
+ const o={...sample(),stage:8,orderCode:'HQ-1',approvedAt:'2026-08-01',payments:[{id:'a',amount:500,confirmed:true,confirmedAt:'2026-09-01',exchangeRate:25000,receivedDate:'2026-09-01'},{id:'b',amount:355,confirmed:true,confirmedAt:'2026-10-01',exchangeRate:26000,receivedDate:'2026-10-01'}]};
  const a=accountingPeriod([o],'2026-09'),b=accountingPeriod([o],'2026-10');assert.equal(a.paidVND,12500000);assert.equal(a.shippingPaidVND,2125000);assert.equal(a.revenuePaidVND,10375000);assert.equal(b.revenuePaidVND,9230000);assert.equal(b.shippingPaidVND,0);
  const all=accountingPeriod([o]);assert.equal(all.revenuePaidVND,19605000);assert.equal(all.paidVND,all.shippingPaidVND+all.revenuePaidVND);assert.equal(all.missingRates,0);
  assert.ok(datedFinancialCSV([o],'2026-10').includes('"26000","9230000","0","9230000"'));

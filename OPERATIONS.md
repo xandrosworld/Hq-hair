@@ -148,3 +148,11 @@ Kiểm thử: `npm test`, `npm run build`, `node tests/period-dashboard.mjs`, `n
 - Công nợ là số dư tại cuối tháng kết thúc (hoặc hôm nay), bao gồm mọi đơn cũ còn nợ; tuyệt đối không cộng số dư cuối từng tháng.
 - Ví dụ đơn 1.000 duyệt tháng 8, trả 400/300/300 trong tháng 8/9/10: chọn 8–10 cho thực thu 400, thu hồi 600, công nợ 0.
 - Quy tắc này thay thế việc phân loại theo ngày bắt đầu toàn khoảng đã mô tả trước đó. Sale, tổng quan, kế toán, bảng theo Sale, biểu đồ và CSV đồng bộ.
+
+
+### Chốt ngày ghi nhận thu (17/10/2026 00:43)
+- Mọi báo cáo tiền thu, thực thu, thu hồi, vận chuyển phân bổ, VND, biểu đồ và CSV lấy ngày kế toán xác nhận từng khoản (confirmedAt), quy đổi sang ngày Việt Nam.
+- Ngày gửi bill và ngày thực nhận ngân hàng là thông tin đối chiếu; không dùng làm ngày báo cáo, kể cả dữ liệu cũ. Không thay đổi các ngày này hay timestamp xác nhận trong dữ liệu thật.
+- Công nợ cuối kỳ chỉ trừ khoản được xác nhận đến cuối kỳ. Công nợ hiện tại gồm mọi đơn cũ/mới còn nợ; khoản cũ thiếu timestamp vẫn được tính vào tổng đã trả hiện tại, nhưng báo cáo tiền thu cảnh báo thiếu ngày và công nợ lịch sử hiện chưa đủ dữ liệu.
+- Doanh thu và giảm giá vẫn theo ngày kế toán duyệt đơn lần đầu. Tiền thu theo từng lần xác nhận; không lấy ngày duyệt đơn đầu tiên thay cho các lần thu sau.
+- Hồi quy HQ-JD-2-1: gửi 28/9, ngân hàng về 3/10, kế toán xác nhận 16/10, tiền 746,40 trừ ship 60 = 686,40 vào tháng 10, không vào tháng 9.

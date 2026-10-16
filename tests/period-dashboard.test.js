@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {periodDashboard,periodDashboardCSV,receivablesAt} from '../period-dashboard.js';
 import {buyerStatistics} from '../customer-statistics.js';
-const order={id:'o',orderCode:'HQ-1',customerId:'c',stage:3,date:'2026-07-01',approvedAt:'2026-08-10',items:[{kind:'base',qty:1,price:1000}],discount:100,shippingFee:100,payments:[{confirmed:true,amount:200,receivedDate:'2026-08-10'},{confirmed:true,amount:300,receivedDate:'2026-09-15'},{confirmed:true,amount:500,receivedDate:'2026-10-05'}]};
+const order={id:'o',orderCode:'HQ-1',customerId:'c',stage:3,date:'2026-07-01',approvedAt:'2026-08-10',items:[{kind:'base',qty:1,price:1000}],discount:100,shippingFee:100,payments:[{confirmed:true,confirmedAt:'2026-08-10',amount:200,receivedDate:'2026-08-10'},{confirmed:true,confirmedAt:'2026-09-15',amount:300,receivedDate:'2026-09-15'},{confirmed:true,confirmedAt:'2026-10-05',amount:500,receivedDate:'2026-10-05'}]};
 test('confirmed month splits use approval month and receipt month, net shipping once',()=>{
  const aug=periodDashboard([order],'2026-08','2026-10-16'),sep=periodDashboard([order],'2026-09','2026-10-16'),oct=periodDashboard([order],'2026-10','2026-10-16');
  assert.equal(aug.revenue,900);assert.equal(aug.discount,100);assert.equal(aug.currentReceipts,100);assert.equal(aug.recoveredDebt,0);assert.equal(aug.debt,800);
@@ -48,7 +48,7 @@ test('arbitrary inclusive ranges split by approval boundary and preserve lifetim
  for(const [key,col]of [['revenue',3],['revenuePaid',4],['currentReceipts',5],['recoveredDebt',6],['discount',7],['debt',8]])assert.equal(rows.reduce((n,row)=>n+Number(row[col]),0),r[key]);
 });
 test('cross-year ranges classify old approvals and reject invalid or future dates',()=>{
- const old={...order,approvedAt:'2025-12-31',payments:[{confirmed:true,amount:1000,receivedDate:'2026-01-01'}]};
+ const old={...order,approvedAt:'2025-12-31',payments:[{confirmed:true,confirmedAt:'2026-01-01',amount:1000,receivedDate:'2026-01-01'}]};
  const current={...old,id:'new',approvedAt:'2026-01-01'};
  const r=periodDashboard([old,current],{from:'2026-01-01',to:'2026-01-01'},'2026-10-16');
  assert.equal(r.currentReceipts,900);assert.equal(r.recoveredDebt,900);assert.equal(r.revenuePaid,1800);
@@ -56,7 +56,7 @@ test('cross-year ranges classify old approvals and reject invalid or future date
 });
 
 test('confirmed monthly aggregation: 400 current, 600 recovered, final debt zero, never sum monthly balances',()=>{
- const o={...order,discount:0,shippingFee:0,payments:[{confirmed:true,amount:400,receivedDate:'2026-08-12'},{confirmed:true,amount:300,receivedDate:'2026-09-15'},{confirmed:true,amount:300,receivedDate:'2026-10-05'}]};
+ const o={...order,discount:0,shippingFee:0,payments:[{confirmed:true,confirmedAt:'2026-08-12',amount:400,receivedDate:'2026-08-12'},{confirmed:true,confirmedAt:'2026-09-15',amount:300,receivedDate:'2026-09-15'},{confirmed:true,confirmedAt:'2026-10-05',amount:300,receivedDate:'2026-10-05'}]};
  const range=monthReportRange('2026-08','2026-10','2026-10-17'),r=periodDashboard([o],range,'2026-10-17');
  assert.deepEqual([r.revenue,r.revenuePaid,r.currentReceipts,r.recoveredDebt,r.debt],[1000,1000,400,600,0]);
  for(const [month,debt]of [['2026-08',600],['2026-09',300],['2026-10',0]])assert.equal(periodDashboard([o],monthReportRange(month,month,'2026-10-17'),'2026-10-17').debt,debt);
@@ -64,11 +64,30 @@ test('confirmed monthly aggregation: 400 current, 600 recovered, final debt zero
  assert.equal(rows.reduce((s,r)=>s+Number(r[5]),0),400);assert.equal(rows.reduce((s,r)=>s+Number(r[6]),0),600);
 });
 test('monthly partitions retain multiple same-month payments and allocate shipping once across years',()=>{
- const o={...order,approvedAt:'2025-12-01',discount:0,shippingFee:100,payments:[{confirmed:true,amount:300,receivedDate:'2025-12-02'},{confirmed:true,amount:200,receivedDate:'2025-12-20'},{confirmed:true,amount:600,receivedDate:'2026-01-05'}]};
+ const o={...order,approvedAt:'2025-12-01',discount:0,shippingFee:100,payments:[{confirmed:true,confirmedAt:'2025-12-02',amount:300,receivedDate:'2025-12-02'},{confirmed:true,confirmedAt:'2025-12-20',amount:200,receivedDate:'2025-12-20'},{confirmed:true,confirmedAt:'2026-01-05',amount:600,receivedDate:'2026-01-05'}]};
  const r=periodDashboard([o],monthReportRange('2025-12','2026-01','2026-10-17'),'2026-10-17');
  assert.deepEqual([r.currentReceipts,r.recoveredDebt,r.shippingPaid,r.debt],[400,600,100,0]);
  const jan=periodDashboard([o],monthReportRange('2026-01','2026-01','2026-10-17'),'2026-10-17');assert.equal(jan.recoveredDebt,600);assert.equal(jan.shippingPaid,0);
  assert.equal(monthReportRange('2024-02','2024-02','2026-10-17').to,'2024-02-29');
  assert.equal(monthReportRange('2026-10','2026-10','2026-10-17').to,'2026-10-17');
  for(const [a,b]of [['','2026-10'],['2026-10','2026-09'],['2026-13','2026-13'],['2026-10','2026-11']])assert.equal(monthReportRange(a,b,'2026-10-17'),null);
+});
+
+test('customer regression: September sender date, October accounting confirmation, 686.40 net cash',()=>{
+ const o={id:'actual-case',orderCode:'HQ-JD-2-1',stage:4,approvedAt:'2026-10-15T18:04:57Z',items:[{kind:'base',qty:1,price:695.4}],discount:9,shippingFee:60,payments:[{confirmed:true,confirmedAt:'2026-10-15T18:04:57Z',date:'2026-09-28',receivedDate:'2026-10-03',amount:746.4}]};
+ const oct=periodDashboard([o],monthReportRange('2026-10','2026-10','2026-10-17'),'2026-10-17');
+ assert.deepEqual([oct.revenue,oct.revenuePaid,oct.currentReceipts,oct.recoveredDebt,oct.debt],[686.4,686.4,686.4,0,0]);assert.equal(oct.rows[0].date,'2026-10-16');
+ const sep=periodDashboard([o],monthReportRange('2026-09','2026-09','2026-10-17'),'2026-10-17');assert.equal(sep.paid,0);assert.equal(sep.revenue,0);assert.equal(sep.debt,0);
+ const older={...o,approvedAt:'2026-09-01'};
+ const debt=periodDashboard([older],monthReportRange('2026-09','2026-09','2026-10-17'),'2026-10-17');assert.equal(debt.debt,746.4);
+ assert.equal(periodDashboard([older],monthReportRange('2026-10','2026-10','2026-10-17'),'2026-10-17').recoveredDebt,686.4);
+ const csv=periodDashboardCSV([o],monthReportRange('2026-10','2026-10','2026-10-17'),'2026-10-17');assert.ok(csv.includes('"Khoan thu","HQ-JD-2-1","2026-10-16"'));assert.ok(!csv.includes('2026-09-28'));
+});
+test('missing confirmation never falls back to sender or bank date; cash date survives evidence correction',()=>{
+ const o={...order,payments:[{confirmed:true,date:'2026-09-01',receivedDate:'2026-09-02',amount:100}]};
+ const r=periodDashboard([o],'2026-09','2026-10-17');assert.equal(r.paid,0);assert.equal(r.undated,1);assert.equal(r.debt,null);
+ o.payments[0].confirmedAt='2026-09-30T18:00:00Z';
+ const oct=periodDashboard([o],'2026-10','2026-10-17');assert.equal(oct.paid,100);assert.equal(oct.rows[0].date,'2026-10-01');
+ o.payments[0].receivedDate='2026-08-01';o.payments[0].date='2026-07-01';
+ assert.equal(periodDashboard([o],'2026-10','2026-10-17').paid,100);
 });

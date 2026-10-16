@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {accountingPeriod} from '../accounting-period.js';import {applyReceiptCorrection} from '../receipt-corrections.js';
-const order=()=>({stage:8,orderCode:'HQ-1',approvedAt:'2026-08-01T02:00:00Z',shippingFee:85,items:[{kind:'base',qty:1,price:770}],payments:[{id:'a',confirmed:true,amount:50,receivedDate:'2026-08-10'},{id:'b',confirmed:true,amount:450,receivedDate:'2026-09-10'},{id:'c',confirmed:true,amount:355,receivedDate:'2026-10-01'}]});
+const order=()=>({stage:8,orderCode:'HQ-1',approvedAt:'2026-08-01T02:00:00Z',shippingFee:85,items:[{kind:'base',qty:1,price:770}],payments:[{id:'a',confirmed:true,confirmedAt:'2026-08-10',amount:50,receivedDate:'2026-08-10'},{id:'b',confirmed:true,confirmedAt:'2026-09-10',amount:450,receivedDate:'2026-09-10'},{id:'c',confirmed:true,confirmedAt:'2026-10-01',amount:355,receivedDate:'2026-10-01'}]});
 test('Accounting periods allocate shipping once across receipts and approval separately',()=>{
  const o=order();assert.equal(accountingPeriod([o],'2026-08').revenue,770);assert.equal(accountingPeriod([o],'2026-09').revenue,0);
  for(const [m,paid,ship,net] of [['08',50,50,0],['09',450,35,415],['10',355,0,355]]){const r=accountingPeriod([o],'2026-'+m);assert.equal(r.paid,paid);assert.equal(r.shippingPaid,ship);assert.equal(r.revenuePaid,net)}
