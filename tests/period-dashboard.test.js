@@ -1,3 +1,4 @@
+import {monthReportRange} from '../report-range.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {periodDashboard,periodDashboardCSV,receivablesAt} from '../period-dashboard.js';
@@ -52,4 +53,22 @@ test('cross-year ranges classify old approvals and reject invalid or future date
  const r=periodDashboard([old,current],{from:'2026-01-01',to:'2026-01-01'},'2026-10-16');
  assert.equal(r.currentReceipts,900);assert.equal(r.recoveredDebt,900);assert.equal(r.revenuePaid,1800);
  for(const range of [{from:'2026-10-02',to:'2026-10-01'},{from:'',to:'2026-10-01'},{from:'2026-02-30',to:'2026-10-01'},{from:'2026-10-01',to:'2026-10-17'}])assert.throws(()=>periodDashboard([order],range,'2026-10-16'),/không hợp lệ/);
+});
+
+test('confirmed monthly aggregation: 400 current, 600 recovered, final debt zero, never sum monthly balances',()=>{
+ const o={...order,discount:0,shippingFee:0,payments:[{confirmed:true,amount:400,receivedDate:'2026-08-12'},{confirmed:true,amount:300,receivedDate:'2026-09-15'},{confirmed:true,amount:300,receivedDate:'2026-10-05'}]};
+ const range=monthReportRange('2026-08','2026-10','2026-10-17'),r=periodDashboard([o],range,'2026-10-17');
+ assert.deepEqual([r.revenue,r.revenuePaid,r.currentReceipts,r.recoveredDebt,r.debt],[1000,1000,400,600,0]);
+ for(const [month,debt]of [['2026-08',600],['2026-09',300],['2026-10',0]])assert.equal(periodDashboard([o],monthReportRange(month,month,'2026-10-17'),'2026-10-17').debt,debt);
+ const rows=periodDashboardCSV([o],range,'2026-10-17').trim().split('\r\n').slice(1).map(l=>l.slice(1,-1).split('","'));
+ assert.equal(rows.reduce((s,r)=>s+Number(r[5]),0),400);assert.equal(rows.reduce((s,r)=>s+Number(r[6]),0),600);
+});
+test('monthly partitions retain multiple same-month payments and allocate shipping once across years',()=>{
+ const o={...order,approvedAt:'2025-12-01',discount:0,shippingFee:100,payments:[{confirmed:true,amount:300,receivedDate:'2025-12-02'},{confirmed:true,amount:200,receivedDate:'2025-12-20'},{confirmed:true,amount:600,receivedDate:'2026-01-05'}]};
+ const r=periodDashboard([o],monthReportRange('2025-12','2026-01','2026-10-17'),'2026-10-17');
+ assert.deepEqual([r.currentReceipts,r.recoveredDebt,r.shippingPaid,r.debt],[400,600,100,0]);
+ const jan=periodDashboard([o],monthReportRange('2026-01','2026-01','2026-10-17'),'2026-10-17');assert.equal(jan.recoveredDebt,600);assert.equal(jan.shippingPaid,0);
+ assert.equal(monthReportRange('2024-02','2024-02','2026-10-17').to,'2024-02-29');
+ assert.equal(monthReportRange('2026-10','2026-10','2026-10-17').to,'2026-10-17');
+ for(const [a,b]of [['','2026-10'],['2026-10','2026-09'],['2026-13','2026-13'],['2026-10','2026-11']])assert.equal(monthReportRange(a,b,'2026-10-17'),null);
 });

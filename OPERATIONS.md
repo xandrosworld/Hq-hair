@@ -140,3 +140,11 @@ Kiểm thử: `npm test`, `npm run build`, `node tests/period-dashboard.mjs`, `n
 - Khoảng thiếu ngày, ngày không tồn tại, đảo chiều hoặc vượt hôm nay không áp dụng; giao diện giữ số liệu khoảng hợp lệ trước đó và báo rõ.
 - Quy tắc này thay thế trạng thái Không áp dụng/chờ chốt năm ở 6 thẻ. Thống kê khách hàng và Xưởng giữ cơ chế riêng đã chốt.
 - Biểu đồ doanh thu dùng cùng khoảng; danh sách công nợ cần thu hiện tại vẫn là phần riêng, có tiêu đề phân biệt.
+
+
+### Chốt cuối: khoảng tháng và phân loại thu từng tháng (17/10/2026)
+- Thay hai ô ngày bằng Từ tháng – Đến tháng, mặc định tháng hiện tại. Tháng cũ lấy trọn tháng, tháng hiện tại đến hôm nay.
+- Trong mỗi tháng: thực thu là tiền nhận từ đơn duyệt cùng tháng; thu hồi là tiền nhận từ đơn duyệt trước tháng nhận. Cộng các khoản này qua các tháng chọn, luôn trừ vận chuyển phân bổ một lần trên lịch sử thu.
+- Công nợ là số dư tại cuối tháng kết thúc (hoặc hôm nay), bao gồm mọi đơn cũ còn nợ; tuyệt đối không cộng số dư cuối từng tháng.
+- Ví dụ đơn 1.000 duyệt tháng 8, trả 400/300/300 trong tháng 8/9/10: chọn 8–10 cho thực thu 400, thu hồi 600, công nợ 0.
+- Quy tắc này thay thế việc phân loại theo ngày bắt đầu toàn khoảng đã mô tả trước đó. Sale, tổng quan, kế toán, bảng theo Sale, biểu đồ và CSV đồng bộ.
