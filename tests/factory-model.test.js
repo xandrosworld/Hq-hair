@@ -61,3 +61,8 @@ test('Factory compact date modes use approval and Sale Check dates independently
  assert.equal(filterFactoryOrders(rows,{tab:'review',dateBasis:'sale_check',to:'2026-10-02'}).length,0);
  assert.equal(filterFactoryOrders(rows,{tab:'review',dateBasis:'approval',from:'2026-10-06'}).length,0);
 });
+
+test('overview approval-from and deadline-to use inclusive boundaries, not creation or workshop dates',()=>{
+ const rows=[order({orderCode:'A',approvedAt:'2026-10-05',production:{recordedAt:'2026-10-09'}}),order({orderCode:'B',approvedAt:'2026-10-04',production:{recordedAt:'2026-10-09'}}),order({orderCode:'C',approvedAt:'2026-10-06',due:'2026-10-11'}),order({orderCode:'D'})];
+ assert.deepEqual(filterFactoryOrders(rows,{tab:'overview',dateBasis:'approval',from:'2026-10-05',dueTo:'2026-10-10'}).map(o=>o.orderCode),['A']);
+});

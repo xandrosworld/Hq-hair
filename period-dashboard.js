@@ -29,19 +29,20 @@ export function receivablesAt(orders,cutoff,asOf=today()){
 }
 export function periodDashboard(orders,period='',asOf=today()){
  const report=datedFinancialSummary(orders,period,asOf),cutoff=periodEnd(period,asOf),byId=new Map(orders.map(o=>[o.id,o]));
- // Month partition is confirmed. Year/all-time partition remains unconfigured.
+ // All-time receipts are cumulative; recovery has no prior-period baseline. Year partition remains unconfigured.
  const splitReady=/^\d{4}-\d{2}$/.test(period);let current=0,recovered=0,unclassified=0;
  if(splitReady)for(const receipt of report.rows){const approved=approvalDate(byId.get(receipt.orderId));if(approved?.startsWith(period))current+=receipt.revenuePaid;else if(approved&&approved<period+'-01')recovered+=receipt.revenuePaid;else unclassified+=receipt.revenuePaid;}
- return {...report,...receivablesAt(orders,cutoff,asOf),cutoff,historical:cutoff<asOf,splitReady,currentReceipts:splitReady?round(current):null,recoveredDebt:splitReady?round(recovered):null,unclassified:round(unclassified)};
+ return {...report,...receivablesAt(orders,cutoff,asOf),cutoff,historical:cutoff<asOf,splitReady,recoveryNotApplicable:!period,currentReceipts:!period?report.revenuePaid:splitReady?round(current):null,recoveredDebt:splitReady?round(recovered):null,unclassified:round(unclassified)};
 }
 export function periodDashboardCSV(orders,period='',asOf=today(),accounting=false){
  const r=periodDashboard(orders,period,asOf),byId=new Map(orders.map(o=>[o.id,o]));
  const rows=[['Loai','Ma don','Ngay','Doanh thu thuan USD','Dong tien thu vao tru van chuyen USD','Doanh thu thuc thu USD','Thu hoi cong no USD','Giam gia USD','Cong no tai '+r.cutoff+' USD',...(accounting?['Van chuyen da nhan USD','Thiet hai USD']:[])]];
  for(const a of r.approved)rows.push(['Don duyet',a.code,a.date,a.revenue,0,r.splitReady?0:'',r.splitReady?0:'',Number(byId.get(a.id)?.discount)||0,0]);
- for(const p of r.rows){const approved=approvalDate(byId.get(p.orderId));rows.push(['Khoan thu',p.code,p.date,0,p.revenuePaid,r.splitReady?(approved.startsWith(period)?p.revenuePaid:0):'',r.splitReady?(approved&&approved<period+'-01'?p.revenuePaid:0):'',0,0,...(accounting?[p.shippingPaid,0]:[])])}
+ for(const p of r.rows){const approved=approvalDate(byId.get(p.orderId));rows.push(['Khoan thu',p.code,p.date,0,p.revenuePaid,!period?p.revenuePaid:r.splitReady?(approved.startsWith(period)?p.revenuePaid:0):'',r.splitReady?(approved&&approved<period+'-01'?p.revenuePaid:0):'',0,0,...(accounting?[p.shippingPaid,0]:[])])}
  for(const d of r.debtRows)rows.push(['Cong no cuoi ky',d.code,d.date,0,0,r.splitReady?0:'',r.splitReady?0:'',0,d.debt]);
  if(accounting)for(const l of r.losses)rows.push(['Thiet hai',l.code,l.date,0,0,'','',0,0,0,l.amount]);
  if(r.debtMissing)rows.push(['CHUA DU DU LIEU CONG NO',`${r.debtMissing} don`,r.cutoff]);
- if(!r.splitReady)rows.push(['CHUA CHOT PHAN LOAI THUC THU / THU HOI NO CHO CHE DO NAY']);
+ if(!period)rows.push(['THU HOI CONG NO: KHONG AP DUNG']);
+ if(period&&!r.splitReady)rows.push(['CHUA CHOT PHAN LOAI THUC THU / THU HOI NO CHO CHE DO NAY']);
  return '\uFEFF'+rows.map(row=>Array.from({length:rows[0].length},(_,i)=>row[i]??'').map(csvCell).join(',')).join('\r\n');
 }
