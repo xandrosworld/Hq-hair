@@ -1,3 +1,4 @@
+import {downloadReportExcel} from '../report-workbook.js';
 import {ReportRangeSelect,defaultReportRange} from './report-range-select.jsx';
 import {PeriodKpis} from './period-kpis.jsx';
 import {periodDashboard,periodDashboardCSV} from '../period-dashboard.js';
@@ -156,8 +157,8 @@ function Revenue({data,onOpen,view,setView}){
  const dated=periodDashboard(orders,datedPeriod);
  const debt=reportOrders(scoped,{month:'all',owner,query:q,bucket,overdue,debtOnly:true}),summary=financialSummary(orders);
  const chartYear=mode==='month'?month.slice(0,4):year;
- const download=(rows,name)=>{const url=URL.createObjectURL(new Blob([name==='HQ-Hair-doanh-thu.csv'?periodDashboardCSV(rows,datedPeriod):reportCSV(rows,data.customers)],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
- return <><div className="page-title revenue-report-heading"><div><h1>Doanh thu & công nợ</h1><p>Doanh thu đơn theo ngày duyệt; tiền thu theo ngày kế toán xác nhận từng đợt. Ngày gửi trên bill chỉ dùng đối chiếu, không tính kỳ báo cáo. Cả sáu chỉ số dùng khoảng tháng đã chọn. Thực thu và thu hồi công nợ phân loại từng tháng rồi cộng lại; công nợ là số dư cuối tháng kết thúc, tháng hiện tại tính đến hôm nay. Bao gồm đơn đã duyệt hủy mất cọc; đơn hủy chưa giao không trừ ship, không còn công nợ.</p></div><Button icon={Download} onClick={()=>download(orders,'HQ-Hair-doanh-thu.csv')}>Xuất báo cáo CSV</Button></div>
+ const download=(rows,name)=>downloadReportExcel(name==='HQ-Hair-doanh-thu.csv'?periodDashboardCSV(rows,datedPeriod):reportCSV(rows,data.customers),name);
+ return <><div className="page-title revenue-report-heading"><div><h1>Doanh thu & công nợ</h1><p>Doanh thu đơn theo ngày duyệt; tiền thu theo ngày kế toán xác nhận từng đợt. Ngày gửi trên bill chỉ dùng đối chiếu, không tính kỳ báo cáo. Cả sáu chỉ số dùng khoảng tháng đã chọn. Thực thu và thu hồi công nợ phân loại từng tháng rồi cộng lại; công nợ là số dư cuối tháng kết thúc, tháng hiện tại tính đến hôm nay. Bao gồm đơn đã duyệt hủy mất cọc; đơn hủy chưa giao không trừ ship, không còn công nợ.</p></div><Button icon={Download} onClick={()=>download(orders,'HQ-Hair-doanh-thu.csv')}>Xuất báo cáo Excel</Button></div>
  <Panel><div className="filters">{view!=='debt'&&<ReportRangeSelect value={datedPeriod} onChange={setDatedPeriod}/>}
  {['manager','sales_lead'].includes(data.user?.role)&&<select aria-label="Người phụ trách báo cáo" value={owner} onChange={e=>setOwner(e.target.value)}><option value="all">Toàn đội Sale</option>{[...new Map(data.orders.map(o=>[o.ownerId||o.sale,o.sale])).entries()].map(([id,name])=><option key={id} value={id}>{name}</option>)}</select>}
  <div className="search"><MagnifyingGlass size={18}/><input placeholder="Mã đơn, mã khách, tên khách hoặc Sale…" aria-label="Tìm công nợ" value={q} onChange={e=>setQ(e.target.value)}/></div></div></Panel>

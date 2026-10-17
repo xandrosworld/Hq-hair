@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import {chromium,expect} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
@@ -25,7 +26,7 @@ try{
  await page.getByLabel('Báo cáo từ tháng',{exact:true}).fill('09/2026');
  for(const width of [390,768,1024,1440,1885]){
  await page.setViewportSize({width,height:1050});
- const button=page.getByRole('button',{name:'Xuất báo cáo CSV',exact:true});
+ const button=page.getByRole('button',{name:'Xuất báo cáo Excel',exact:true});
  await expect(button).toBeVisible();
  assert.ok(await button.evaluate(el=>{const r=el.getBoundingClientRect();const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect();return text.left>=r.left&&text.right<=r.right&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth+1}));
  }
@@ -36,7 +37,7 @@ try{
  await expect(page.locator('main table tbody')).toContainText('PER-1');
  await expect(page.locator('main table tbody')).toContainText('$500.00');
  await page.getByRole('button',{name:'Tổng quan doanh thu',exact:true}).click();
- const promise=page.waitForEvent('download');await page.getByRole('button',{name:'Xuất báo cáo CSV',exact:true}).click();const download=await promise,file=path.join(dir,'report.csv');await download.saveAs(file);assert.ok(readFileSync(file,'utf8').includes('2026-09-30'));assert.ok(readFileSync(file,'utf8').includes('"800"'));
+ const promise=page.waitForEvent('download');await page.getByRole('button',{name:'Xuất báo cáo Excel',exact:true}).click();const download=await promise,file=path.join(dir,'report.xlsx');await download.saveAs(file);assert.ok(download.suggestedFilename().endsWith('.xlsx'));const exported=new ExcelJS.Workbook();await exported.xlsx.readFile(file);const sheet=exported.worksheets[0];assert.ok(sheet.getRow(1).values.some(v=>String(v).includes('2026-09-30')));assert.ok(sheet.getColumn(9).values.includes(800));assert.equal(sheet.getColumn(3).width,16);
  mkdirSync('screenshots/periods',{recursive:true});await page.screenshot({path:'screenshots/periods/sale.png',fullPage:true});await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:'screenshots/periods/sale-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1050});
  await nav('Khách hàng');await page.getByRole('button',{name:'Thống kê khách hàng',exact:true}).click();await page.getByLabel('Kỳ thống kê khách hàng').selectOption('month');await page.getByLabel('Tháng thống kê khách',{exact:true}).fill('10/2026');
  for(const [key,value]of [['total','3'],['new','1'],['repeat','1']])await expect(page.getByTestId('buyers-'+key).locator('.animated-number')).toHaveAttribute('data-value',value);
