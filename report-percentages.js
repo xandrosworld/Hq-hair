@@ -12,3 +12,10 @@ export function buyerGroupShares(customers,orders,cutoff=today()){
  const total=buyerStatistics(customers,orders,cutoff,cutoff.slice(0,7),'all').total;
  return {total,groups:groups.map(group=>{const count=buyerStatistics(customers.filter(c=>c.group===group),orders,cutoff,cutoff.slice(0,7),'all').total;return {group,count,percent:percentageOf(count,total)}})};
 }
+
+export function financialShareText(key,value,report){
+ if(value===null)return 'Chưa có số liệu xác định';
+ const discount=key==='discount',base=discount?report.revenue+report.discount:report.revenue;
+ const label=discount?'doanh thu niêm yết':'doanh thu thuần';
+ return base>0?`${percentageText(percentageOf(value,base))} so với ${label}`:`— · Chưa có ${label} để tính %`;
+}

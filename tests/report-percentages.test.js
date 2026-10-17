@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buyerGroupShares,percentageOf,percentageText} from '../report-percentages.js';
+import {buyerGroupShares,percentageOf,percentageText,financialShareText} from '../report-percentages.js';
 const customers=[{id:'a',group:'Salon'},{id:'b',group:'Wholesale'},{id:'c',group:'Khách lẻ'},{id:'d',group:'Start Business'}];
 const approved=(id,customerId,date)=>({id,customerId,orderCode:id,stage:3,approvedAt:date});
 test('Buyer group shares count distinct approved buyers, exclude pending/cancelled/future and honor visibility',()=>{
@@ -16,4 +16,12 @@ test('Percentages use order revenue, retain values over 100 and handle a zero ba
  assert.equal(percentageText(percentageOf(0,1237)),'0%');
  assert.equal(percentageText(percentageOf(50,0)),'—');
  assert.equal(percentageOf(50,-1),null);assert.equal(percentageOf(Infinity,10),null);
+});
+
+test('Discount share uses pre-discount goods revenue while cash shares retain net revenue',()=>{
+ const report={revenue:1237,discount:19};
+ assert.equal(financialShareText('discount',19,report),'1,51% so với doanh thu niêm yết');
+ assert.equal(financialShareText('cash',1333.9,report),'107,83% so với doanh thu thuần');
+ assert.equal(financialShareText('discount',100,{revenue:0,discount:100}),'100% so với doanh thu niêm yết');
+ assert.equal(financialShareText('discount',0,{revenue:0,discount:0}),'— · Chưa có doanh thu niêm yết để tính %');
 });
