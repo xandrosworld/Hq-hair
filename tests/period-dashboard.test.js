@@ -133,3 +133,14 @@ test('confirmed recovery rule follows each receipt month even for partial-month 
  const csv=periodDashboardCSV(orders,range,'2026-10-25').trim().split('\r\n').slice(1).map(l=>l.slice(1,-1).split('","'));
  assert.equal(csv.reduce((n,row)=>n+Number(row[6]),0),50);
 });
+
+test('new evidence does not reduce debt until accounting confirms; old and current approvals both reduce debt',()=>{
+ const old={...order,approvedAt:'2026-07-01',discount:0,shippingFee:0,items:[{kind:'base',qty:1,price:100}],payments:[{id:'bill',amount:20,confirmed:false,date:'2026-10-01'}]};
+ const current={...old,id:'current',approvedAt:'2026-10-05',payments:[{id:'new-bill',amount:30,confirmed:false}]};
+ const range=monthReportRange('2026-10','2026-10','2026-10-17');
+ assert.equal(periodDashboard([old,current],range,'2026-10-17').debt,200);
+ old.payments[0]={...old.payments[0],confirmed:true,confirmedAt:'2026-10-16'};
+ current.payments[0]={...current.payments[0],confirmed:true,confirmedAt:'2026-10-16'};
+ const r=periodDashboard([old,current],range,'2026-10-17');
+ assert.deepEqual([r.recoveredDebt,r.currentReceipts,r.revenuePaid,r.debt],[20,30,50,150]);
+});

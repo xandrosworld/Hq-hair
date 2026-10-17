@@ -30,6 +30,12 @@ try{
  assert.ok(await button.evaluate(el=>{const r=el.getBoundingClientRect();const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect();return text.left>=r.left&&text.right<=r.right&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth+1}));
  }
  await page.setViewportSize({width:1440,height:1050});
+ await page.getByRole('button',{name:'Công nợ cần thu',exact:true}).click();
+ await expect(page.getByLabel('Báo cáo từ tháng',{exact:true})).toHaveCount(0);
+ await expect(page.getByText('Toàn bộ đơn còn công nợ đến hiện tại',{exact:true})).toBeVisible();
+ await expect(page.locator('main table tbody')).toContainText('PER-1');
+ await expect(page.locator('main table tbody')).toContainText('$500.00');
+ await page.getByRole('button',{name:'Tổng quan doanh thu',exact:true}).click();
  const promise=page.waitForEvent('download');await page.getByRole('button',{name:'Xuất báo cáo CSV',exact:true}).click();const download=await promise,file=path.join(dir,'report.csv');await download.saveAs(file);assert.ok(readFileSync(file,'utf8').includes('2026-09-30'));assert.ok(readFileSync(file,'utf8').includes('"800"'));
  mkdirSync('screenshots/periods',{recursive:true});await page.screenshot({path:'screenshots/periods/sale.png',fullPage:true});await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:'screenshots/periods/sale-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1050});
  await nav('Khách hàng');await page.getByRole('button',{name:'Thống kê khách hàng',exact:true}).click();await page.getByLabel('Kỳ thống kê khách hàng').selectOption('month');await page.getByLabel('Tháng thống kê khách',{exact:true}).fill('10/2026');
