@@ -91,3 +91,45 @@ test('missing confirmation never falls back to sender or bank date; cash date su
  o.payments[0].receivedDate='2026-08-01';o.payments[0].date='2026-07-01';
  assert.equal(periodDashboard([o],'2026-10','2026-10-17').paid,100);
 });
+
+// Customer's confirmed rule: flows add, balances carry forward from all history.
+test('August to October 16: 100 opening + 30 new outstanding - 20 old debt = 110',()=>{
+ const make=(id,approvedAt,price,payments=[])=>({id,orderCode:id,stage:3,approvedAt,items:[{kind:'base',qty:1,price}],payments});
+ const receipt=(amount,date)=>({amount,confirmed:true,confirmedAt:date});
+ const orders=[make('old-july','2026-07-01',100,[receipt(20,'2026-10-10'),receipt(80,'2026-10-20')]),...['01','08','16'].map(day=>make('oct-'+day,'2026-10-'+day,20,[receipt(10,'2026-10-'+day)]))];
+ const asOf='2026-10-25',range={from:'2026-08-01',to:'2026-10-16',monthly:true},r=periodDashboard(orders,range,asOf);
+ assert.equal(r.debt,110);assert.equal(r.debtCount,4);
+ assert.deepEqual([r.debtReconciliation.opening,r.debtReconciliation.increased,r.debtReconciliation.decreased,r.debtReconciliation.closing],[100,30,20,110]);
+ for(const from of ['2026-01-01','2026-07-01','2026-09-01','2026-10-16'])assert.equal(periodDashboard(orders,{...range,from},asOf).debt,110);
+ assert.equal(periodDashboard(orders,'2026-09',asOf).debt,100);
+ assert.equal(periodDashboard(orders,'2026-10',asOf).debt,30);
+ const months=['2026-08','2026-09'].map(m=>periodDashboard(orders,m,asOf));months.push(periodDashboard(orders,{from:'2026-10-01',to:'2026-10-16',monthly:true},asOf));
+ for(const key of ['discount','revenue','paid','shippingPaid','revenuePaid','currentReceipts','recoveredDebt'])assert.equal(r[key],months.reduce((sum,m)=>sum+m[key],0),key);
+ const csv=periodDashboardCSV(orders,range,asOf);const rows=csv.trim().split('\r\n').slice(1).map(l=>l.slice(1,-1).split('","'));
+ assert.equal(rows.reduce((sum,row)=>sum+Number(row[8]),0),110);
+ assert.ok(csv.includes('old-july'));
+});
+
+test('reconciliation handles overpayments, cancellations, year boundary and missing history',()=>{
+ const old={...order,approvedAt:'2025-12-01',discount:0,shippingFee:0,items:[{kind:'base',qty:1,price:100}],payments:[]};
+ const paid={...old,id:'paid',payments:[{confirmed:true,confirmedAt:'2026-01-05',amount:150}]};
+ const unpaid={...old,id:'unpaid'};
+ const cancelled={...old,id:'cancelled',cancelledAt:'2026-01-03'};
+ const r=periodDashboard([paid,unpaid,cancelled],{from:'2026-01-01',to:'2026-01-16'},'2026-10-17');
+ assert.equal(r.debt,100);assert.equal(r.debtReconciliation.openingDate,'2025-12-31');
+ assert.deepEqual([r.debtReconciliation.opening,r.debtReconciliation.decreased,r.debtReconciliation.closing],[300,200,100]);
+ const missing=periodDashboard([{...old,payments:[{confirmed:true,amount:10}]}],'2026-10','2026-10-17');
+ assert.equal(missing.debt,90);assert.equal(missing.debtReconciliation.complete,false);assert.equal(missing.debtReconciliation.increased,null);
+});
+
+test('confirmed recovery rule follows each receipt month even for partial-month ranges',()=>{
+ const make=(id,approvedAt,payments)=>({id,orderCode:id,stage:3,approvedAt,items:[{kind:'base',qty:1,price:100}],payments:payments.map(([amount,confirmedAt])=>({confirmed:true,amount,confirmedAt}))});
+ const orders=[make('june','2026-06-01',[[20,'2026-10-16']]),make('oct','2026-10-05',[[30,'2026-10-16'],[70,'2026-10-20']]),make('aug','2026-08-01',[[40,'2026-08-10'],[10,'2026-09-10'],[20,'2026-10-10']])];
+ const range={from:'2026-08-01',to:'2026-10-16'},r=periodDashboard(orders,range,'2026-10-25');
+ assert.deepEqual([r.currentReceipts,r.recoveredDebt,r.revenuePaid,r.debt],[70,50,120,180]);
+ const day=periodDashboard(orders,{from:'2026-10-16',to:'2026-10-16'},'2026-10-25');
+ assert.deepEqual([day.currentReceipts,day.recoveredDebt,day.revenuePaid,day.debt],[30,20,50,180]);
+ assert.equal(r.currentReceipts+r.recoveredDebt,r.revenuePaid);
+ const csv=periodDashboardCSV(orders,range,'2026-10-25').trim().split('\r\n').slice(1).map(l=>l.slice(1,-1).split('","'));
+ assert.equal(csv.reduce((n,row)=>n+Number(row[6]),0),50);
+});

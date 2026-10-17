@@ -30,13 +30,27 @@ export function receivablesAt(orders,cutoff,asOf=today()){
  }
  return {debt:missing?null:round(rows.reduce((s,r)=>s+r.debt,0)),debtCount:rows.length,debtRows:rows,debtMissing:missing};
 }
+// Reconcile the final month's closing balance, independently of the range start.
+// Compare each order separately: an overpayment must never offset another order's debt.
+export function debtReconciliation(orders,cutoff,asOf=today(),closing=receivablesAt(orders,cutoff,asOf)){
+ const openingDate=new Date(Date.UTC(Number(cutoff.slice(0,4)),Number(cutoff.slice(5,7))-1,0)).toISOString().slice(0,10);
+ const opening=receivablesAt(orders,openingDate,asOf);
+ if(opening.debt===null||closing.debt===null)return {openingDate,cutoff,opening:opening.debt,closing:closing.debt,increased:null,decreased:null,rows:[],complete:false};
+ const before=new Map(opening.debtRows.map(r=>[r.id,r])),after=new Map(closing.debtRows.map(r=>[r.id,r]));
+ const rows=[...new Set([...before.keys(),...after.keys()])].map(id=>{
+  const start=before.get(id)?.debt||0,end=after.get(id)?.debt||0;
+  return {id,code:(after.get(id)||before.get(id)).code,opening:start,closing:end,increased:round(Math.max(0,end-start)),decreased:round(Math.max(0,start-end))};
+ });
+ return {openingDate,cutoff,opening:opening.debt,closing:closing.debt,increased:round(rows.reduce((n,r)=>n+r.increased,0)),decreased:round(rows.reduce((n,r)=>n+r.decreased,0)),rows,complete:true};
+}
 export function periodDashboard(orders,period='',asOf=today()){
  if(typeof period==='object'&&!validReportRange(period,asOf))throw new Error('Khoảng ngày báo cáo không hợp lệ');
  const report=datedFinancialSummary(orders,period,asOf),cutoff=periodEnd(period,asOf),byId=new Map(orders.map(o=>[o.id,o]));
  // All-time receipts are cumulative; recovery has no prior-period baseline. Year partition remains unconfigured.
  const splitReady=typeof period==='object'||/^\d{4}-\d{2}$/.test(period),start=typeof period==='object'?period.from:period+'-01';let current=0,recovered=0,unclassified=0;
  if(splitReady)for(const receipt of report.rows){const kind=receiptPartition(approvalDate(byId.get(receipt.orderId)),receipt.date,period);if(kind==='current')current+=receipt.revenuePaid;else if(kind==='recovered')recovered+=receipt.revenuePaid;else unclassified+=receipt.revenuePaid;}
- return {...report,...receivablesAt(orders,cutoff,asOf),cutoff,historical:cutoff<asOf,splitReady,recoveryNotApplicable:!period,currentReceipts:!period?report.revenuePaid:splitReady?round(current):null,recoveredDebt:splitReady?round(recovered):null,unclassified:round(unclassified)};
+ const balance=receivablesAt(orders,cutoff,asOf);
+ return {...report,...balance,debtReconciliation:debtReconciliation(orders,cutoff,asOf,balance),cutoff,historical:cutoff<asOf,splitReady,recoveryNotApplicable:!period,currentReceipts:!period?report.revenuePaid:splitReady?round(current):null,recoveredDebt:splitReady?round(recovered):null,unclassified:round(unclassified)};
 }
 export function periodDashboardCSV(orders,period='',asOf=today(),accounting=false){
  const start=typeof period==='object'?period.from:period+'-01',r=periodDashboard(orders,period,asOf),byId=new Map(orders.map(o=>[o.id,o]));

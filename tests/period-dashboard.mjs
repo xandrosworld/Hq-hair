@@ -18,6 +18,11 @@ try{
  await nav('Doanh thu & công nợ');await expect(page.locator('.period-kpi')).toHaveCount(6);await expect(page.getByText('Thiệt hại',{exact:true})).toHaveCount(0);await expect(page.getByText('Vận chuyển đã nhận',{exact:true})).toHaveCount(0);await money('current','$200.00');await money('recovered','$300.00');
  await page.getByLabel('Báo cáo từ tháng',{exact:true}).fill('10/2026');await page.getByLabel('Báo cáo đến tháng',{exact:true}).fill('10/2026');await money('revenue','$200.00');await money('cash','$500.00');await money('current','$200.00');await money('recovered','$300.00');await money('debt','$500.00');
  await page.getByLabel('Báo cáo từ tháng',{exact:true}).fill('09/2026');await page.getByLabel('Báo cáo đến tháng',{exact:true}).fill('09/2026');await money('revenue','$900.00');await money('debt','$800.00');await money('cash','$100.00');await money('current','$100.00');
+ await page.locator('.debt-reconciliation summary').click();
+ await expect(page.getByTestId('debt-equation')).toHaveText('$0.00 + $800.00 − $0.00 = $800.00');
+ await page.getByLabel('Báo cáo từ tháng',{exact:true}).fill('08/2026');await money('debt','$800.00');
+ await expect(page.getByTestId('debt-equation')).toHaveText('$0.00 + $800.00 − $0.00 = $800.00');
+ await page.getByLabel('Báo cáo từ tháng',{exact:true}).fill('09/2026');
  for(const width of [390,768,1024,1440,1885]){
  await page.setViewportSize({width,height:1050});
  const button=page.getByRole('button',{name:'Xuất báo cáo CSV',exact:true});

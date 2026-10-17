@@ -10,12 +10,9 @@ export function monthReportRange(fromMonth,toMonth,asOf){
  const end=new Date(Date.UTC(Number(toMonth.slice(0,4)),Number(toMonth.slice(5)),0)).toISOString().slice(0,10);
  return {from:fromMonth+'-01',to:end<asOf?end:asOf,monthly:true};
 }
+// Classify by each receipt's calendar month, never by the report start date.
 export function receiptPartition(approved,received,period){
- if(!approved)return 'unclassified';
- if(period?.monthly){
-  const approvalMonth=approved.slice(0,7),receiptMonth=received.slice(0,7);
-  return approvalMonth===receiptMonth?'current':approvalMonth<receiptMonth?'recovered':'unclassified';
- }
- const start=typeof period==='object'?period.from:period+'-01';
- return inReportPeriod(approved,period)?'current':approved<start?'recovered':'unclassified';
+ if(!approved||!received||approved>received)return 'unclassified';
+ const approvalMonth=approved.slice(0,7),receiptMonth=received.slice(0,7);
+ return approvalMonth===receiptMonth?'current':approvalMonth<receiptMonth?'recovered':'unclassified';
 }

@@ -158,3 +158,16 @@ Kiểm thử: `npm test`, `npm run build`, `node tests/period-dashboard.mjs`, `n
 - Hồi quy HQ-JD-2-1: gửi 28/9, ngân hàng về 3/10, kế toán xác nhận 16/10, tiền 746,40 trừ ship 60 = 686,40 vào tháng 10, không vào tháng 9.
 
 - Xưởng: bộ lọc tháng, nhóm tháng và cột ngày trên tổng quan/chưa ghi nhận dùng ngày kế toán duyệt lần đầu; bỏ ngày tạo đơn khỏi các mốc này. Thời gian kế hoạch/thực tế bắt đầu từ ngày duyệt; hạn theo đơn (hạn đã chốt lúc gửi văn phòng với đơn đã gửi), thực tế theo sự kiện gửi văn phòng. Ngày ghi nhận và Sale Check vẫn là các sự kiện riêng có nhãn rõ.
+
+### Đối chiếu công nợ theo ngày kết thúc (17/10/2026)
+- Các khoản phát sinh được cộng trong khoảng chọn. Số dư công nợ lấy toàn bộ lịch sử đến ngày kết thúc, không giới hạn theo ngày bắt đầu và không cộng số dư các tháng.
+- Bổ sung mục mở rộng “Đối chiếu công nợ” dùng chung cho Sale, Tổng quan và Kế toán: số dư cuối tháng trước + nợ tăng − nợ giảm = số dư ngày kết thúc. Từng dòng đối chiếu một đơn, không bù tiền trả dư giữa các đơn.
+- Nợ tăng/giảm là thay đổi ròng từng đơn (bao gồm điều chỉnh/hủy), không đồng nghĩa chỉ tiêu thu hồi công nợ. Thiếu lịch sử thì không tự đặt số dư đầu kỳ bằng 0.
+- Hồi quy chính: cuối 9 còn 100; ba đơn tháng 10 còn thiếu tổng 30; thu nợ tháng 7 là 20; đến 16/10 còn 110. Khoản thu ngày 20/10 không ảnh hưởng số dư 16/10; đổi mốc bắt đầu không đổi số dư.
+- Giữ nguyên phân loại thực thu/thu hồi hiện có trong khi chờ khách xác nhận lại. Không coi thay đổi này là xác nhận mới cho quy tắc phân loại đó. Khoản thu sửa sai tiếp tục dùng dữ liệu đã sửa theo chính sách báo cáo hiện có; đây chưa phải cơ chế khóa sổ bất biến.
+
+### Khách xác nhận phân loại thu hồi công nợ (17/10/2026 09:19)
+- Thu hồi công nợ: khoản thu trong kỳ của đơn duyệt trước tháng nhận tiền, bất kể nợ từ tháng nào trước đó.
+- Đơn duyệt và thu tiền cùng tháng: vào dòng tiền và thực thu cùng tháng, không vào thu hồi công nợ. Phần chưa thu vẫn nằm trong công nợ tại ngày kết thúc.
+- Khoảng nhiều tháng cộng phát sinh riêng từng tháng; tháng kết thúc chưa hết chỉ lấy đến ngày kết thúc. Áp dụng cùng quy tắc tháng cho cả khoảng ngày, không phân loại theo mốc bắt đầu bộ lọc.
+- Xác nhận này thay thế ghi chú chờ xác nhận về phân loại ở trên. Ngày kế toán xác nhận và cách trừ vận chuyển giữ theo quy tắc đã có.
