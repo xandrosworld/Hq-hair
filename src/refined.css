@@ -380,3 +380,6 @@ footer { color: #a4b0bf; font-size: 8px; padding-top: 18px; margin: 0 32px; }
 .revenue-report-heading>.btn{flex:0 0 auto;max-width:100%;white-space:normal}
 .revenue-report-heading>.btn svg{flex-shrink:0}
 .accounting-period .metric-middle{flex-direction:column;align-items:flex-start;justify-content:center}.accounting-period .metric-vnd{font-size:15px;line-height:1.5;color:#557080;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.accounting-period .metric-middle>strong{overflow-wrap:anywhere}.accounting-period .accounting-report-heading{flex-wrap:wrap;gap:10px}
+.receipt-dialog{width:min(960px,94vw);max-width:94vw;max-height:92dvh;padding:16px;border:0;border-radius:16px;color:#17384c;overflow:auto}.receipt-dialog::backdrop{background:#102837aa}.receipt-dialog header{display:flex;gap:12px;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;padding-bottom:12px;z-index:1}.receipt-dialog header strong{overflow-wrap:anywhere;min-width:0}.receipt-dialog header button{flex-shrink:0}.receipt-dialog img{display:block;max-width:100%;height:auto;margin:0 auto 16px}.receipt-dialog iframe{display:block;width:100%;height:70dvh;border:0;margin-bottom:12px}
+
+.receipt-dialog{box-sizing:border-box}

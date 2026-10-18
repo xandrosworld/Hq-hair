@@ -1,3 +1,5 @@
+import {approvalDate} from './order-identity.js';
+import {receiptPartition} from './report-range.js';
 import {accountingCurrencies} from './accounting-currencies.js';
 import {csvCell} from './reporting.js';
 import {money} from './shared.js';
@@ -17,4 +19,19 @@ export function accountingPrintHTML(orders,report,period,sale){
 export async function printAccountingReport(html){
  const popup=window.open('','_blank');if(!popup){window.alert('Cho phép mở cửa sổ mới để in báo cáo.');return}
  popup.document.write(html);popup.document.close();await popup.document.fonts.ready;popup.focus();popup.print();
+}
+
+// Each confirmed receipt appears once; shipping remains separate from net revenue.
+export function accountingReceiptCSV(orders,report){
+ const byId=new Map(orders.map(o=>[o.id,o]));
+ const rows=report.rows.map(r=>{const o=byId.get(r.orderId),part=receiptPartition(approvalDate(o||{}),r.date);return {r,o,part}}).sort((a,b)=>a.part.localeCompare(b.part)||a.r.date.localeCompare(b.r.date)||a.r.code.localeCompare(b.r.code));
+ return [['Loại thanh toán','Ma don','Sale','Ngày xác nhận thu','Ngày thực nhận','Tổng thu USD','Doanh thu thực thu USD','Thu hồi công nợ USD','Phí vận chuyển thu hộ USD','Tổng thu VND','Doanh thu thực thu VND','Thu hồi công nợ VND','Phí vận chuyển thu hộ VND'],...rows.map(({r,o,part})=>{
+ const payment=o?.payments?.find(p=>p.id&&p.id===r.id);
+ const known=v=>v??'Chưa có tỷ giá';
+ return [part==='current'?'Thanh toán đơn hàng':part==='recovered'?'Thu hồi công nợ':'Chưa đủ ngày duyệt để phân loại',r.code,o?.sale||'',r.date,payment?.receivedDate||'',r.paid,part==='current'?r.revenuePaid:0,part==='recovered'?r.revenuePaid:0,r.shippingPaid,known(r.paidVND),part==='current'?known(r.revenuePaidVND):0,part==='recovered'?known(r.revenuePaidVND):0,known(r.shippingPaidVND)];
+ })].map(r=>r.map(csvCell).join(',')).join('\r\n');
+}
+export function accountingCollectionSummaryCSV(orders,report,period){
+ const rows=accountingSummaryRows(orders,report,period),take=label=>rows.find(r=>r[0]===label);
+ return [['Chỉ tiêu','USD','VND'],take('Tổng thu'),['1. Các đơn hàng','',''],take('Doanh thu thực thu'),take('Tổng thu phí vận chuyển'),['2. Thu hồi công nợ','',''],take('Thu hồi công nợ'),['Dòng tiền thu về',report.revenuePaid,accountingCurrencies(orders,report,period).cash??'Chưa có tỷ giá'],['Đối chiếu','Tổng thu = Dòng tiền thu về + Phí vận chuyển thu hộ','Dòng tiền thu về = Doanh thu thực thu + Thu hồi công nợ'],...rows.filter(r=>!['Tổng thu','Doanh thu thực thu','Tổng thu phí vận chuyển','Thu hồi công nợ','Dòng tiền thu vào'].includes(r[0]))].map(r=>r.map(csvCell).join(',')).join('\r\n');
 }

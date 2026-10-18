@@ -1,5 +1,5 @@
 import {accountingCurrencies} from '../accounting-currencies.js';
-import {accountingMetrics,accountingSummaryCSV,accountingPrintHTML,printAccountingReport} from '../accounting-export.js';
+import {accountingMetrics,accountingReceiptCSV,accountingCollectionSummaryCSV,accountingPrintHTML,printAccountingReport} from '../accounting-export.js';
 import {downloadReportExcel} from '../report-workbook.js';
 import {ReportRangeSelect,defaultReportRange} from './report-range-select.jsx';
 import React,{useState} from 'react';
@@ -15,7 +15,7 @@ export function AccountingPeriod({orders}){
  const groups=new Map();for(const o of orders){const key=saleKey(o);if(!groups.has(key))groups.set(key,{key,name:o.sale||'Chưa xác định',orders:[]});groups.get(key).orders.push(o)}
  const sales=[...groups.values()].map(s=>({...s,...periodDashboard(s.orders,period)})).sort((a,b)=>a.name.localeCompare(b.name,'vi'));
  const selected=orders.filter(o=>!sale||saleKey(o)===sale),report=periodDashboard(selected,period);
- const download=()=>downloadReportExcel(periodDashboardCSV(selected,period,today(),true),'HQ-Hair-ke-toan-theo-ky.xlsx',accountingSummaryCSV(selected,report,period));
+ const download=()=>downloadReportExcel(accountingReceiptCSV(selected,report),'HQ-Hair-ke-toan-theo-ky.xlsx',accountingCollectionSummaryCSV(selected,report,period));
  const show=v=>v===null?'—':money(v);
  return <section className="panel panel-body accounting-period"><div className="accounting-report-heading"><h2>Báo cáo theo ngày duyệt / xác nhận thu</h2><button className="btn" onClick={()=>printAccountingReport(accountingPrintHTML(selected,report,period,sales.find(s=>s.key===sale)?.name))}>In / Lưu PDF</button><button className="btn" onClick={download}>Xuất Excel theo kỳ</button></div>
  <div className="filters accounting-report-filters"><label>Sale<select aria-label="Sale báo cáo" value={sale} onChange={e=>setSale(e.target.value)}><option value="">Toàn bộ Sale</option>{sales.map(s=><option key={s.key} value={s.key}>{s.name}</option>)}</select></label><ReportRangeSelect value={period} onChange={setPeriod}/></div>
