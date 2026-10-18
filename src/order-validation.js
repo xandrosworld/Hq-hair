@@ -11,7 +11,7 @@ export function validateOrder(order,{submit=false}={}){
   (order.items||[]).forEach((item,i)=>{
     if(submit&&!String(item.name||'').trim())errors[`name-${i}`]=`Dòng sản phẩm ${i+1}: nhập loại tóc nối / tên sản phẩm hoặc xóa dòng không dùng.`;
     if(submit){
-      for(const [key,label] of [['origin','nguồn tóc'],['lengthCm','chiều dài'],['texture','kiểu tóc'],['segment','phân khúc tóc'],['color','màu tóc'],['unit','đơn vị'],['priceBasis','cách tính giá']])if(!String(item[key]??'').trim()||['-','—'].includes(String(item[key]).trim()))errors[`${key}-${i}`]=`Dòng sản phẩm ${i+1}: chọn ${label}.`;
+      for(const [key,label] of [['origin','nguồn tóc'],['lengthCm','chiều dài'],['texture','kiểu tóc'],['segment','phân khúc tóc'],['color','màu tóc'],['unit','đơn vị'],['priceBasis','cách tính giá']])if(!(key==='segment'&&item.origin==='Baby Hair')&&(!String(item[key]??'').trim()||['-','—'].includes(String(item[key]).trim())))errors[`${key}-${i}`]=`Dòng sản phẩm ${i+1}: chọn ${label}.`;
       if(item.lengthCm&&(!Number.isFinite(Number(item.lengthCm))||Number(item.lengthCm)<=0))errors[`lengthCm-${i}`]=`Dòng sản phẩm ${i+1}: chiều dài phải lớn hơn 0.`;
       if(item.kind!=='gift'&&Number(item.price)<=0)errors[`price-${i}`]=`Dòng sản phẩm ${i+1}: đơn giá phải lớn hơn 0.`;
     }

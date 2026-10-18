@@ -7,3 +7,10 @@ const item={name:'Bulk',origin:'Raw Hair',segment:'Super Double Drawn',lengthCm:
 test('Matches exact segment and color code, then calculates grams',()=>{const rows=matchingOrderPrices(item,data);assert.deepEqual(rows.map(p=>p.id),['a']);assert.equal(productAmount({...item,...matchedPriceFields(rows[0],data)}),300)});
 test('Incomplete and unlisted colors do not guess a price',()=>{assert.deepEqual(matchingOrderPrices({...item,color:''},data),[]);assert.deepEqual(matchingOrderPrices({...item,color:'Omb'},data),[])});
 test('Preserves ambiguous variants for explicit selection',()=>{const prices=[...data.prices,{...data.prices[0],id:'c',variant:'wide',price:220}];assert.equal(matchingOrderPrices(item,{...data,prices}).length,2)});
+
+test('Baby matches without segment, Raw Double Drawn matches only its own prices',()=>{
+ const baby={id:'baby',tier:'Baby',product:'Baby Bulk',segment:'',lengthCm:50,tone:'black',price:250,priceBasis:'100g'};
+ assert.deepEqual(matchingOrderPrices({...item,origin:'Baby Hair',segment:''},{...data,prices:[...data.prices,baby]}).map(p=>p.id),['baby']);
+ assert.deepEqual(matchingOrderPrices({...item,segment:'Double Drawn'},data).map(p=>p.id),['b']);
+ assert.deepEqual(matchingOrderPrices({...item,segment:'Double Drawn'},{...data,prices:[{...data.prices[0],segment:''}]}),[]);
+});
