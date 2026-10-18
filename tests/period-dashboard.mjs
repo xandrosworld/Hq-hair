@@ -1,11 +1,11 @@
 import ExcelJS from 'exceljs';
-import {chromium,expect} from '@playwright/test';
+import {chromium,webkit,expect} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {mkdtempSync,mkdirSync,rmSync,readFileSync} from 'node:fs';
 import os from 'node:os';import path from 'node:path';
 import {seed} from '../seed.js';
-const dir=mkdtempSync(path.join(os.tmpdir(),'hq-period-')),base='http://127.0.0.1:3197';
+const dir=mkdtempSync(path.join(os.tmpdir(),'hq-period-')),base=process.env.QA_BASE_URL||'http://127.0.0.1:3197';
 const server=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:'3197',DATA_DIR:dir,NODE_ENV:'test'},stdio:'ignore'});let browser;
 try{
  for(let i=0;i<100;i++){try{if((await fetch(base+'/api/health')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
@@ -13,7 +13,8 @@ try{
  data.orders=[0,1,2,3].map(i=>{const date=i===0?'2025-12-01':i===1?'2026-09-01':'2026-10-01';return {...structuredClone(original),id:'period-'+i,orderCode:'PER-'+i,customerId:data.customers[i===3?0:i===1?0:i===0?1:2].id,stage:6,cancelledAt:null,date:'2025-01-01',approvedAt:date,history:[],accountingApproval:{time:date},officeDispatch:{time:date,dueDate:date},items:[{name:'Bulk',kind:'base',qty:100,price:i===1?900:100,unit:'Gram',priceBasis:'100g'}],discount:0,shippingFee:i===1?100:0,paymentFee:0,payments:i===1?[{confirmed:true,confirmedAt:'2026-09-01',amount:200,receivedDate:'2026-09-01'},{confirmed:true,confirmedAt:'2026-10-01',amount:300,receivedDate:'2026-10-01'}]:[{confirmed:true,confirmedAt:date,amount:100,receivedDate:date}],compensations:i===1?[{amount:19,date:'2026-10-01'}]:[]}});
  // Bills and actual bank dates may precede confirmation; they must not move reporting periods.
  for(const o of data.orders)for(const p of o.payments){p.date='2025-01-01';p.receivedDate='2025-02-01'}
- browser=await chromium.launch({headless:true,channel:'msedge'});const page=await browser.newPage({viewport:{width:1440,height:1050},reducedMotion:'reduce'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ browser=await (process.env.QA_ENGINE==='webkit'?webkit:chromium).launch({headless:true,...(process.env.QA_ENGINE==='webkit'?{}:{channel:'msedge'})});const page=await browser.newPage({viewport:{width:1440,height:1050},reducedMotion:'reduce'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ if(process.env.QA_BASE_URL)await page.route('**/api/work/**',route=>route.request().method()==='GET'?route.continue():route.abort());
  await page.route('**/api/work/me',r=>r.fulfill({json:{user:data.user,csrf:'test'}}));await page.route('**/api/work/state',r=>r.fulfill({json:data}));await page.goto(base+'/workspace');
  const nav=label=>page.locator('.sidebar nav').getByRole('button',{name:label,exact:true}).click();const money=async(key,text)=>expect(page.getByTestId('period-kpi-'+key).locator('.metric-middle > strong')).toHaveText(text);
  await nav('Doanh thu & công nợ');await expect(page.locator('.period-kpi')).toHaveCount(6);await expect(page.getByText('Thiệt hại',{exact:true})).toHaveCount(0);await expect(page.getByText('Vận chuyển đã nhận',{exact:true})).toHaveCount(0);await money('current','$200.00');await money('recovered','$300.00');
@@ -39,12 +40,18 @@ try{
  await page.getByRole('button',{name:'Tổng quan doanh thu',exact:true}).click();
  const promise=page.waitForEvent('download');await page.getByRole('button',{name:'Xuất báo cáo Excel',exact:true}).click();const download=await promise,file=path.join(dir,'report.xlsx');await download.saveAs(file);assert.ok(download.suggestedFilename().endsWith('.xlsx'));const exported=new ExcelJS.Workbook();await exported.xlsx.readFile(file);const sheet=exported.worksheets[0];assert.ok(sheet.getRow(1).values.some(v=>String(v).includes('2026-09-30')));assert.ok(sheet.getColumn(9).values.includes(800));assert.equal(sheet.getColumn(3).width,16);
  mkdirSync('screenshots/periods',{recursive:true});await page.screenshot({path:'screenshots/periods/sale.png',fullPage:true});await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:'screenshots/periods/sale-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1050});
- await nav('Khách hàng');await page.getByRole('button',{name:'Thống kê khách hàng',exact:true}).click();await page.getByLabel('Kỳ thống kê khách hàng').selectOption('month');await page.getByLabel('Tháng thống kê khách',{exact:true}).fill('10/2026');
+ await nav('Khách hàng');await page.getByRole('button',{name:'Tạo khách hàng',exact:true}).first().click();
+ const customerCountry=page.getByLabel('Quốc gia khách hàng',{exact:false}),shippingCountry=page.getByLabel('Quốc gia giao hàng',{exact:false});
+ assert.ok(await customerCountry.locator('option').count()>=250);assert.equal(await customerCountry.locator('option').count(),await shippingCountry.locator('option').count());
+ await customerCountry.selectOption('Latvia');await shippingCountry.selectOption('Pakistan');await expect(customerCountry).toHaveValue('Latvia');await expect(shippingCountry).toHaveValue('Pakistan');await page.getByRole('button',{name:'Hủy',exact:true}).click();
+ await page.getByRole('button',{name:'Thống kê khách hàng',exact:true}).click();await page.getByLabel('Kỳ thống kê khách hàng').selectOption('month');await page.getByLabel('Tháng thống kê khách',{exact:true}).fill('10/2026');
  for(const [key,value]of [['total','3'],['new','1'],['repeat','1']])await expect(page.getByTestId('buyers-'+key).locator('.animated-number')).toHaveAttribute('data-value',value);
  await page.getByLabel('Tháng thống kê khách',{exact:true}).fill('09/2026');for(const [key,value]of [['total','2'],['new','1'],['repeat','0']])await expect(page.getByTestId('buyers-'+key).locator('.animated-number')).toHaveAttribute('data-value',value);
  await page.screenshot({path:'screenshots/periods/customers.png',fullPage:true});
  await nav('Số liệu Kế toán');await money('current','$200.00');await money('recovered','$300.00');await money('current','$200.00');await money('recovered','$300.00');await expect(page.locator('.period-kpi')).toHaveCount(9);await expect(page.getByTestId('period-kpi-damages')).toContainText('$19.00');await expect(page.getByTestId('period-vnd-damages')).toContainText('Chưa có tỷ giá');await expect(page.getByTestId('period-vnd-debt')).toHaveCount(0);await expect(page.getByRole('button',{name:'In / Lưu PDF',exact:true})).toBeVisible();
  await page.getByLabel('Báo cáo từ tháng',{exact:true}).fill('12/2025');await page.getByLabel('Báo cáo đến tháng',{exact:true}).fill('12/2025');await money('revenue','$100.00');await money('debt','$0.00');await money('current','$100.00');await money('recovered','$0.00');await page.screenshot({path:'screenshots/periods/accounting.png',fullPage:true});
+ const accountingDownload=page.waitForEvent('download');await page.getByRole('button',{name:'Xuất Excel theo kỳ',exact:true}).click();const accountingFile=path.join(dir,'accounting.xlsx');await (await accountingDownload).saveAs(accountingFile);const accountingBook=new ExcelJS.Workbook();await accountingBook.xlsx.readFile(accountingFile);assert.equal(accountingBook.getWorksheet('Tổng hợp').getCell('A2').value,'Tổng thu');assert.equal(accountingBook.getWorksheet('Tổng hợp').getCell('B2').value,100);assert.equal(accountingBook.getWorksheet('Chi tiết').getCell('A2').value,'Thanh toán đơn hàng');assert.ok(accountingBook.getWorksheet('Chi tiết').getCell('D2').value instanceof Date);
+
  await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.setViewportSize({width:1440,height:1050});
  await nav('Thống kê Xưởng');await expect(page.locator('.factory-kpi').first().locator('strong')).toHaveText('4');await page.getByLabel('Kỳ thống kê xưởng',{exact:true}).selectOption('year');await page.getByLabel('Kỳ thống kê xưởng năm',{exact:true}).selectOption('2026');await expect(page.locator('.factory-kpi').first().locator('strong')).toHaveText('3');await page.getByLabel('Kỳ thống kê xưởng',{exact:true}).selectOption('month');await page.getByLabel('Kỳ thống kê xưởng tháng',{exact:true}).fill('10/2026');await expect(page.locator('.factory-kpi').first().locator('strong')).toHaveText('2');await page.screenshot({path:'screenshots/periods/factory.png',fullPage:true});
  await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:'screenshots/periods/factory-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1050});

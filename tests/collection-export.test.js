@@ -9,3 +9,12 @@ test('collection export reconciles receipts, shipping and recovery across months
  const wb=new ExcelJS.Workbook();await wb.xlsx.load(await reportWorkbook(csv,summary));assert.ok(wb.getWorksheet('Chi tiết').getCell('D2').value instanceof Date);assert.equal(wb.getWorksheet('Chi tiết').getCell('B2').value,'0001');assert.equal(wb.getWorksheet('Tổng hợp').getCell('B2').value,120);
 });
 test('customer and shipping catalog covers previously missing destinations',()=>{assert.ok(countries.length>=249);for(const name of ['Latvia','Lithuania','Pakistan','Bangladesh','Peru'])assert.ok(countryLabels[name]);assert.equal(new Set(countries).size,countries.length)});
+
+test('legacy receipt without id retains bank date and monthly splits for all-time',()=>{
+ const o={id:'old',orderCode:'LEGACY',stage:8,approvedAt:'2026-08-01',items:[{kind:'base',qty:1,price:100}],payments:[{amount:20,confirmed:true,confirmedAt:'2026-08-02',receivedDate:'2026-08-01',exchangeRate:25000},{amount:80,confirmed:true,confirmedAt:'2026-10-01',receivedDate:'2026-09-30',exchangeRate:26000}]};
+ const r=periodDashboard([o],'','2026-10-18'),rows=parseReportCSV(accountingReceiptCSV([o],r));assert.equal(r.currentReceipts,20);assert.equal(r.recoveredDebt,80);assert.equal(rows[1][4],'2026-08-01');assert.equal(rows[2][4],'2026-09-30');assert.equal(r.currentReceipts+r.recoveredDebt,r.revenuePaid);
+});
+test('unclassified money is explicit in details and reconciliation',()=>{
+ const o={id:'missing',orderCode:'MISSING',stage:8,items:[{kind:'base',qty:1,price:100}],payments:[{amount:80,confirmed:true,confirmedAt:'2026-10-01'}]};
+ const r=periodDashboard([o],'2026-10','2026-10-18'),rows=parseReportCSV(accountingReceiptCSV([o],r));assert.equal(rows[1][13],'80');assert.equal(rows[1][14],'Chưa có tỷ giá');assert.ok(accountingCollectionSummaryCSV([o],r,'2026-10').includes('Tiền chưa phân loại'));
+});

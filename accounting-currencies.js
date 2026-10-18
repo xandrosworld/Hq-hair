@@ -4,7 +4,7 @@ import {receiptPartition} from './report-range.js';
 export function accountingCurrencies(orders,report,period){
  const byId=new Map(orders.map(o=>[o.id,o]));
  const sum=(rows,key,amount)=>rows.some(r=>r[key]==null&&r[amount]!==0)?null:rows.reduce((n,r)=>n+(r[key]||0),0);
- const current=report.rows.filter(r=>!period||receiptPartition(approvalDate(byId.get(r.orderId)),r.date,period)==='current');
+ const current=report.rows.filter(r=>receiptPartition(approvalDate(byId.get(r.orderId)),r.date,period)==='current');
  const recovered=report.rows.filter(r=>receiptPartition(approvalDate(byId.get(r.orderId)),r.date,period)==='recovered');
  const convert=(amount,rate)=>amount===0?0:rate>0?Math.round(amount*rate):null;
  const approved=report.approved.map(r=>({...r,discount:Number(byId.get(r.id)?.discount)||0,rate:byId.get(r.id)?.accountingApproval?.exchangeRate}));

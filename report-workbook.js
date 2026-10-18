@@ -20,6 +20,10 @@ export async function reportWorkbook(csv,summary){
   const lines=Math.max(...values.map((v,i)=>Math.ceil(String(v).length/(headers[i].includes('USD')?22:28))),1);row.height=Math.max(34,lines*16+8);
  }
  headers.forEach((h,i)=>{sheet.getColumn(i+1).width=/^(Ngay|Ngày|Han |Hạn )/.test(h)?16:h.includes('USD')?24:h==='Ma don'||h==='Ma khach'?22:32});
+ if(name==='Tổng hợp'){
+ sheet.getColumn(1).width=44;sheet.getColumn(2).width=32;sheet.getColumn(3).width=44;
+ sheet.eachRow((row,n)=>{if(n>1&&(/^[12]\./.test(String(row.getCell(1).value))||['Tổng thu','Dòng tiền thu về'].includes(row.getCell(1).value)))row.eachCell(cell=>{cell.font={...cell.font,bold:true};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE3EDF3'}}})});
+ }
  const first=sheet.getRow(1);first.height=64;first.eachCell(c=>{c.font={name:'Calibri',size:11,bold:true,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF17384C'}};c.alignment={vertical:'middle',wrapText:true}});
  sheet.autoFilter={from:{row:1,column:1},to:{row:Math.max(1,sheet.rowCount),column:headers.length}};sheet.pageSetup.printTitlesRow='1:1';
  }
