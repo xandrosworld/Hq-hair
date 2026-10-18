@@ -24,3 +24,4 @@
 .accounting-report-filters select,.accounting-report-filters .btn,.accounting-report-heading .btn{min-height:36px;padding:7px 10px;font-size:12px}
 .accounting-report-filters label:first-child{min-width:160px}
 @media(max-width:600px){.accounting-report-filters label{flex:1 1 90px}.accounting-report-filters label:first-child{flex:1 1 140px}.accounting-report-heading h2{font-size:15px}.accounting-report-filters select{width:100%}}
+.order-accounting-summary .qc-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.order-accounting-summary .qc-summary>span{min-width:0;overflow-wrap:anywhere}.order-accounting-summary small{display:block;margin-top:6px;font-size:13px;color:#557080}.order-accounting-summary .muted{line-height:1.6}@media(max-width:900px){.order-accounting-summary .qc-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:380px){.order-accounting-summary .qc-summary{grid-template-columns:1fr}}
