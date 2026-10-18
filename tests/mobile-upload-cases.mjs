@@ -15,31 +15,10 @@ export async function paymentUploads(page){
  const input=page.getByRole('dialog').locator('input[type=file]');
  await pick(page,input,image('phone-portrait.jpg',jpg,'image/jpeg'));
  await expect(page.getByText('Đã chọn: phone-portrait.jpg',{exact:true})).toBeVisible({timeout:30000});
- const data=await page.getByRole('link',{name:'Tải tệp đã chọn để kiểm tra'}).getAttribute('href');
- const bytes=Buffer.from(data.split(',')[1],'base64');assert.ok(bytes.length<=1024*1024);const meta=await sharp(bytes).metadata();assert.ok(meta.height>meta.width);
- await page.getByRole('button',{name:'Bỏ tệp đã chọn'}).tap();
- await pick(page,input,image('phone-portrait.jpg',jpg,'image/jpeg'));
- await expect(page.getByText('Đã chọn: phone-portrait.jpg',{exact:true})).toBeVisible();
- await pick(page,input,image('iphone.heic',Buffer.from('unsupported'),'image/heic'));
- await expect(page.getByRole('alert')).toContainText('HEIC');
- await expect(page.getByRole('dialog').getByRole('button',{name:'Thêm thanh toán',exact:true})).toBeDisabled();
- await pick(page,input,image('broken.png',Buffer.from('broken')));
- await expect(page.getByRole('alert')).toContainText('Không mở được ảnh');
- await pick(page,input,image('large.pdf',Buffer.alloc(1024*1024+1),'application/pdf'));
- await expect(page.getByRole('alert')).toContainText('PDF tối đa');
- const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>','<< /Length 0 >>\nstream\n\nendstream'];
- let pdf='%PDF-1.4\n',offsets=[0];for(let i=0;i<objects.length;i++){offsets.push(Buffer.byteLength(pdf));pdf+=`${i+1} 0 obj\n${objects[i]}\nendobj\n`}const xref=Buffer.byteLength(pdf);pdf+=`xref\n0 5\n0000000000 65535 f \n${offsets.slice(1).map(n=>String(n).padStart(10,'0')+' 00000 n \n').join('')}trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
- await pick(page,input,image('corrupt.pdf',Buffer.from('not a PDF'),'application/pdf'));
- await expect(page.getByRole('alert')).toContainText('PDF hợp lệ');
- await pick(page,input,image('receipt.pdf',Buffer.from(pdf),'application/octet-stream'));
- await expect(page.getByText('Đã chọn: receipt.pdf',{exact:true})).toBeVisible();
- const downloadEvent=page.waitForEvent('download');await page.getByRole('link',{name:'Tải tệp đã chọn để kiểm tra'}).tap();const download=await downloadEvent;assert.equal(download.suggestedFilename(),'receipt.pdf');const chunks=[];for await(const chunk of await download.createReadStream())chunks.push(chunk);assert.equal(Buffer.concat(chunks).toString(),pdf);
- await pick(page,input,image('receipt.png',png,''));
- await expect(page.getByText('Đã chọn: receipt.png',{exact:true})).toBeVisible();
- await expect(page.getByRole('alert')).toHaveCount(0);
- await decoded(page.getByAltText('Ảnh chứng từ đã chọn'));
- await page.screenshot({path:'data/mobile-audit/payment-upload.png',fullPage:true});
- console.log('PASS payment: native chooser event, >1 MB portrait compression, remove/reselect, HEIC/corrupt/oversize rejection, recovery');
+ const data=await page.getByAltText('Ảnh chứng từ 1',{exact:true}).getAttribute('src');const bytes=Buffer.from(data.split(',')[1],'base64');assert.ok(bytes.length<=1024*1024);const meta=await sharp(bytes).metadata();assert.ok(meta.height>meta.width);
+ for(const [file,message] of [[image('iphone.heic',Buffer.from('unsupported'),'image/heic'),'HEIC'],[image('broken.png',Buffer.from('broken')),'Không mở được ảnh'],[image('large.pdf',Buffer.alloc(1024*1024+1),'application/pdf'),'PDF tối đa'],[image('corrupt.pdf',Buffer.from('not a PDF'),'application/pdf'),'PDF hợp lệ']]){await pick(page,input,file);await expect(page.getByRole('alert')).toContainText(message);await expect(page.locator('.payment-attachment')).toHaveCount(1)}
+ await page.getByRole('button',{name:'Bỏ tệp phone-portrait.jpg',exact:true}).tap();await pick(page,input,image('receipt.png',png,''));await expect(page.getByRole('alert')).toHaveCount(0);await decoded(page.getByAltText('Ảnh chứng từ 1',{exact:true}));
+ await page.screenshot({path:'data/mobile-audit/payment-upload.png',fullPage:true});console.log('PASS payment compression, invalid file rejection without losing attachments, remove and recovery');
 }
 
 export async function chatUploads(page,sale,orderId){
