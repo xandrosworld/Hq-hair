@@ -54,8 +54,9 @@ export function applyAccounting(order,user,action,body,event){
  const total=totals({...order,payments});
  if(body.paymentStatus==='full'&&total.debt>0)fail(400,'Tiền xác nhận chưa đủ tổng phải nhận. Chọn thanh toán một phần.');
  if(body.paymentStatus==='partial'&&(total.paid<=0||total.debt<=0))fail(400,'Thanh toán một phần cần có tiền đã nhận và còn công nợ.');
+ const exchangeRate=receiptRate(body.approvalExchangeRate);
  order.payments=payments;order.stage=3;
- order.accountingApproval={status:body.paymentStatus,by:user.id,name:user.name,time:now,paid:total.paid,note};
+ order.accountingApproval={exchangeRate,status:body.paymentStatus,by:user.id,name:user.name,time:now,paid:total.paid,note};
  event('Kế toán duyệt',paymentLabels[body.paymentStatus]+(note?' · '+note:''));
  return true;
 }

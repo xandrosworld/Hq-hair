@@ -171,3 +171,10 @@ Kiểm thử: `npm test`, `npm run build`, `node tests/period-dashboard.mjs`, `n
 - Đơn duyệt và thu tiền cùng tháng: vào dòng tiền và thực thu cùng tháng, không vào thu hồi công nợ. Phần chưa thu vẫn nằm trong công nợ tại ngày kết thúc.
 - Khoảng nhiều tháng cộng phát sinh riêng từng tháng; tháng kết thúc chưa hết chỉ lấy đến ngày kết thúc. Áp dụng cùng quy tắc tháng cho cả khoảng ngày, không phân loại theo mốc bắt đầu bộ lọc.
 - Xác nhận này thay thế ghi chú chờ xác nhận về phân loại ở trên. Ngày kế toán xác nhận và cách trừ vận chuyển giữ theo quy tắc đã có.
+
+### Báo cáo Kế toán USD/VND (18/10/2026)
+- Báo cáo Kế toán có 9 chỉ số: 6 chỉ số hiện tại, thêm tổng thu phí vận chuyển, tổng thu (gồm vận chuyển) và bồi thường/thiệt hại. Bỏ các dải tổng phụ lặp bên dưới.
+- Doanh thu/giảm giá dùng accountingApproval.exchangeRate nhập riêng lúc duyệt. Tiền thu dùng tỷ giá từng khoản đã xác nhận. Bồi thường dùng exchangeRate nhập riêng từng lần ghi nhận; khoản hủy ghi nhận không tính.
+- Dữ liệu thiếu tỷ giá hiển thị Chưa có tỷ giá, không tự suy đoán hoặc trình bày tổng VND chưa đủ như tổng đầy đủ. Công nợ chỉ có USD. Các khoản phát sinh cộng theo kỳ, công nợ vẫn là số dư cuối kỳ.
+- In / Lưu PDF có đủ 9 chỉ số, kỳ báo cáo và Sale đang chọn. Excel có trang Tổng hợp USD/VND và Chi tiết; bảng theo Sale cũng hiển thị hai loại tiền.
+- Dữ liệu cũ giữ nguyên; không điền hàng loạt tỷ giá cho khoản cũ.

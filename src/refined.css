@@ -379,3 +379,4 @@ footer { color: #a4b0bf; font-size: 8px; padding-top: 18px; margin: 0 32px; }
 .revenue-report-heading>div{flex:1 1 360px;min-width:0}
 .revenue-report-heading>.btn{flex:0 0 auto;max-width:100%;white-space:normal}
 .revenue-report-heading>.btn svg{flex-shrink:0}
+.accounting-period .metric-middle{flex-direction:column;align-items:flex-start;justify-content:center}.accounting-period .metric-vnd{font-size:15px;line-height:1.5;color:#557080;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.accounting-period .metric-middle>strong{overflow-wrap:anywhere}.accounting-period .accounting-report-heading{flex-wrap:wrap;gap:10px}
