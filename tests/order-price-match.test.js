@@ -14,3 +14,11 @@ test('Baby matches without segment, Raw Double Drawn matches only its own prices
  assert.deepEqual(matchingOrderPrices({...item,segment:'Double Drawn'},data).map(p=>p.id),['b']);
  assert.deepEqual(matchingOrderPrices({...item,segment:'Double Drawn'},{...data,prices:[{...data.prices[0],segment:''}]}),[]);
 });
+
+test('Basic and legacy Double Drawn select the same price for every mixed tone',()=>{
+ for(const segment of ['Basic','Double Drawn'])for(const stored of ['Basic','Double Drawn'])for(const tone of ['black','brown','blonde']){
+  const prices=['black','brown','blonde'].map((tone,i)=>({id:String(i),tier:'Basic',segment:stored,product:'Bulk',lengthCm:50,tone,price:50+i*10}));
+  const result=matchingOrderPrices({name:'Bulk',origin:'Raw Hair',segment,lengthCm:50,color:'mix'},{prices,colors:[{code:'mix',tone}]});
+  assert.equal(result.length,1);assert.equal(result[0].tone,tone);
+ }
+});

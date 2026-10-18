@@ -1,8 +1,9 @@
+import {hairSegment} from './hair-classification.js';
 // Legacy rows retain their original per-unit calculation unless explicitly changed.
 export const hairFields=[['origin','Origin of hair','Nguồn tóc'],['lengthCm','LENGTH (CM)','Chiều dài (cm)'],['texture','Hair Style','Kiểu tóc'],['segment','Hair segment','Phân khúc tóc'],['color','Color','Màu tóc'],['productNote','Note','Ghi chú sản phẩm']];
 export function rawProductAmount(item){return Number(item.qty||0)*Number(item.price||0)/(item.priceBasis==='100g'?100:1)}
 export function productAmount(item){return Math.round((rawProductAmount(item)+Number.EPSILON)*100)/100}
-export function productDescription(item){return [item.origin,item.lengthCm?`${item.lengthCm} cm`:null,item.texture,item.segment,item.color,item.productNote,item.spec].filter(Boolean).join(' · ')}
+export function productDescription(item){return [item.origin,item.lengthCm?`${item.lengthCm} cm`:null,item.texture,hairSegment(item.segment),item.color,item.productNote,item.spec].filter(Boolean).join(' · ')}
 export function cleanProductFields(p){
  const fail=message=>{throw Object.assign(new Error(message),{status:400})};
  if(p.priceBasis!==undefined&&!['unit','100g'].includes(p.priceBasis))fail('Đơn vị tính giá không hợp lệ.');

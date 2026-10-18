@@ -27,3 +27,13 @@ test('color imports check permission, duplicate codes and preserve category',()=
  assert.equal(planPricingImport(data,{version:3,rows:[c],mode:'add'},{prices:true,colors:false}).errors.length,1);
  assert.equal(plan([c],'upsert',{...data,colors:[{id:'c',code:'new',category:'Black'}]}).errors.length,1);
 });
+
+test('Basic rename matches legacy prices without duplicate imports or changing amounts',()=>{
+ const old={...row,tier:'Basic',segment:'Double Drawn',id:'old'};
+ const d={...data,prices:[old]};const before=structuredClone(d);
+ assert.equal(plan([{...old,segment:'Basic'}],'add',d).counts.same,1);
+ const update=plan([{...old,segment:'Basic',price:60}],'upsert',d);
+ assert.equal(update.counts.update,1);assert.equal(update.changes[0].existingId,'old');
+ assert.equal(plan([old,{...old,segment:'Basic'}],'add',d).errors.length,1);
+ assert.deepEqual(d,before);
+});

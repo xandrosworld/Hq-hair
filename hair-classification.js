@@ -5,5 +5,8 @@ export function hairProductName(value=''){
  return aliases[name.toLowerCase()]||name;
 }
 export function priceHairFields(price){
- return {name:hairProductName(price.product),origin:price.tier==='Baby'?'Baby Hair':'Raw Hair',segment:price.tier==='Basic'?(price.segment==='Double Drawn'?'Double Drawn':'Super Double Drawn'):price.tier==='Premium'?'Premium':''};
+ return {name:hairProductName(price.product),origin:price.tier==='Baby'?'Baby Hair':'Raw Hair',segment:price.tier==='Basic'?(hairSegment(price.segment)==='Basic'?'Basic':'Super Double Drawn'):price.tier==='Premium'?'Premium':''};
 }
+
+// Keep legacy workbook/order labels compatible without rewriting saved orders.
+export function hairSegment(value=''){return /^double drawn$/i.test(String(value).trim())?'Basic':value}

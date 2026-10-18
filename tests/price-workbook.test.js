@@ -10,3 +10,10 @@ test('standard XLSX parses new products and colors and cached formula results',a
 test('XLSX refuses bad headers, foreign sheets, missing formula values and extra data',async()=>{
  for(const edit of [(b,s)=>s.getCell('A1').value='wrong',(b,s)=>s.getCell('I2').value={formula:'25*2'},b=>b.addWorksheet('Unknown'),(b,s)=>s.getCell('K2').value=100]){const buffer=await workbook(edit);await assert.rejects(()=>readPriceWorkbook(buffer));}
 });
+
+test('standard workbook accepts old and new Basic segment labels',async()=>{
+ for(const label of ['Double Drawn','Basic']){
+  const result=await readPriceWorkbook(await workbook((b,s)=>{s.getCell('A2').value='Basic';s.getCell('C2').value=label}));
+  assert.equal(result.rows[0].segment,'Basic');assert.equal(result.rows[0].price,50);
+ }
+});

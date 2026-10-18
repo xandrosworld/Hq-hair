@@ -1,13 +1,13 @@
-import {hairProductName} from './hair-classification.js';
+import {hairProductName,hairSegment} from './hair-classification.js';
 export function matchingOrderPrices(item,data){
  if(!data||!item.name||!item.origin||!item.lengthCm||!item.color||(item.origin!=='Baby Hair'&&!item.segment))return [];
  const code=value=>String(value).trim().replace(/^#/,'').toLowerCase();
  const color=data.colors.find(c=>code(c.code)===code(item.color));
  if(!color?.tone)return [];
- const tier=item.origin==='Baby Hair'?'Baby':item.origin==='Raw Hair'?(item.segment==='Premium'?'Premium':['Super Double Drawn','Double Drawn'].includes(item.segment)?'Basic':null):null;
+ const tier=item.origin==='Baby Hair'?'Baby':item.origin==='Raw Hair'?(item.segment==='Premium'?'Premium':['Super Double Drawn','Basic'].includes(hairSegment(item.segment))?'Basic':null):null;
  if(!tier)return [];
  let rows=data.prices.filter(p=>p.tier===tier&&hairProductName(p.product).toLowerCase()===hairProductName(item.name).toLowerCase()&&Number(p.lengthCm)===Number(item.lengthCm)&&p.tone===color.tone);
- const exact=rows.filter(p=>p.segment===item.segment);
+ const exact=rows.filter(p=>hairSegment(p.segment)===hairSegment(item.segment));
  if(tier!=='Baby'&&exact.length)rows=exact;
  else if(tier==='Basic')rows=item.segment==='Super Double Drawn'?rows.filter(p=>!p.segment):[];
  return rows;

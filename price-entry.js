@@ -1,4 +1,4 @@
-import {hairProductName} from './hair-classification.js';
+import {hairProductName,hairSegment} from './hair-classification.js';
 const fail=message=>{throw Object.assign(new Error(message),{status:400})};
 const text=(value,max)=>typeof value==='string'&&value.trim().length<=max?value.trim():null;
 const numeric=(value,max,label)=>{if(typeof value!=='number'||!Number.isFinite(value)||value<=0||value>max)fail(`${label} phải lớn hơn 0 và không quá ${max.toLocaleString('vi-VN')}.`);return value};
@@ -11,6 +11,6 @@ export function cleanPriceEntry(body,existing){
  if(!product||segment===null||variant===null)fail('Nhập tên sản phẩm và quy cách hợp lệ.');
  if(!['Basic','Baby','Premium'].includes(body.tier)||!['black','brown','blonde'].includes(body.tone)||!['100g','unit'].includes(body.priceBasis))fail('Chọn bảng giá, tông màu và đơn vị tính giá hợp lệ.');
  const lengthCm=numeric(body.lengthCm,300,'Chiều dài (cm)'),inches=numeric(body.inches,120,'Chiều dài (inch)');
- return {tier:body.tier,product,segment,variant,lengthCm,inches,tone:body.tone,priceBasis:body.priceBasis,price,note};
+ return {tier:body.tier,product,segment:hairSegment(segment),variant,lengthCm,inches,tone:body.tone,priceBasis:body.priceBasis,price,note};
 }
-export function priceEntryKey(row){return JSON.stringify([row.tier,hairProductName(row.product).normalize('NFKC').toLowerCase(),String(row.segment||'').normalize('NFKC').trim().toLowerCase(),String(row.variant||'').normalize('NFKC').trim().toLowerCase(),Number(row.lengthCm),row.tone])}
+export function priceEntryKey(row){return JSON.stringify([row.tier,hairProductName(row.product).normalize('NFKC').toLowerCase(),String(hairSegment(row.segment)||'').normalize('NFKC').trim().toLowerCase(),String(row.variant||'').normalize('NFKC').trim().toLowerCase(),Number(row.lengthCm),row.tone])}

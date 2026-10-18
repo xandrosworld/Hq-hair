@@ -111,3 +111,9 @@ Xem SALE_IMPLEMENTATION.md để theo dõi trạng thái hiện tại, không d�
 - Quản trị có hai quyền độc lập, mặc định tắt: `leadEdit` (thao tác khách/đơn như Sale, vẫn tuân thủ khóa sau gửi và bước 8), `leadAssign` (chuyển khách cùng đơn liên quan sang Sale/quản trị đang hoạt động). Cấp/thu hồi có audit, kiểm tra lại tại máy chủ mỗi yêu cầu. Không bao gồm ngoại lệ quản trị, quyền duyệt tiền hoặc quản lý tài khoản.
 - Hỗ trợ tên đăng nhập nội bộ cho trưởng nhóm; giao diện đăng nhập nhận email hoặc tên đăng nhập. Thông tin bàn giao lưu riêng trong data, không đưa mật khẩu vào Git.
 - `node tests/sales-lead.mjs` kiểm tra hai Sale độc lập, Lead xem tổng, chặn API ghi, đăng nhập tên nội bộ/đổi mật khẩu, UI chỉ đọc, xuất báo cáo và cấp/thu hồi hai quyền độc lập.
+
+## Chốt 19/10/2026 — tên phân khúc và màu phối
+- Raw Hair gồm Basic (tên cũ Double Drawn), Super Double Drawn và Premium. Baby Hair đứng riêng, không bắt chọn phân khúc.
+- Đổi nhãn trong phạm vi hỗ trợ; không đổi số tiền hay công thức. Nhóm workbook `Basic` vẫn chứa hai phân khúc Basic và Super Double Drawn, không được đổi nhầm khóa nhóm thành phân khúc.
+- File và dữ liệu cũ Double Drawn được nhận như Basic khi tra giá, nhập/cập nhật và kiểm tra trùng; đơn cũ giữ nguyên số tiền. Xuất Excel dùng tên Basic.
+- Ombre/Piano/Balayage chọn tối thiểu hai màu thành phần; lấy tông cao nhất Đen < Nâu < Sáng, không có bảng giá riêng cho kiểu phối.
