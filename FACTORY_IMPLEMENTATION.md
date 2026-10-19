@@ -117,3 +117,6 @@ Sáu mục Tổng quan / Chưa ghi nhận / Đã ghi nhận / Đã gửi Sale Ch
 Menu quản trị có Thống kê Xưởng, mở mặc định Thống kê & phân tích, dùng chung FactoryBoard và factoryReport với tài khoản Xưởng (sớm/đúng/trễ, sản lượng kg, lọc năm/tháng). Các danh sách sản xuất cho quản trị mở chi tiết, không hiển thị thao tác ghi nhận/tạm dừng/bàn giao dành cho Xưởng. API vẫn giữ quyền nghiệp vụ hiện hành.
 
 Số liệu Kế toán dùng toàn bộ đơn quản trị được xem: tổng thu, tổng đã nhận, doanh thu đã nhận và công nợ trên đơn đã duyệt không hủy; lọc chờ duyệt, chứng từ chưa đối soát, thanh toán cuối, tạm dừng, công nợ, hủy. Mở đơn để đối chiếu chứng từ/lịch sử. Doanh thu & công nợ toàn bộ Sale tiếp tục dùng báo cáo hiện có.
+
+## Chốt 19/10/2026 — sản lượng theo đơn duyệt
+Thay thế mốc tính sản lượng tại X06 ở trên: cộng khối lượng theo tháng Kế toán duyệt lần đầu, gồm cả đơn chờ Xưởng ghi nhận/chưa gửi văn phòng. Loại đơn chưa duyệt và đơn hủy; thiếu ngày duyệt không tự lấy ngày tạo thay thế. Gram đổi kg, đơn vị khác giữ riêng. Thống kê sớm/đúng/trễ và số đơn đã gửi vẫn theo ngày gửi văn phòng. Bảng tháng ghi rõ hai mốc, bổ sung số đơn duyệt. Bộ lọc năm bao gồm cả năm duyệt chưa có bàn giao.

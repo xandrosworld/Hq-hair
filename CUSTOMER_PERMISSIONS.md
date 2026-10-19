@@ -123,3 +123,9 @@ Xem SALE_IMPLEMENTATION.md để theo dõi trạng thái hiện tại, không d�
 - Ngày duyệt và ngày xác nhận thu hiển thị dd/mm/yyyy. Có thể mở xem từng khoản thu, tỷ giá; khoản chưa đủ ngày duyệt phải cảnh báo, không tự gán vào đơn mới.
 - Chỉ thay cách trình bày web, giữ nguyên Excel/PDF và công thức. Cột Giá trị (USD) của danh sách Sale đổi thành Tổng thu (USD), giữ nguyên tổng phải thu trên đơn.
 - Nhập một bill và tự phân bổ/liên kết nhiều đơn chưa được chốt; chờ khách xác nhận cách xử lý, chưa triển khai.
+
+## Chốt 19/10/2026 — tóm tắt Sale và sản lượng Xưởng
+- Sale: Giảm giá (phần trăm so với doanh thu niêm yết gồm sản phẩm gốc và bổ sung, trước giảm) / Tổng thu / Tiền đã xác nhận / Doanh thu sau giảm / Vận chuyển / Công nợ còn lại / Dự kiến giao hàng.
+- Tổng thu vẫn là tổng phải thu trên đơn; tiền xác nhận chỉ gồm khoản Kế toán đã duyệt. Không thay công thức tiền.
+- Sản lượng Xưởng theo tháng duyệt đơn; tiến độ bàn giao giữ mốc gửi văn phòng. Chi tiết tại FACTORY_IMPLEMENTATION.md.
+- Khách hoãn nghiệp vụ thu gộp và phân bổ giữa nhiều đơn (đề xuất 3 triệu); không triển khai, chưa tính phí.

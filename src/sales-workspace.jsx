@@ -58,7 +58,7 @@ export function OrderBoard({orders,data,onOpen}) {
 
 export function OrderSnapshot({order}) {
   const t=totals(order);
-  return <div className="order-snapshot">{[[Receipt,'Tổng thu',t.total,''],[Wallet,'Tiền đã xác nhận',t.paid,'green'],[Clock,'Công nợ còn lại',order.cancelledAt?0:t.debt,'amber']].map(([Icon,label,value,tone])=><div key={label} className={tone}><span className="snapshot-icon"><Icon size={22}/></span><span><small>{label}</small><strong><AnimatedNumber value={value} format="money"/></strong></span></div>)}<div className="snapshot-delivery"><CalendarBlank size={22}/><span><small>Dự kiến giao hàng</small><strong>{dateText(order.due)}</strong></span></div></div>;
+  return <div className="order-snapshot sale-order-snapshot">{[[Receipt,'Giảm giá',Number(order.discount)||0,''],[Receipt,'Tổng thu',t.total,''],[Wallet,'Tiền đã xác nhận',t.paid,'green'],[Receipt,'Doanh thu',t.revenue,''],[Truck,'Vận chuyển',Number(order.shippingFee)||0,''],[Clock,'Công nợ còn lại',order.cancelledAt?0:t.debt,'amber']].map(([Icon,label,value,tone])=><div key={label} className={tone}><span className="snapshot-icon"><Icon size={22}/></span><span><small>{label}</small><strong><AnimatedNumber value={value} format="money"/></strong>{label==='Giảm giá'&&<small>{t.base+t.extra>0?((Number(order.discount)||0)/(t.base+t.extra)*100).toLocaleString('vi-VN',{maximumFractionDigits:2}):0}% so với doanh thu niêm yết</small>}</span></div>)}<div className="snapshot-delivery"><CalendarBlank size={22}/><span><small>Dự kiến giao hàng</small><strong>{dateText(order.due)}</strong></span></div></div>;
 }
 
 export function DemoGuide({data,onCreate,onOpen,onRevenue,onCustomers,onReset}) {

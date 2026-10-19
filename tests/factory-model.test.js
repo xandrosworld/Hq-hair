@@ -31,7 +31,7 @@ test('Paused rework stays visible in production; reply freezes wait time and que
  assert.equal(factoryReport([c],2026)[0].total,1);
 });
 test('Factory reports freeze dispatch deadlines, separate units and exclude pending/cancelled orders',()=>{
- const o=order({stage:6,due:'2026-12-01',officeDispatch:{time:'2026-10-11T00:00:00Z',dueDate:'2026-10-10'}});
+ const o=order({approvedAt:'2026-10-01',stage:6,due:'2026-12-01',officeDispatch:{time:'2026-10-11T00:00:00Z',dueDate:'2026-10-10'}});
  const report=factoryReport([o,order(),{...o,cancelledAt:'2026-10-12'}],2026)[9];
  assert.equal(report.total,1);assert.equal(report.late,1);assert.equal(report.grams,150);assert.deepEqual(report.units,{g:150,Piece:2});
  assert.equal(factoryReport([o],2025).reduce((s,r)=>s+r.total,0),0);
@@ -72,4 +72,12 @@ test('waiting queue uses first accounting approval, not creation or workshop ack
  assert.equal(filterFactoryOrders([o],{tab:'waiting',from:'2026-10-16',to:'2026-10-16'}).length,1);
  assert.equal(filterFactoryOrders([o],{tab:'waiting',from:'2026-09-01',to:'2026-09-30'}).length,0);
  assert.equal(factoryTiming(o).approved,'2026-10-16');assert.equal(factoryTiming(o).plannedDays,4);
+});
+
+test('Production follows approval month independently of dispatch and includes waiting orders',()=>{
+ const a=order({approvedAt:'2026-09-01',stage:6,officeDispatch:{time:'2026-10-01',dueDate:'2026-10-01'}});
+ const b=order({approvedAt:'2026-09-02'});
+ const r=factoryReport([a,b,{...b,cancelledAt:'2026-09-03'},order({stage:2,approvedAt:'2026-09-01'}),order()],2026,'2026-10-19');
+ assert.equal(r[8].grams,300);assert.equal(r[8].approved,2);assert.equal(r[8].total,0);assert.equal(r[9].grams,0);assert.equal(r[9].total,1);assert.equal(r[9].onTime,1);
+ assert.equal(factoryReport([a,b],2026,'2026-08-31')[8].grams,0);
 });
