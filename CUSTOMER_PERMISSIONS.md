@@ -117,3 +117,9 @@ Xem SALE_IMPLEMENTATION.md để theo dõi trạng thái hiện tại, không d�
 - Đổi nhãn trong phạm vi hỗ trợ; không đổi số tiền hay công thức. Nhóm workbook `Basic` vẫn chứa hai phân khúc Basic và Super Double Drawn, không được đổi nhầm khóa nhóm thành phân khúc.
 - File và dữ liệu cũ Double Drawn được nhận như Basic khi tra giá, nhập/cập nhật và kiểm tra trùng; đơn cũ giữ nguyên số tiền. Xuất Excel dùng tên Basic.
 - Ombre/Piano/Balayage chọn tối thiểu hai màu thành phần; lấy tông cao nhất Đen < Nâu < Sáng, không có bảng giá riêng cho kiểu phối.
+
+## Chốt 19/10/2026 — thu gọn báo cáo trên web
+- Chi tiết kế toán chia Đơn duyệt (gộp các khoản thu cùng tháng duyệt theo từng đơn) và Thu hồi công nợ (thu ở tháng sau tháng duyệt). Phân loại từng khoản trước khi gộp, kể cả kỳ nhiều tháng.
+- Ngày duyệt và ngày xác nhận thu hiển thị dd/mm/yyyy. Có thể mở xem từng khoản thu, tỷ giá; khoản chưa đủ ngày duyệt phải cảnh báo, không tự gán vào đơn mới.
+- Chỉ thay cách trình bày web, giữ nguyên Excel/PDF và công thức. Cột Giá trị (USD) của danh sách Sale đổi thành Tổng thu (USD), giữ nguyên tổng phải thu trên đơn.
+- Nhập một bill và tự phân bổ/liên kết nhiều đơn chưa được chốt; chờ khách xác nhận cách xử lý, chưa triển khai.
