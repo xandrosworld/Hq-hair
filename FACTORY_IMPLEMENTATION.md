@@ -120,3 +120,6 @@ Số liệu Kế toán dùng toàn bộ đơn quản trị được xem: tổng 
 
 ## Chốt 19/10/2026 — sản lượng theo đơn duyệt
 Thay thế mốc tính sản lượng tại X06 ở trên: cộng khối lượng theo tháng Kế toán duyệt lần đầu, gồm cả đơn chờ Xưởng ghi nhận/chưa gửi văn phòng. Loại đơn chưa duyệt và đơn hủy; thiếu ngày duyệt không tự lấy ngày tạo thay thế. Gram đổi kg, đơn vị khác giữ riêng. Thống kê sớm/đúng/trễ và số đơn đã gửi vẫn theo ngày gửi văn phòng. Bảng tháng ghi rõ hai mốc, bổ sung số đơn duyệt. Bộ lọc năm bao gồm cả năm duyệt chưa có bàn giao.
+
+## Chốt 20/10/2026 — thống kê độ dài
+Theo các đơn được duyệt trong kỳ đang chọn, loại đơn hủy/chưa duyệt. Nhóm 40–50 cm, 55–65 cm, từ 70 cm trở lên, Khác (ngoài nhóm hoặc thiếu độ dài). Cộng gram đổi kg; % chia tổng gram của bốn nhóm. Không quy đổi cái/bó vào kg. Tỷ lệ hiển thị làm tròn hai chữ số; kỳ không có khối lượng hiện 0 kg, 0%. Áp dụng chung Xưởng và quản trị.

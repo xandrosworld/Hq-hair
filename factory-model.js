@@ -28,11 +28,11 @@ export const checkAt=o=>o.production?.checkAt||o.history?.findLast(h=>h.title===
 export const waitingDays=(o,asOf=today())=>{const date=deliveryDate(checkAt(o)),end=o.stage===5?asOf:deliveryDate(o.saleReview?.time);const days=deliveryDays(date,end);return days==null?null:Math.max(0,-days)};
 export const factoryDate=(o,tab)=>deliveryDate(tab==='waiting'?approvalDate(o):tab==='production'?recordedAt(o):tab==='review'?checkAt(o):deliveryTiming(o).actual);
 export function factoryReport(orders,year,asOf=today()){
- const rows=Array.from({length:12},(_,i)=>({month:`${year}-${String(i+1).padStart(2,'0')}`,total:0,early:0,onTime:0,late:0,unknown:0,approved:0,grams:0,units:{}}));
+ const rows=Array.from({length:12},(_,i)=>({month:`${year}-${String(i+1).padStart(2,'0')}`,total:0,early:0,onTime:0,late:0,unknown:0,approved:0,grams:0,units:{},lengthGrams:[0,0,0,0]}));
  for(const o of factoryOrders(orders)){
   if(o.cancelledAt)continue;
   const approved=approvalDate(o),productionRow=approved&&approved<=asOf?rows.find(r=>r.month===approved.slice(0,7)):null;
-  if(productionRow){productionRow.approved++;for(const [unit,n] of Object.entries(quantities(o))){productionRow.units[unit]=round((productionRow.units[unit]||0)+n);if(unit==='g')productionRow.grams=round(productionRow.grams+n)}}
+  if(productionRow){productionRow.approved++;for(const item of o.items||[]){if(!/^(g|gram|grams)$/i.test(String(item.unit||'').trim()))continue;const cm=Number(item.lengthCm),group=cm>=40&&cm<=50?0:cm>=55&&cm<=65?1:cm>=70?2:3;productionRow.lengthGrams[group]=round(productionRow.lengthGrams[group]+(Number(item.qty)||0));}for(const [unit,n] of Object.entries(quantities(o))){productionRow.units[unit]=round((productionRow.units[unit]||0)+n);if(unit==='g')productionRow.grams=round(productionRow.grams+n)}}
   const timing=deliveryTiming(o),row=timing.actual&&timing.actual<=asOf?rows.find(r=>r.month===timing.actual.slice(0,7)):null;
   if(row){row.total++;row[timing.days==null?'unknown':timing.days>0?'early':timing.days===0?'onTime':'late']++;}
  }

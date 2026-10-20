@@ -81,3 +81,12 @@ test('Production follows approval month independently of dispatch and includes w
  assert.equal(r[8].grams,300);assert.equal(r[8].approved,2);assert.equal(r[8].total,0);assert.equal(r[9].grams,0);assert.equal(r[9].total,1);assert.equal(r[9].onTime,1);
  assert.equal(factoryReport([a,b],2026,'2026-08-31')[8].grams,0);
 });
+
+test('Length groups cover boundaries and unknowns using approved grams only',()=>{
+ const items=[40,50,55,65,70,100,39,52,68,null].map(lengthCm=>({lengthCm,unit:'Gram',qty:100}));
+ items.push({lengthCm:70,unit:'Piece',qty:900});
+ const o=order({approvedAt:'2026-09-01',items,officeDispatch:{time:'2026-10-01'}});
+ const rows=factoryReport([o,{...o,stage:2},{...o,cancelledAt:'2026-10-01'},{...o,approvedAt:'2027-01-01'}],2026,'2026-10-20');
+ assert.deepEqual(rows[8].lengthGrams,[200,200,200,400]);assert.equal(rows[8].grams,1000);assert.equal(rows[8].lengthGrams.reduce((s,n)=>s+n,0),rows[8].grams);
+ assert.deepEqual(rows[9].lengthGrams,[0,0,0,0]);assert.equal(rows[8].units.Piece,900);
+});
