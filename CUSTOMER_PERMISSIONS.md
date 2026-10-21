@@ -129,3 +129,8 @@ Xem SALE_IMPLEMENTATION.md để theo dõi trạng thái hiện tại, không d�
 - Tổng thu vẫn là tổng phải thu trên đơn; tiền xác nhận chỉ gồm khoản Kế toán đã duyệt. Không thay công thức tiền.
 - Sản lượng Xưởng theo tháng duyệt đơn; tiến độ bàn giao giữ mốc gửi văn phòng. Chi tiết tại FACTORY_IMPLEMENTATION.md.
 - Khách hoãn nghiệp vụ thu gộp và phân bổ giữa nhiều đơn (đề xuất 3 triệu); không triển khai, chưa tính phí.
+
+## Chốt 21/10/2026 — in Xưởng, chiều dài, mã Emily
+- Xưởng có nút In phiếu sản phẩm: mã đơn, ngày duyệt, ngày hẹn giao trên đơn, thông số/số lượng/ghi chú sản phẩm; không có giá hoặc thông tin thanh toán/khách hàng.
+- Chiều dài lấy các mức trong bảng giá, có sẵn 25–90 cm, không chặn ở 80 cm.
+- Theo yêu cầu sửa mã Emily: lịch sử có HQ-EM-1 và HQ-EM-2 nhưng hiện chỉ còn HQ-EM-3. Chuyển khách và mã đơn liên quan về HQ-EM-1 / HQ-EM-1-1 qua migration có backup, audit, tăng phiên bản và hết hạn phiên đăng nhập. ID đơn, chứng từ và tiền không đổi. Không tự đánh lại mã các Sale khác hoặc tái sử dụng mã sau xóa thông thường.

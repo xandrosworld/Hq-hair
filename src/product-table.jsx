@@ -27,7 +27,7 @@ export function ProductEditorTable({items,kind,products,onChange,errors={},onTou
  const [priceHints,setPriceHints]=useState({});
  const colorListId=useId();
  const [colors,setColors]=useState([]);
- const lengths=Array.from({length:12},(_,i)=>25+i*5);
+ const lengths=[...new Set([...Array.from({length:14},(_,i)=>25+i*5),...(pricing?.prices||[]).map(p=>Number(p.lengthCm))])].filter(n=>Number.isFinite(n)&&n>0&&n<=300).sort((a,b)=>a-b);
  const [priceNames,setPriceNames]=useState([]);
  const [priceError,setPriceError]=useState('');
  const loadNames=()=>workspaceAPI('/pricing').then(data=>{setPricing(data);setColors([...new Set(data.colors.map(c=>c.code).filter(Boolean))]);setPriceNames([...new Set(data.prices.map(p=>hairProductName(p.product)).filter(Boolean))]);setPriceError('')}).catch(()=>setPriceError('Không tải được danh mục tóc và màu.'));

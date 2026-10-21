@@ -26,3 +26,9 @@ test('Migration backs up, audits, resets the next number to 5, expires stale for
  assert.equal(events,1);assert.equal(db.prepare('SELECT value FROM sequences').get().value,4);assert.equal(db.prepare('SELECT count(*) n FROM auth_sessions').get().n,0);assert.ok(db.prepare('SELECT id FROM app_migrations WHERE id=?').get(customerNumberingMigration));
  const copy=new DatabaseSync(path.join(dir,'identity-backups',readdirSync(path.join(dir,'identity-backups'))[0]),{readOnly:true});try{assert.deepEqual(JSON.parse(copy.prepare('SELECT data FROM workspace').get().data),fixture())}finally{copy.close()}
 });
+
+test('Emily correction is scoped and preserves payments, stable IDs and prior identity',()=>{
+ const data={customers:[{id:'HQ-EM-3'},{id:'HQ-JD-1'}],orders:[{id:'stable',customerId:'HQ-EM-3',orderCode:'HQ-EM-3-1',payments:[{amount:725}]}]};
+ const map=renumberJudyCustomers(data,'HQ-EM');assert.deepEqual(map,[{before:'HQ-EM-3',after:'HQ-EM-1'}]);
+ assert.equal(data.orders[0].orderCode,'HQ-EM-1-1');assert.equal(data.orders[0].id,'stable');assert.equal(data.orders[0].payments[0].amount,725);assert.equal(data.customers[1].id,'HQ-JD-1');assert.deepEqual(data.customers[0].previousIds,['HQ-EM-3']);
+});

@@ -64,6 +64,7 @@ export async function createWorkspace(dir){
   }catch(e){db.exec('ROLLBACK');throw e}
  }
  migrateCustomerNumbering(db,dir,audit);
+ migrateCustomerNumbering(db,dir,audit,'HQ-EM','emily-customer-numbering-20261021');
  const draftData=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
  if(freezeDraftCodes(draftData.orders))db.prepare('UPDATE workspace SET data=? WHERE id=1').run(JSON.stringify(draftData));
  if(!db.prepare('SELECT id FROM users LIMIT 1').get()&&process.env.HQ_ADMIN_EMAIL&&process.env.HQ_ADMIN_PASSWORD){
