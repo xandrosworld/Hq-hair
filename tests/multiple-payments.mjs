@@ -30,6 +30,14 @@ try{
  const saved=(await sale.call('/state')).orders.find(o=>o.id===approved.id);assert.equal(saved.payments.length,2);assert.equal(saved.payments[1].files.length,3);assert.equal(saved.payments[1].amount,25);assert.equal(saved.payments[1].confirmed,false);
  await sale.call(`/orders/${saved.id}/action`,{version:saved.version,action:'payment',payment:{sender:'Buyer',method:'Wise',date:'2026-10-01',files:[...saved.payments[1].files,saved.payments[1].files[0]]}},400);assert.equal((await sale.call('/state')).orders.find(o=>o.id===saved.id).payments.length,2);
 
+
+ const compact=(await accountant.call('/state')).orders.find(o=>o.id===saved.id);
+ const receiptURL=compact.payments[1].files[0].file;assert.ok(receiptURL.startsWith('/api/work/orders/'));
+ const delivered=await accountant.ctx.request.get(base+receiptURL);assert.equal(delivered.status(),200);assert.deepEqual(await delivered.body(),buffer);
+ assert.equal((await fetch(base+receiptURL)).status,401);
+ const roster=await admin.call('/users');await admin.call('/users/'+roster.find(u=>u.code==='SX-MO').id+'/visibility',{factoryView:'products'});
+ assert.equal((await factory.ctx.request.get(base+receiptURL)).status(),404);
+ console.log('PASS accounting lazy receipt, bytes, anonymous and restricted factory access');
  await page.reload();await page.getByRole('button',{name:'Mở menu',exact:true}).tap();await page.locator('.sidebar').getByRole('button',{name:'Đơn hàng chưa hoàn thành',exact:true}).tap();await page.getByRole('button',{name:approved.orderCode,exact:true}).first().tap();await page.getByRole('button',{name:'Thanh toán & giao hàng',exact:true}).tap();
  for(const n of [1,2,3]){await page.getByRole('button',{name:'bill-'+n+'.png',exact:true}).tap();await expect(page.locator('.receipt-dialog img')).toHaveJSProperty('complete',true);await page.getByRole('button',{name:'Đóng',exact:true}).tap()}
  console.log('PASS mobile 3-file upload, limit, remove/re-add, server persistence, reload and preview; one payment amount');

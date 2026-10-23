@@ -1,3 +1,4 @@
+import {compactReceipts} from './receipt-delivery.js';
 import {setupCleanup} from './workspace-cleanup.js';
 import {migrateCustomerNumbering} from './customer-numbering.js';
 import {freezeDraftCodes} from './draft-orders.js';
@@ -210,7 +211,7 @@ export async function createWorkspace(dir){
   req.assertAccess=record=>{if(!req.canRead(record))reject(404,'Không tìm thấy dữ liệu trong phạm vi được giao.')};
   req.assertVersion=record=>{if(record&&req.body.version!==record.version)reject(409,'Dữ liệu đã được cập nhật ở nơi khác. Tải lại trang trước khi sửa tiếp.')};
   req.nextCode=key=>db.prepare('INSERT INTO sequences VALUES (?,1) ON CONFLICT(key) DO UPDATE SET value=value+1 RETURNING value').get(key).value;
-  req.view=()=>{const orders=req.data.orders.filter(req.canRead).map(o=>({...o,salePhone:db.prepare('SELECT phone FROM users WHERE id=?').get(o.ownerId||'')?.phone||''}));if(req.user.role==='accounting')return {orders,customers:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};if(req.user.role==='factory')return {orders:factoryView(req.user)==='products'?orders.map(factoryOrder):orders,customers:factoryView(req.user)==='products'?[]:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};return {...req.data,customers:req.data.customers.filter(req.canRead),orders,user:safeUser(req.user),mode:'workspace'}};
+  req.view=()=>{const orders=req.data.orders.filter(req.canRead).map(o=>({...o,salePhone:db.prepare('SELECT phone FROM users WHERE id=?').get(o.ownerId||'')?.phone||''}));if(req.user.role==='accounting')return {orders:orders.map(compactReceipts),customers:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};if(req.user.role==='factory')return {orders:factoryView(req.user)==='products'?orders.map(factoryOrder):orders,customers:factoryView(req.user)==='products'?[]:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};return {...req.data,customers:req.data.customers.filter(req.canRead),orders,user:safeUser(req.user),mode:'workspace'}};
   req.save=()=>{
    for(const c of req.data.customers){const before=beforeCustomers.get(c.id);if(before!==JSON.stringify(c))audit(req.user,before?'customer-update':'customer-create',c.id,{before:before?JSON.parse(before):null,after:c})}
    if(beforeCatalog!==JSON.stringify(req.data.catalog))audit(req.user,'catalog-update','catalog',{before:JSON.parse(beforeCatalog),after:req.data.catalog});

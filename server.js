@@ -1,3 +1,5 @@
+import {factoryView} from './permissions.js';
+import {receiptBytes} from './receipt-delivery.js';
 import {cleanPaymentAttachments} from './payment-attachments.js';
 import {applyReceiptCorrection} from './receipt-corrections.js';
 import {applyCompensation} from './compensation.js';
@@ -56,7 +58,15 @@ const num=(v,max=10000000)=>{const n=Number(v);if((typeof v!=='number'&&typeof v
 const event=(req,o,title,note='')=>o.history.push({title,note,actor:req.user.name+' · '+(req.user.role==='manager'?'Quản lý':req.user.role==='accounting'?'Kế toán':req.user.role==='factory'?'Xưởng':req.user.role==='sales_lead'?'Trưởng nhóm Sale':'Sale'),actorId:req.user.id,time:new Date().toISOString()});
 business.get('/orders/:id/images/:imageId',(req,res)=>{const o=req.data.orders.find(o=>o.id===req.params.id);req.assertAccess(o);if(!o||!o.messages.some(m=>m.images?.some(i=>i.id===req.params.imageId)))return res.status(404).json({error:'Không tìm thấy ảnh trong đơn này.'});const image=req.imageDb.prepare('SELECT data,mime FROM chat_images WHERE id=?').get(req.params.imageId);if(!image)return res.status(404).json({error:'Không tìm thấy ảnh.'});res.set({'Cache-Control':'private, no-store','Content-Type':image.mime,'Content-Security-Policy':"default-src 'none'; sandbox"});const bytes=Buffer.from(image.data);res.set('Accept-Ranges','bytes');if(req.headers.range){const range=/^bytes=(\d+)-(\d*)$/.exec(req.headers.range);const start=range?Number(range[1]):-1,end=range&&range[2]?Math.min(Number(range[2]),bytes.length-1):bytes.length-1;if(start<0||start>=bytes.length||end<start)return res.status(416).set('Content-Range',`bytes */${bytes.length}`).end();return res.status(206).set('Content-Range',`bytes ${start}-${end}/${bytes.length}`).send(bytes.subarray(start,end+1))}res.send(bytes)});
 qcRoutes(business);
-business.get('/state',(req,res)=>res.json(req.view()));
+business.get('/orders/:id/receipts/:paymentId/:file',(req,res)=>{
+ const order=req.data.orders.find(o=>o.id===req.params.id);req.assertAccess(order);
+ if(req.user.role==='factory'&&factoryView(req.user)==='products')return res.status(404).json({error:'Không tìm thấy chứng từ.'});
+ const match=/^(legacy|\d+)\.(png|jpg|webp|pdf)$/.exec(req.params.file);
+ const receipt=match&&receiptBytes(order,req.params.paymentId,match[1]);
+ if(!receipt)return res.status(404).json({error:'Không tìm thấy chứng từ.'});
+ res.set({'Cache-Control':'private, no-store','Content-Type':receipt.mime,'Content-Disposition':'inline','Content-Security-Policy':"default-src 'none'; sandbox"});res.send(receipt.bytes);
+});
+business.get('/state' ,(req,res)=>res.json(req.view()));
 business.post('/reset',(req,res)=>{req.data=seed();req.save();res.json(req.view())});
 business.post('/customers',(req,res)=>{
  const b=req.body;const c=cleanCustomer(b,req.data.customers.find(x=>x.id===b.id));c.purchase=purchaseHistory(b.id,req.data.orders);
