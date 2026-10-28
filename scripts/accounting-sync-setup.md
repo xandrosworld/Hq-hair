@@ -34,11 +34,22 @@ Lần ghi đầu phải đối chiếu với báo cáo CRM và công thức tổ
 - R không tự điền tỷ giá bình quân. Các khoản dùng tỷ giá riêng từ CRM; thiếu tỷ giá trả ô trống.
 - Ghi đè giá trị hiện tại, không cộng thêm vào lần đồng bộ trước. Mã bị thiếu hoặc trùng khiến toàn bộ kế hoạch dừng trước khi ghi.
 - Sao lưu công thức/giá trị trước mỗi lần ghi; đọc lại từng ô đã ghi để kiểm chứng.
-- Các tiêu đề I/P hiện khác nghĩa nhau theo công thức của file mẫu; cần làm rõ nhãn khi nghiệm thu. Các bảng lương có tỷ giá chính sách riêng vẫn giữ nguyên.
+- Tiêu đề I là Dòng tiền thu về (VND); P là Doanh thu thực thu (USD). Các bảng lương có tỷ giá chính sách riêng vẫn giữ nguyên.
 - File hiện không có cột năm. Không tự chuyển sang năm mới; phải chọn và đối chiếu file năm mới trước.
 
 ## Tình trạng
 
 Đã triển khai revision 899127d; 163 kiểm thử qua. Service account đã có quyền Editor đúng file; khóa riêng lưu ngoài Git tại /opt/hqhaircrm/data/google-accounting/service-account.json (600, UID 1000). Khóa công khai tải lên hết hạn 28/10/2027: cần thay khóa trước ngày này. Khóa tải xuống bị thất lạc d9591ca66893 đã xóa theo xác nhận người dùng.
 
-Lần đồng bộ đầu ngày 28/10/2026 đã ghi và đọc lại khớp 40 dòng tháng 1–10, gồm công nợ HQ-LN 0.33 USD. Timer production đã bật, lần chạy ghi nhận Result=success. Chỉ xác nhận tab 05 và dữ liệu đã ghi; chưa nghiệm thu toàn bộ công thức lương/tài chính ở các tab phụ thuộc.
+Lần đồng bộ đầu ngày 28/10/2026 đã ghi và đọc lại khớp 40 dòng tháng 1–10, gồm công nợ HQ-LN 0.33 USD. Timer production đã bật; lần chạy tiếp theo 15:45 ghi nhận Result=success và written-and-verified.
+
+## Rà soát workbook ngày 28/10/2026
+
+- Đối chiếu hợp đồng gốc: K03–K05 và Điều 8.1–8.2 bao gồm kết nối và hoàn thiện liên kết lương/tài chính theo nghiệp vụ đã chốt. Không triển khai chế độ tỷ giá chung đã hoãn.
+- Sửa 1.137 công thức AGGREGATE không tương thích Google Sheets thành INDEX/FILTER, giữ nguyên điều kiện nhân sự và thứ tự. Đã xác nhận đủ 4 Sale và HQ-MKT-VH ở các bảng tự động; các ô chọn nhân viên/chấm công/KPI nhập tay giữ nguyên.
+- Sửa liên kết tiền hàng mới thành dòng tiền sau vận chuyển trừ thu hồi công nợ, tránh cộng trùng khi bảng Dòng tiền cộng hai khoản.
+- Sửa 1.250 ô tổng/liên kết: thêm tổng USD còn thiếu; khi khoản USD khác 0 thiếu tỷ giá, tổng VND và các phép tính phụ thuộc hiển thị Chưa có tỷ giá, không cộng ô thiếu như 0. Tổng có đủ tỷ giá tiếp tục dùng công thức gốc. Không thay tỷ giá chính sách tính lương.
+- Đọc lại 29 tab, 17.290 công thức: không có effectiveValue.errorValue; mọi công thức sửa khớp kế hoạch. Không còn AGGREGATE, _xlfn hoặc #REF! trong công thức.
+- Đối chiếu tháng 10: đã nhận 5.511,78 USD = vận chuyển 518 USD + dòng tiền 4.993,78 USD; công nợ 72,22 USD. Khoản thiếu tỷ giá trên CRM tiếp tục để trống VND ở dòng dữ liệu gốc.
+- Bản sao trước sửa và kế hoạch từng ô nằm trong data/accounting-live-audit.xlsx, data/roster-formula-audit.json, data/financial-formula-audit.json (không đưa dữ liệu khách vào Git).
+- Đây là kiểm tra kỹ thuật và dữ liệu CRM hiện có, không phải xác nhận các khoản chấm công, KPI, chi phí nhập tay hoặc chính sách lương chưa được khách cung cấp mẫu đối soát. File dành cho năm 2026; phải xác nhận file năm mới trước khi chuyển kỳ năm.
