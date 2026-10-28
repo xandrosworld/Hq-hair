@@ -25,7 +25,7 @@ Sau khi đối chiếu kế hoạch:
 node scripts/sync-accounting-sheet.mjs --write
 ```
 
-Lần ghi đầu phải đối chiếu với báo cáo CRM và công thức tổng trên Sheet. Sau đó mới cấu hình lịch chạy 5 phút một lần bằng bộ lập lịch máy chủ, có khóa chống chạy chồng và ghi nhận lỗi. Chưa có lịch chạy nào được bật bởi các file này.
+Lần ghi đầu phải đối chiếu với báo cáo CRM và công thức tổng trên Sheet. Sau đó mới cấu hình lịch chạy 5 phút một lần bằng bộ lập lịch máy chủ, có khóa chống chạy chồng và ghi nhận lỗi. Lịch production đã bật ngày 28/10/2026 bằng hqhair-accounting-sync.timer (5 phút sau mỗi lần hoàn thành).
 
 ## Phạm vi dữ liệu
 
@@ -39,4 +39,6 @@ Lần ghi đầu phải đối chiếu với báo cáo CRM và công thức tổ
 
 ## Tình trạng
 
-Đã kiểm thử phép tính và ánh xạ trên dữ liệu giả lập. Chưa có khóa service account, chưa chạy thử API Google bằng tài khoản máy chủ, chưa triển khai hoặc bật lịch. Chưa thay đổi dữ liệu trong file Google Sheet.
+Đã triển khai revision 899127d; 163 kiểm thử qua. Service account đã có quyền Editor đúng file; khóa riêng lưu ngoài Git tại /opt/hqhaircrm/data/google-accounting/service-account.json (600, UID 1000). Khóa công khai tải lên hết hạn 28/10/2027: cần thay khóa trước ngày này. Khóa tải xuống bị thất lạc d9591ca66893 đã xóa theo xác nhận người dùng.
+
+Lần đồng bộ đầu ngày 28/10/2026 đã ghi và đọc lại khớp 40 dòng tháng 1–10, gồm công nợ HQ-LN 0.33 USD. Timer production đã bật, lần chạy ghi nhận Result=success. Chỉ xác nhận tab 05 và dữ liệu đã ghi; chưa nghiệm thu toàn bộ công thức lương/tài chính ở các tab phụ thuộc.
