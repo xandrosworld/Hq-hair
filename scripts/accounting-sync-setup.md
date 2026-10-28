@@ -41,6 +41,8 @@ Lần ghi đầu phải đối chiếu với báo cáo CRM và công thức tổ
 
 ## Tình trạng
 
+Cập nhật tab giá vốn 28/10/2026: revision abe94ee đã triển khai khỏe, 168 kiểm thử qua. Đã ghi và đọc lại 11 đơn vào tháng 10, lần chạy lại costChanges=0. Đối chiếu bản sao trước/sau xác nhận các ô nhập tay, công thức tên Sale, số thứ tự và tổng tháng giữ nguyên. Timer enabled/active. Thử chèn 20 dòng bằng đúng hàm production trên tab QA tạm trong Google Sheets: SUM và SUMIF tự mở rộng, giữ khoản cũ và cộng khoản mới đúng 60; tab QA đã dọn sau kiểm tra.
+
 Đã triển khai revision 899127d; 163 kiểm thử qua. Service account đã có quyền Editor đúng file; khóa riêng lưu ngoài Git tại /opt/hqhaircrm/data/google-accounting/service-account.json (600, UID 1000). Khóa công khai tải lên hết hạn 28/10/2027: cần thay khóa trước ngày này. Khóa tải xuống bị thất lạc d9591ca66893 đã xóa theo xác nhận người dùng.
 
 Lần đồng bộ đầu ngày 28/10/2026 đã ghi và đọc lại khớp 40 dòng tháng 1–10, gồm công nợ HQ-LN 0.33 USD. Timer production đã bật; lần chạy tiếp theo 15:45 ghi nhận Result=success và written-and-verified.
