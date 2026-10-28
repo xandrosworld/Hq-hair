@@ -4,6 +4,7 @@ import {DatabaseSync} from 'node:sqlite';
 import path from 'node:path';
 import {accountingSheetData} from '../accounting-sheet-data.js';
 import {accountingSpreadsheetId,accountingTab,accountingSheetPlan} from '../accounting-sheet-plan.js';
+import {costTab,costOrders,costSheetPlan,costExpansionRequests} from '../accounting-cost-sheet.js';
 
 // One-shot worker. Default is read-only preview. Schedule only after review of
 // the initial backup/plan and explicit --write activation by the operator.
@@ -30,21 +31,38 @@ async function api(route,body){
 const range=encodeURIComponent(`'${accountingTab}'!A1:R226`);
 const live=await api(`/values/${range}?valueRenderOption=UNFORMATTED_VALUE`);
 const db=new DatabaseSync(path.join(process.env.DATA_DIR||'data','workspace.sqlite'),{readOnly:true});
-let payload;
+let payload,approvedOrders;
 try{
  db.exec('BEGIN');
  const state=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
- const users=db.prepare('SELECT id,code,name,role FROM users WHERE deleted_at IS NULL').all();
+ const allUsers=db.prepare('SELECT id,code,name,role,deleted_at FROM users').all();
+ const users=allUsers.filter(u=>!u.deleted_at);
  payload=accountingSheetData(state.orders,users,year);
+ approvedOrders=costOrders(state.orders,allUsers,year);
  db.exec('COMMIT');
 }finally{db.close();}
 const data=accountingSheetPlan(payload,live.values||[]);
+async function readCosts(){
+ const result=await api(`?ranges=${encodeURIComponent(`'${costTab}'!A:I`)}&includeGridData=true&fields=sheets(data(startRow,rowData(values(userEnteredValue,effectiveValue,note))))`);
+ const grid=[];
+ for(const d of result.sheets?.[0]?.data||[])for(const [i,r] of (d.rowData||[]).entries())grid[(d.startRow||0)+i]=r.values||[];
+ return grid;
+}
+let costGrid=await readCosts(),costPlan=costSheetPlan(approvedOrders,costGrid,year);
 const backupDir=path.join(process.env.DATA_DIR||'data','accounting-sheet-backups');
 mkdirSync(backupDir,{recursive:true,mode:0o700});
 const original=await api(`/values/${range}?valueRenderOption=FORMULA`);
 const filename=path.join(backupDir,`${Date.now()}-${write?'write':'preview'}.json`);
-writeFileSync(filename,JSON.stringify({spreadsheetId:accountingSpreadsheetId,original,plan:data}),{mode:0o600});
+writeFileSync(filename,JSON.stringify({spreadsheetId:accountingSpreadsheetId,original,plan:data,costGrid,costPlan}),{mode:0o600});
 if(write){
+ if(costPlan.expansions.length){
+  await api(':batchUpdate',{requests:costExpansionRequests(costPlan.expansions)});
+  costGrid=await readCosts();costPlan=costSheetPlan(approvedOrders,costGrid,year);
+  if(costPlan.expansions.length)throw Error('Cost sheet expansion did not provide enough rows');
+ }
+ if(costPlan.requests.length)await api(':batchUpdate',{requests:costPlan.requests});
+ const costCheck=costSheetPlan(approvedOrders,await readCosts(),year);
+ if(costCheck.expansions.length||costCheck.requests.length)throw Error('Cost sheet read-back verification failed');
  await api('/values:batchUpdate',{valueInputOption:'RAW',data});
  const query=data.map(d=>'ranges='+encodeURIComponent(d.range)).join('&');
  const verification=await api(`/values:batchGet?valueRenderOption=UNFORMATTED_VALUE&${query}`);
@@ -52,4 +70,4 @@ if(write){
   if((verification.valueRanges?.[i]?.values?.[0]?.[col]??'')!==data[i].values[0][col])throw Error('Read-back verification failed; inspect backup before retry.');
  }
 }
-console.log(JSON.stringify({mode:write?'written-and-verified':'preview',rows:data.length,asOf:payload.asOf,backup:filename}));
+console.log(JSON.stringify({mode:write?'written-and-verified':'preview',rows:data.length,costOrders:approvedOrders.length,costChanges:costPlan.requests.length,costExpansions:costPlan.expansions.length,asOf:payload.asOf,backup:filename}));

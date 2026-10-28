@@ -29,7 +29,9 @@ Lần ghi đầu phải đối chiếu với báo cáo CRM và công thức tổ
 
 ## Phạm vi dữ liệu
 
-- Chỉ cập nhật E:Q của những dòng khớp tháng và mã Sale; không sửa nhân sự, chi phí, lương hoặc dữ liệu MKT.
+- Tab 05 chỉ cập nhật E:Q của những dòng khớp tháng và mã Sale; không sửa nhân sự, chi phí, lương hoặc dữ liệu MKT.
+- Tab 13 đồng bộ mã đơn đã duyệt theo tháng duyệt đầu tiên (múi giờ Việt Nam), mã Sale và mặc định loại Giá vốn hàng hóa nếu ô loại còn trống. Gắn ID CRM trong ghi chú ô mã đơn; chạy lại không đổi vị trí dòng hoặc ghi đè số tiền/nội dung/NCC/trạng thái nhập tay. Đơn đã hủy giữ dòng chi phí và có ghi chú để đối soát. Đổi tháng duyệt hoặc Sale không khớp thì dừng để kiểm tra, không tự chuyển chi phí.
+- Khi tháng hết dòng trống, chèn thêm dòng bên trong vùng tổng hiện có, sao chép định dạng/validation và công thức tên Sale. Các tham chiếu tổng của Google Sheets tự mở rộng. Dòng có thông tin nhập tay nhưng chưa có mã đơn không bị lấy để ghi đơn mới.
 - I là dòng tiền đã trừ vận chuyển. P là doanh thu thực thu, Q là thu hồi công nợ để công thức hoa hồng P+Q không cộng trùng.
 - R không tự điền tỷ giá bình quân. Các khoản dùng tỷ giá riêng từ CRM; thiếu tỷ giá trả ô trống.
 - Ghi đè giá trị hiện tại, không cộng thêm vào lần đồng bộ trước. Mã bị thiếu hoặc trùng khiến toàn bộ kế hoạch dừng trước khi ghi.
