@@ -20,10 +20,18 @@ function confirmReceipts(order,user,receipts,now){
 }
 export const canForfeitPaused=order=>order.stage===4&&order.production?.status==='paused'&&!!order.orderCode&&!order.cancelledAt&&!order.contentLockedAt;
 export function applyAccounting(order,user,action,body,event){
- if(!['accounting-approve','accounting-cancel','accounting-final','accounting-forfeit'].includes(action))return false;
+ if(!['accounting-receive','accounting-approve','accounting-cancel','accounting-final','accounting-forfeit'].includes(action))return false;
  if(user.role!=='accounting')fail(403,'Chỉ Kế toán được xử lý bước duyệt thanh toán.');
  if(order.cancelledAt||order.contentLockedAt)fail(400,'Đơn đã hủy hoặc đã khóa nội dung.');
  const now=new Date().toISOString(),note=typeof body.text==='string'?body.text.trim().slice(0,1000):'';
+ if(action==='accounting-receive'){
+  if(![3,4,5,6,7].includes(order.stage)||!order.accountingApproval||!order.orderCode)fail(400,'Chỉ ghi nhận bổ sung cho đơn đã duyệt, chưa kiểm tra thanh toán cuối.');
+  if(!Array.isArray(body.receipts)||!body.receipts.length)fail(400,'Chọn chứng từ mới và nhập tiền thực nhận.');
+  const payments=confirmReceipts(order,user,body.receipts,now);
+  order.payments=payments;
+  event('Kế toán ghi nhận khoản thu bổ sung',note||'Đã đối soát chứng từ bổ sung.');
+  return true;
+ }
  if(['accounting-final','accounting-forfeit'].includes(action)){
   if(action==='accounting-forfeit'&&!canForfeitPaused(order))fail(400,'Chỉ hủy mất cọc khi Xưởng đang tạm dừng sản xuất.');
   if(action==='accounting-final'&&(![6,7].includes(order.stage)||!order.orderCode||(!order.officeDispatch&&!order.history?.some(h=>['Đã gửi đến văn phòng','Gửi đến văn phòng'].includes(h.title)))))fail(400,'Xưởng phải xác nhận gửi đến văn phòng trước bước kiểm tra thanh toán lần cuối.');
