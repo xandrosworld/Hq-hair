@@ -1,3 +1,4 @@
+import {LoginVisual} from './login-visual.jsx';
 import {SessionLock} from './session-lock.jsx';
 import React,{useState,useEffect,useId} from 'react';
 import {ArrowRight,ShieldCheck,User,LockKey,Eye,EyeSlash,Question,WarningCircle,SpinnerGap} from '@phosphor-icons/react';
@@ -19,12 +20,7 @@ export function WorkspaceGate({children}){
  if(auth===undefined)return <div className="hq-auth-loading" role="status"><Brand/><span className="hq-auth-loading-line"/><p>Đang mở không gian làm việc…</p></div>;
  if(auth&&!auth.user.mustChange){const logout=async()=>{await workspaceAPI('/logout',{});setAuth(null)};return <SessionLock auth={auth} onLogout={logout}>{children(auth.user,logout)}</SessionLock>}
  const login=<main className="hq-login">
-  <section className="hq-login-visual" aria-label="HQ Hair">
-   <picture className="hq-login-photo"><source media="(max-width: 760px)" srcSet="/assets/login/hq-hair-editorial-mobile.webp"/><img src="/assets/login/hq-hair-editorial.webp" alt="Mái tóc nâu dài với những lọn sóng mềm trong ánh sáng ấm" width="1122" height="1402" fetchPriority="high" decoding="async"/></picture>
-   <div className="hq-login-shade"/>
-   <div className="hq-login-visual-top"><Brand/></div>
-   <div className="hq-login-story"><span className="hq-login-story-line"/><h1>Chất lượng từ<br/><span>từng chi tiết.</span></h1><p>Cùng HQ Hair chăm chút từng đơn hàng.</p></div>
-  </section>
+  <LoginVisual brand={<Brand/>}/>
   <section className={'hq-login-panel'+(auth?' is-setup':'')} aria-labelledby="hq-login-title">
    <header className="hq-login-panel-header"><span className="hq-workspace-symbol"><ShieldCheck size={19} weight="regular"/></span><span>KHÔNG GIAN LÀM VIỆC</span></header>
    <div className="hq-login-form-wrap">
