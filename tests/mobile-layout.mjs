@@ -33,4 +33,7 @@ export async function inspectMobile(page,name,shots,checks){
   }
  }finally{await page.setViewportSize(original)}
  await page.screenshot({path:`${shots}/${name}.png`,fullPage:true,animations:'disabled'});
+ if(process.env.MOBILE_DESKTOP_CHECK==='1'){
+  try{await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>document.fonts.ready);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),name+': desktop overflow');await page.screenshot({path:`${shots}/desktop-${name}.png`,fullPage:true,animations:'disabled'});}finally{await page.setViewportSize(original)}
+ }
 }

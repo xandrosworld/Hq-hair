@@ -1,0 +1,20 @@
+HQ HAIR — Rà soát giao diện 03/11/2026
+
+Phạm vi: Sale, quản lý, kế toán, xưởng; danh sách, chi tiết đơn, báo cáo,
+biểu mẫu và cửa sổ thao tác. Không đổi dữ liệu hay công thức nghiệp vụ.
+
+Quy chuẩn:
+- Inter tự lưu trên máy chủ cho phần nghiệp vụ, hỗ trợ tiếng Việt.
+- Nội dung 14 px; bảng 13 px; nhãn/chú thích 12–13 px; tiêu đề 24–28 px.
+- Nút tối thiểu 40 px, điện thoại 44 px; ô nhập điện thoại 16 px.
+- Viết nhãn theo kiểu câu, dùng “Phụ trách” cho cột nhân viên; giữ tên
+  bước nghiệp vụ, mã đơn và nội dung khách nhập.
+- Bộ lọc xuống nhãn riêng, tìm kiếm được ưu tiên chiều rộng.
+- Ngày đặt trong lịch sử kế toán hiển thị theo định dạng Việt Nam.
+- Cột số liệu dùng chữ số cùng độ rộng; tăng độ rõ của nhãn phụ.
+- Giữ bố cục cột thống kê trên điện thoại, không xếp lệch tiêu đề.
+- CSS chỉ áp dụng trên màn hình; mẫu in và màn đăng nhập có thiết kế riêng.
+
+Kiểm tra: npm test, build, navigation-audit, accounting-qc, login-design,
+mobile-workspace (kèm MOBILE_DESKTOP_CHECK=1 chụp đối chiếu desktop).
+Dữ liệu kiểm tra được tạo trong môi trường tạm, không sửa đơn thật.

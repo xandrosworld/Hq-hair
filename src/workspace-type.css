@@ -1,0 +1,72 @@
+/* Shared screen typography. Print documents and the login retain their own design. */
+@media screen {
+  body:has(.shell), body:has(.factory-shell) {
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #243d4c;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  :is(.shell,.factory-shell,.modal) :is(button,input,select,textarea) { font-family: inherit; }
+  :is(.shell,.factory-shell,.modal) :is(h1,h2,h3,h4) { font-weight: 600; line-height: 1.35; letter-spacing: -.025em; }
+  :is(.shell,.factory-shell) .page-title h1 { font-size: 28px; margin: 0 0 8px; }
+  :is(.shell,.factory-shell) .page-title p { font-size: 14px; line-height: 1.6; color: #667987; max-width: 100ch; }
+  :is(.shell,.factory-shell,.modal) :is(h2,.panel-heading,.panel-head h3) { font-size: 17px; }
+  :is(.shell,.factory-shell) .page-kicker { font-size: 11px; letter-spacing: .12em; }
+  :is(.shell,.factory-shell,.modal) :is(.btn,.tabs button,.order-stage-tabs button) { font-size: 13px; font-weight: 500; line-height: 1.45; }
+  :is(.shell,.factory-shell,.modal) .btn { min-height: 40px; padding: 10px 15px; white-space: normal; flex-shrink: 0; }
+  :is(.shell,.factory-shell) .nav-item { font-size: 14px; font-weight: 500; line-height: 1.45; }
+  :is(.shell,.factory-shell) .nav-label { font-size: 11px; letter-spacing: .1em; }
+  :is(.shell,.factory-shell) .brand small { font-size: 9px; line-height: 1.6; }
+  body:has(.shell) .sidebar .nav-item { font-size: 13px; line-height: 1.5; }
+  body:has(.shell) .sidebar .order-subnav button { font-size: 12px; line-height: 1.5; }
+  body:has(.shell) .sidebar .nav-label { font-size: 10px; }
+  :is(.shell,.factory-shell) .customer-groups .group-growth { font-size: 12px; }
+  :is(.shell,.factory-shell,.modal) :is(.field,.filters label,.report-filters label) { font-size: 13px; line-height: 1.5; font-weight: 500; }
+  :is(.shell,.factory-shell,.modal) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea) { font-size: 14px; line-height: 1.5; min-height: 40px; }
+  :is(.shell,.factory-shell,.modal) input::placeholder,:is(.shell,.factory-shell,.modal) textarea::placeholder { color: #778591; opacity: 1; font-weight: 400; }
+  :is(.shell,.factory-shell,.modal) :is(.field small,.field-error,.notice,.inline-empty) { font-size: 12px; line-height: 1.6; }
+  :is(.shell,.factory-shell) .filters { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; padding: 20px; }
+  :is(.shell,.factory-shell) .filters>label { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  :is(.shell,.factory-shell) .filters>label:has(input[type=checkbox]) { flex-direction: row; align-items: center; align-self: center; }
+  :is(.shell,.factory-shell) .filters>label:has(input:not([type=checkbox])) { flex: 1 1 280px; }
+  :is(.shell,.factory-shell) .filters>label :is(input:not([type=checkbox]),select) { width: 100%; min-width: 0; }
+  .accounting-shell .accounting-list-filters>label:has(select) { flex: 0 1 220px; }
+  .accounting-shell .accounting-list-filters>label:has(input:not([type=checkbox])) { max-width: 560px; }
+  :is(.shell,.factory-shell,.modal) :is(table th,.hair-table th) { font-size: 12px; font-weight: 600; line-height: 1.5; letter-spacing: 0; text-transform: none; color: #596e7c; padding: 13px 14px; }
+  :is(.shell,.factory-shell,.modal) :is(table td,.hair-table td) { font-size: 13px; line-height: 1.6; padding: 14px; }
+  :is(.shell,.factory-shell,.modal) :is(table td small,table th small,.profile-info small) { font-size: 12px; line-height: 1.55; }
+  :is(.shell,.factory-shell) .order-link { font-size: 13px; font-weight: 600; line-height: 1.5; }
+  :is(.shell,.factory-shell) :is(.badge,.workflow-substatus,.delivery-timing) { font-size: 12px; line-height: 1.5; }
+  :is(.shell,.factory-shell) :is(.metric-top,.metric-share,.period-change) { font-size: 13px; line-height: 1.5; }
+  :is(.shell,.factory-shell) :is(.metric-bottom,.metric-vnd) { font-size: 12px; line-height: 1.55; }
+  :is(.shell,.factory-shell) :is(.metric-middle strong,.metric>strong) { font-size: clamp(25px,2.3vw,32px); font-weight: 600; letter-spacing: -.035em; line-height: 1.25; overflow-wrap: anywhere; }
+  :is(.shell,.factory-shell) .timeline-step { min-width: 0; }
+  :is(.shell,.factory-shell) .timeline-step :is(strong,b) { font-size: 13px; line-height: 1.5; }
+  :is(.shell,.factory-shell) .timeline-step small { font-size: 12px; line-height: 1.55; }
+  :is(.shell,.factory-shell) .profile-info b { font-size: 14px; font-weight: 500; }
+  :is(.shell,.factory-shell) :is(.outcomes p,.outcomes footer,.outcome-row,.queue-footnote,.panel-head p,.pagination,.group-card small,.group-card p) { font-size: 12px; line-height: 1.6; }
+  :is(.shell,.factory-shell) .outcomes .outcome-columns { display: grid; grid-template-columns: minmax(0,1fr) 48px 58px; }
+  :is(.shell,.factory-shell) .outcome-columns>* { grid-column: auto; }
+  :is(.shell,.factory-shell) .filters>.search { flex: 1 1 280px; min-width: 0; }
+  #order-editor-content .page-title p { font-size: 13px; }
+  #order-editor-content :is(.field,.field>span) { font-size: 13px; }
+  #order-editor-content :is(input,select,textarea) { font-size: 14px; }
+  :is(.shell,.factory-shell,.modal) :is(button,input,select,textarea):focus-visible { outline: 2px solid #468c9c; outline-offset: 3px; }
+  @media (min-width: 601px) {
+    :is(.shell,.factory-shell) .product-read-view .hair-read :is(th,td) { font-size: 12px; line-height: 1.6; padding: 10px 6px; }
+    :is(.shell,.factory-shell) .product-read-view .hair-read :is(th,td) small { font-size: 11px; }
+  }
+  @media (max-width: 1119px) {
+    :is(.shell,.factory-shell) .page-title h1 { font-size: 24px; }
+    :is(.shell,.factory-shell,.modal) .btn { min-height: 44px; }
+    :is(.shell,.factory-shell,.modal) :is(input:not([type=checkbox]):not([type=radio]),select,textarea),#order-editor-content :is(input,select,textarea) { font-size: 16px; }
+    :is(.shell,.factory-shell) .filters { padding: 16px; gap: 12px; }
+  }
+  @media (max-width: 600px) {
+    :is(.shell,.factory-shell) .filters>label,.accounting-shell .accounting-list-filters>label:has(select) { flex: 1 1 100%; }
+    :is(.shell,.factory-shell) .page-title p { font-size: 13px; }
+    :is(.shell,.factory-shell,.modal) :is(table th,table td) { padding: 12px; }
+  }
+}
