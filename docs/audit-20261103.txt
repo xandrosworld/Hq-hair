@@ -1,0 +1,70 @@
+HQ HAIR CRM — KIỂM TRA VÀ KHẮC PHỤC KỸ THUẬT
+Ngày: 03/11/2026 (Việt Nam)
+
+PHẠM VI VÀ KẾT QUẢ
+- React/Vite frontend, Express backend, SQLite WAL; Docker/Caddy trên VPS.
+- Kiểm tra API thực tế khi chưa đăng nhập: dữ liệu khách/đơn, người dùng,
+  nhật ký, bảng giá, bản sao lưu và media đều bị chặn 401.
+- Bộ kiểm thử API xác nhận phân quyền Sale/Kế toán/Xưởng/Quản lý, CSRF,
+  phiên đăng nhập, thu hồi phiên, idempotency và chống cập nhật phiên bản cũ.
+- Quy trình kế toán, Xưởng và QC được kiểm tra bằng dữ liệu giả, máy chủ riêng;
+  không tạo đơn hay sửa dữ liệu khách thật để kiểm thử.
+- Không phát hiện đường nối chuỗi SQL với đầu vào người dùng trong phạm vi
+  rà soát; các truy vấn dữ liệu sử dụng tham số. Không có bảo đảm tuyệt đối
+  rằng hệ thống không còn lỗ hổng; đây không phải chứng nhận pentest độc lập.
+
+THAY ĐỔI
+- robots.txt trả văn bản hợp lệ thay vì HTML ứng dụng; giữ noindex/nofollow.
+- Đóng demo và API demo ở production; trang công khai chuyển về đăng nhập.
+- CSP giới hạn tài nguyên cùng nguồn; ngăn nhúng trang CRM, HSTS trên HTTPS.
+  API và tài liệu ứng dụng không được cache công khai. Bảo vệ dữ liệu vẫn
+  dựa vào xác thực/phân quyền backend, không dựa vào robots.txt.
+- Tách tải Workspace sau xác thực; không xóa CSS của các tab/popup.
+  Build: JS đăng nhập 238,47 KB; CSS 8,34 KB (chưa nén), trước khoảng
+  679,97 KB và 177,92 KB. Excel chỉ tải khi dùng nhập/xuất.
+- Bản nháp dự phòng chuyển sang sessionStorage theo tab/người dùng;
+  xóa khi đăng xuất/hết phiên; chặn phản hồi chậm ghi lại sau đăng xuất.
+  Bản nháp localStorage cũ của người đang đăng nhập được chuyển trước khi xóa.
+- Bỏ truy vấn số điện thoại nhân viên lặp theo từng đơn: đọc bảng ánh xạ một lần.
+- Cập nhật body-parser 2.4.0, qs 6.17.1 và dependency tương thích.
+- Cập nhật kiểm thử giao diện theo bộ lọc tháng và các chức năng đã thay đổi;
+  fixture kiểm thử đồng thời dùng số điện thoại riêng, giữ kiểm tra chống trùng.
+
+SAO LƯU / KHÔI PHỤC
+- VPS có backup hằng ngày 09:15 giờ Việt Nam; kiểm tra timer và log thành công.
+- Đã tải snapshot SQLite online ra máy vận hành, xác nhận SHA256 và integrity.
+- Đã chạy script restore vào thư mục mới, đối chiếu nguyên văn dữ liệu nghiệp vụ
+  và số hàng của mọi bảng bền vững (bao gồm media), thu hồi phiên cũ, khởi chạy
+  máy chủ riêng khỏe và xác nhận API vẫn yêu cầu đăng nhập.
+- Đã bật và chạy thử thành công tác vụ Windows HQHair-OutsideVPS-Backup:
+  09:30 mỗi ngày và khi đăng nhập, giữ tối đa 14 ngày. Máy phải bật, có mạng,
+  người dùng đã đăng nhập và .env còn thông tin hợp lệ. Đây chưa phải kho backup
+  độc lập luôn hoạt động khi máy vận hành tắt. Không lưu khóa/mật khẩu trong Git.
+
+GOOGLE SHEET
+- Service account đồng bộ không còn trong quyền chia sẻ của workbook hiện tại,
+  làm Sheets API trả 403 PERMISSION_DENIED.
+- Khôi phục quyền Editor cho đúng service account đã cấu hình; không mở công khai.
+- Chạy lại worker: written-and-verified, 44 dòng, 12 đơn giá vốn, không đổi dòng
+  giá vốn nhập tay; giữ backup trước lần ghi và đọc lại kiểm chứng.
+
+GIỚI HẠN / THEO DÕI
+- Workspace hiện lưu JSON và trả toàn bộ dữ liệu được phân quyền; không có
+  phân trang backend. Chưa có bằng chứng cần viết lại database ở quy mô hiện tại.
+  Kiểm thử cục bộ 20 người dùng, 80 khách, 60 đơn: ghi đua cùng phiên bản chỉ
+  một thành công, 19 xung đột đúng dự kiến. Không suy ra công suất VPS thực tế.
+- npm audit production còn 8 cảnh báo moderate cùng chuỗi ExcelJS/archiver/
+  glob/minimatch; không còn high/critical sau cập nhật. Chưa thấy luồng CRM
+  truyền glob pattern người dùng vào các API đó. Không ép thay major minimatch
+  hoặc hạ ExcelJS chỉ để xóa cảnh báo vì có thể phá nhập/xuất; cần theo dõi bản
+  tương thích. Nguồn: https://github.com/advisories/GHSA-g3hv-75wg-m249
+- Bản vá HTTP: https://github.com/advisories/GHSA-27r3-jxmh-p828
+- Số đo trình duyệt là mẫu kiểm tra, không phải cam kết điểm Lighthouse hay tốc độ
+  trên mọi điện thoại/mạng. Không đổi framework vì điểm PageSpeed.
+
+BẰNG CHỨNG NỘI BỘ
+Log local: tmp/audit-*.log, tmp/audit-live*.json; không đưa dữ liệu thật vào Git.
+Kiểm thử: npm test; tests/security.mjs; tests/workflow-security.mjs;
+tests/accounting-qc.mjs; tests/factory-integration.mjs;
+tests/concurrent-workspace.mjs; tests/navigation-audit.mjs;
+tests/production-boundary.mjs; tests/mobile-workspace.mjs.

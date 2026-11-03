@@ -39,9 +39,9 @@ try{
  await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
  await page.getByLabel('Trạng thái đơn tổng quan',{exact:true}).selectOption('Xưởng đang sản xuất');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(0);
  await page.getByLabel('Trạng thái đơn tổng quan',{exact:true}).selectOption('Chờ Xưởng ghi nhận');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
- await page.getByLabel('Hạn giao từ ngày',{exact:true}).fill('11/10/2026');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(0);
- await page.getByLabel('Hạn giao từ ngày',{exact:true}).fill('10/10/2026');await page.getByLabel('Hạn giao đến ngày',{exact:true}).fill('10/10/2026');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
- await page.getByRole('button',{name:'Mở lịch Hạn giao đến ngày',exact:true}).click();await expect(page.getByRole('dialog',{name:'Chọn Hạn giao đến ngày'})).toBeVisible();await expect(page.getByRole('button',{name:'09/10/2026',exact:true})).toBeDisabled();await page.getByRole('button',{name:'Đóng',exact:true}).click();
+ await page.getByLabel('Ngày duyệt đơn từ ngày',{exact:true}).fill('01/01/2099');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(0);
+ await page.getByLabel('Ngày duyệt đơn từ ngày',{exact:true}).fill('01/01/2020');await page.getByLabel('Hạn giao đến ngày',{exact:true}).fill('10/10/2026');await expect(page.locator('.factory-all-orders tbody tr')).toHaveCount(3);
+ await page.getByRole('button',{name:'Mở lịch Hạn giao đến ngày',exact:true}).click();await expect(page.getByRole('dialog',{name:'Chọn Hạn giao đến ngày'})).toBeVisible();await expect(page.getByRole('button',{name:'09/10/2026',exact:true})).toBeEnabled();await page.getByRole('button',{name:'Đóng',exact:true}).click();
  await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();
  await page.getByRole('button',{name:'Mở lịch Tháng danh sách đơn hàng',exact:true}).click();await page.getByLabel('Tháng trong lịch',{exact:true}).selectOption('10');await page.getByLabel('Năm trong lịch',{exact:true}).fill('2026');await page.getByRole('button',{name:'Chọn tháng 10/2026',exact:true}).click();await expect(page.getByLabel('Tháng danh sách đơn hàng',{exact:true})).toHaveValue('10/2026');
  await expect(page.locator('input[type=date],input[type=month]')).toHaveCount(0);
@@ -104,8 +104,8 @@ try{
  await page.getByLabel('Tìm đơn Xưởng',{exact:true}).fill('No such buyer');await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(0);
  await navClick(5);await expect(page.locator('.factory-kpi strong').first()).toHaveText('2');await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-analytics.png`,fullPage:true,animations:'disabled'});
  await page.setViewportSize({width:390,height:844});await navClick(0);await page.screenshot({path:`data/factory-${process.env.FACTORY_BROWSER||'chromium'}-mobile.png`,fullPage:true,animations:'disabled'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
- await page.getByRole('button',{name:'Mở lịch Hạn giao từ ngày',exact:true}).click();
- const calendarBox=await page.getByRole('dialog',{name:'Chọn Hạn giao từ ngày',exact:true}).boundingBox();assert.ok(calendarBox.x>=0&&calendarBox.x+calendarBox.width<=390&&calendarBox.y>=0&&calendarBox.y+calendarBox.height<=844);
+ await page.getByRole('button',{name:'Mở lịch Ngày duyệt đơn từ ngày',exact:true}).click();
+ const calendarBox=await page.getByRole('dialog',{name:'Chọn Ngày duyệt đơn từ ngày',exact:true}).boundingBox();assert.ok(calendarBox.x>=0&&calendarBox.x+calendarBox.width<=390&&calendarBox.y>=0&&calendarBox.y+calendarBox.height<=844);
  await page.screenshot({path:'data/factory-calendar-mobile.png',fullPage:false});await page.getByRole('button',{name:'Đóng',exact:true}).click();
  const filterBoxes=await page.locator('.factory-all-orders .factory-filters .field').evaluateAll(nodes=>nodes.map(n=>({width:n.getBoundingClientRect().width,x:n.getBoundingClientRect().x})));assert.ok(filterBoxes.every(r=>r.width>250&&r.x+r.width<=390));
  await navClick(4);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await expect(page.locator('.factory-order-table tbody tr')).toHaveCount(2);
@@ -154,7 +154,7 @@ try{
  await expect(adminPage.getByRole('checkbox')).toHaveCount(0);
  await adminPage.locator('#workspace-navigation').getByRole('button',{name:'Số liệu Kế toán',exact:true}).click();
  await expect(adminPage.getByRole('heading',{name:'Số liệu Kế toán',exact:true})).toBeVisible();
- await expect(adminPage.locator('.factory-kpi strong')).toHaveCount(6);
+ await expect(adminPage.locator('[data-testid^=period-kpi-]')).toHaveCount(9);
  await adminPage.getByLabel('Trạng thái Kế toán',{exact:true}).selectOption('approval');
  await expect(adminPage.locator('.factory-order-table tbody tr')).toHaveCount(1);
  await adminPage.locator('.factory-order-table .order-link').first().click();

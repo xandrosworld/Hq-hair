@@ -23,11 +23,11 @@ try{
  timings.length=0;
  const started=performance.now();
  await Promise.all(clients.map(async(c,i)=>{
-  let state=await c.call('/customers',{name:`Load Buyer ${i}`,country:'United States',group:'Salon',phone:'+1234567',address:'123 Test Road',recipient:'Buyer',recipientPhone:'+1234567',social:'https://wa.me/1234567',source:'Website',purchase:'First'});
+  let state=await c.call('/customers',{name:`Load Buyer ${i}`,country:'United States',group:'Salon',phone:('+1900'+String(i).padStart(3,'0')),address:'123 Test Road',recipient:'Buyer',recipientPhone:'+1234567',social:'https://wa.me/1234567',source:'Website',purchase:'First'});
   const customerId=state.customers[0].id;
-  const draft={customerId,date:'2026-01-01',due:'2026-02-01',paymentDue:'2026-02-15',recipient:'Buyer',phone:'+1234567',address:'123 Test Road',country:'United States',discount:5,shippingFee:20,paymentFee:3,items:[{name:'Bulk',kind:'base',qty:800,price:98.5,unit:'Gram',priceBasis:'100g'},{name:'Closure',kind:'extra',qty:2,price:30,unit:'Piece'},{name:'Gift',kind:'gift',qty:1,price:40,unit:'Piece'}].map(item=>({...item,origin:'Raw Hair',lengthCm:50,texture:'Natural Straight',segment:'Premium',color:'1B',priceBasis:item.priceBasis||'unit'})),payments:[{sender:'Buyer',amount:0,method:'Wise',date:'2026-01-01'}]};
+  const draft={customerId,date:'2026-01-01',due:'2026-02-01',paymentDue:'2026-02-15',recipient:'Buyer',phone:('+1900'+String(i).padStart(3,'0')),address:'123 Test Road',country:'United States',discount:5,shippingFee:20,paymentFee:3,items:[{name:'Bulk',kind:'base',qty:800,price:98.5,unit:'Gram',priceBasis:'100g'},{name:'Closure',kind:'extra',qty:2,price:30,unit:'Piece'},{name:'Gift',kind:'gift',qty:1,price:40,unit:'Piece'}].map(item=>({...item,origin:'Raw Hair',lengthCm:50,texture:'Natural Straight',segment:'Premium',color:'1B',priceBasis:item.priceBasis||'unit'})),payments:[{sender:'Buyer',amount:0,method:'Wise',date:'2026-01-01'}]};
   for(let n=0;n<3;n++){
-   const created=await c.call('/customers',{name:`Load order buyer ${i}/${n}`,phone:'123',recipient:'Buyer',recipientPhone:'123',address:'Road',country:'United States',group:'Salon',source:'Website'});draft.customerId=created.customers.at(-1).id;
+   const created=await c.call('/customers',{name:`Load order buyer ${i}/${n}`,phone:('+1800'+String(i).padStart(3,'0')+n),recipient:'Buyer',recipientPhone:'123',address:'Road',country:'United States',group:'Salon',source:'Website'});draft.customerId=created.customers.at(-1).id;
    const key=randomUUID(),saved=await c.call('/orders',{...draft,submit:true},200,key);
    assert.equal((await c.call('/orders',{...draft,submit:true},200,key)).id,saved.id);
    await c.call(`/orders/${saved.id}/action`,{version:1,action:'message',text:`Concurrent message ${i}/${n}`});

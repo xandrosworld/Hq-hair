@@ -1,3 +1,4 @@
+import {publicSecurity,productionBoundary} from './public-security.js';
 import {factoryView} from './permissions.js';
 import {receiptBytes} from './receipt-delivery.js';
 import {cleanPaymentAttachments} from './payment-attachments.js';
@@ -31,9 +32,11 @@ const db=new DatabaseSync(path.join(dir,'demo.sqlite'));db.exec('PRAGMA journal_
 setupChatImages(db);setupQC(db);
 const app=express();app.disable('x-powered-by');app.set('trust proxy',1);
 app.use(deploymentGate(dir));
+app.use(publicSecurity);
 app.use((req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'same-origin','X-Robots-Tag':'noindex, nofollow'});next()});
 app.get('/api/health',(req,res)=>res.json({ok:true,revision:process.env.APP_REVISION||null}));
 app.use('/api/work',express.json({limit:'70mb'}));
+app.use(productionBoundary);
 app.use('/api',express.json({limit:'70mb'}));
 app.use('/api',(req,res,next)=>{
  if(req.method==='POST'&&(!req.body||Array.isArray(req.body)||typeof req.body!=='object'))return res.status(400).json({error:'Nội dung yêu cầu phải là một đối tượng hợp lệ.'});

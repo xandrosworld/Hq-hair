@@ -1,3 +1,4 @@
+import {countries} from '../shared.js';
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
@@ -60,9 +61,9 @@ try{
  assert.equal(await form.getByLabel('Tên khách hàng',{exact:true}).getAttribute('required'),null);
  await form.getByLabel('Email người nhận',{exact:true}).waitFor();
  await form.getByLabel('Trang web',{exact:true}).waitFor();
- await form.getByLabel('Quốc gia khách hàng').selectOption('Netherlands');await form.getByLabel('Quốc gia giao hàng').selectOption('Poland');
- assert.equal(await form.getByLabel('Quốc gia khách hàng').locator('option').count(),81);
- assert.equal(await form.getByLabel('Quốc gia khách hàng').locator('option:checked').innerText(),'Hà Lan');
+ await form.getByLabel('Quốc gia khách hàng',{exact:true}).selectOption('Netherlands');await form.getByLabel('Quốc gia giao hàng',{exact:true}).selectOption('Poland');
+ assert.equal(await form.getByLabel('Quốc gia khách hàng',{exact:true}).locator('option').count(),countries.length+1);
+ assert.equal(await form.getByLabel('Quốc gia khách hàng',{exact:true}).locator('option:checked').innerText(),'Hà Lan');
 
  assert.equal(await form.getByLabel('Lịch sử mua hàng · tự động').getAttribute('readonly'),'');
  await page.getByRole('button',{name:'Đóng',exact:true}).click();
@@ -77,17 +78,13 @@ try{
  await page.getByRole('button',{name:'Danh sách khách hàng',exact:true}).click();
  await page.screenshot({path:'screenshots/audit-customers.png',fullPage:true});
  await nav('Doanh thu & công nợ');
- await page.getByLabel('Kỳ báo cáo',{exact:true}).selectOption('month');
- await page.getByLabel('Tháng báo cáo',{exact:true}).waitFor();
- await page.getByRole('button',{name:'Mở lịch Tháng báo cáo',exact:true}).click();
- await page.getByLabel('Tháng trong lịch',{exact:true}).selectOption('9');await page.getByLabel('Năm trong lịch',{exact:true}).fill('2026');await page.getByRole('button',{name:'Chọn tháng 9/2026',exact:true}).click();assert.equal(await page.getByLabel('Tháng báo cáo',{exact:true}).inputValue(),'09/2026');
-
- await page.getByLabel('Kỳ báo cáo',{exact:true}).selectOption('year');
- await page.getByLabel('Năm báo cáo',{exact:true}).waitFor();
- await page.getByLabel('Kỳ báo cáo',{exact:true}).selectOption('all');
+ await page.getByLabel('Báo cáo từ tháng',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'Mở lịch Báo cáo từ tháng',exact:true}).click();
+ await page.getByLabel('Tháng trong lịch',{exact:true}).selectOption('9');await page.getByLabel('Năm trong lịch',{exact:true}).fill('2026');await page.getByRole('button',{name:'Chọn tháng 9/2026',exact:true}).click();assert.equal(await page.getByLabel('Báo cáo từ tháng',{exact:true}).inputValue(),'09/2026');
+ await page.getByLabel('Báo cáo đến tháng',{exact:true}).waitFor();
  await page.screenshot({path:'screenshots/audit-revenue-period.png',fullPage:true});await page.getByRole('button',{name:'Công nợ cần thu',exact:true}).click();
  assert.equal(await page.getByLabel('Kỳ báo cáo',{exact:true}).count(),0);assert.equal(await page.locator('.overview-grid').count(),0);await page.locator('.order-link').first().click();await page.locator('.back-link').click();
- await page.getByRole('heading',{name:'Danh sách đơn còn công nợ',exact:true}).waitFor();
+ await page.getByRole('heading',{name:'Toàn bộ đơn còn công nợ đến hiện tại',exact:true}).waitFor();
  assert.match(await page.locator('.pagination').innerText(),/khách đang nợ/);
  await page.getByRole('button',{name:'Việc cần chú ý',exact:true}).click();
  await page.getByRole('dialog',{name:'Thông báo đơn hàng'}).waitFor();
