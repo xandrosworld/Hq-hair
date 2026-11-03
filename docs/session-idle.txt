@@ -1,0 +1,24 @@
+HQ HAIR — Khóa phiên khi không hoạt động
+
+Chính sách áp dụng cho tất cả vai trò:
+- Sau 1 giờ không thao tác: khóa màn hình, nhập mật khẩu hiện tại để tiếp tục.
+- Sau 5 giờ không thao tác: hết phiên, cần đăng nhập đầy đủ.
+- Nội dung đang nhập giữ nguyên trong tab khi khóa; tải lại trang không bảo đảm
+  khôi phục mọi biểu mẫu chưa lưu. Hết phiên vẫn xóa dữ liệu nháp theo chính sách cũ.
+- Di chuyển chuột, nhấn phím, chạm và cuộn được tính là hoạt động; tự tải dữ liệu,
+  thông báo và chỉ chuyển tab/focus không kéo dài phiên.
+- Các tab cùng phiên đồng bộ qua BroadcastChannel, có kiểm tra lại máy chủ
+  mỗi 30 giây và khi quay lại tab. Mỗi thiết bị/phiên đăng nhập có mốc riêng.
+
+Máy chủ:
+- auth_sessions.last_activity; hạn khóa 1 giờ, expires trượt 5 giờ.
+- Chặn API nghiệp vụ bằng 423 khi khóa; hết phiên trả 401.
+- /activity chỉ gia hạn phiên chưa khóa, cần CSRF.
+- /unlock xác minh mật khẩu, CSRF, trạng thái tài khoản và phiên sau scrypt.
+- Giới hạn 10 lần mở khóa trong 15 phút theo tài khoản; ghi nhật ký session-unlock.
+- Phiên cũ được chuyển đổi từ thời điểm phát hành suy ra từ expires cũ.
+- Cửa sổ hóa đơn ngoài root, bàn phím và dữ liệu phía sau bị che/chặn khi khóa.
+
+Kiểm tra: tests/session-idle.mjs (dịch mốc trong SQLite tạm để kiểm tra giới hạn
+thật, không rút ngắn chính sách production), npm test, tests/security.mjs,
+tests/login-design.mjs. Không sửa thời gian phiên của người dùng thật.

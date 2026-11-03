@@ -1,6 +1,7 @@
 import {setDraftOwner,endDraftSession} from './draft-storage.js';
 export const isWorkspace=location.pathname.startsWith('/workspace');
 let csrf='';
+let sessionChannel;try{sessionChannel=new BroadcastChannel('hq-session');sessionChannel.onmessage=()=>window.dispatchEvent(new Event('hq-session-sync'))}catch{}
 const pendingWrites=new Map();
 export async function workspaceAPI(path,body){
  const controller=new AbortController(),timeout=!body?setTimeout(()=>controller.abort(),30000):null;
@@ -17,8 +18,11 @@ export async function workspaceAPI(path,body){
  }
  let data;try{data=await response.json()}catch{throw Error(controller.signal.aborted?'Tải dữ liệu quá lâu. Vui lòng thử lại.':'Máy chủ chưa trả được dữ liệu. Vui lòng thử lại.')}
  if(businessWrite&&response.status<500)pendingWrites.delete(signature);
+ if(response.status===423)window.dispatchEvent(new Event('hq-session-locked'));
  if(!response.ok){if(response.status===401)endDraftSession();if(response.status===401&&!['/login','/me'].includes(path))window.dispatchEvent(new Event('hq-session-ended'));throw Object.assign(Error(data.error||'Không thể kết nối.'),{fields:data.fields,status:response.status})}
  if(data.csrf)csrf=data.csrf;
+ if(data.lockAt)window.dispatchEvent(new CustomEvent('hq-session-update',{detail:data}));
+ if(['/activity','/unlock','/logout','/login','/password'].includes(path))sessionChannel?.postMessage('sync');
  if(['/me','/login','/password'].includes(path)&&data.user)setDraftOwner(data.user.id);
  if(path==='/logout')endDraftSession();
  if(['/login','/logout','/password'].includes(path))pendingWrites.clear();

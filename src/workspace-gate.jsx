@@ -1,3 +1,4 @@
+import {SessionLock} from './session-lock.jsx';
 import React,{useState,useEffect,useId} from 'react';
 import {ArrowRight,ShieldCheck,User,LockKey,Eye,EyeSlash,Question,WarningCircle,SpinnerGap} from '@phosphor-icons/react';
 import {workspaceAPI} from './workspace-api.js';
@@ -16,8 +17,8 @@ export function WorkspaceGate({children}){
  useEffect(()=>{let active=true;workspaceAPI('/me').then(value=>{if(active)setAuth(value)}).catch(()=>{if(active)setAuth(null)});const ended=()=>{setAuth(null);setError('Phiên đã kết thúc. Vui lòng đăng nhập lại.')};window.addEventListener('hq-session-ended',ended);return()=>{active=false;window.removeEventListener('hq-session-ended',ended)}},[]);
  const submit=async e=>{e.preventDefault();if(busy)return;setError('');setBusy(true);try{if(auth?.user.mustChange&&newPassword!==confirm)throw Error('Mật khẩu xác nhận chưa trùng khớp.');setAuth(await workspaceAPI(auth?.user.mustChange?'/password':'/login',auth?.user.mustChange?{currentPassword:password,password:newPassword}:{email,password}));setPassword('');setNewPassword('');setConfirm('');setHelp(false)}catch(e){setError(e.message)}finally{setBusy(false)}};
  if(auth===undefined)return <div className="hq-auth-loading" role="status"><Brand/><span className="hq-auth-loading-line"/><p>Đang mở không gian làm việc…</p></div>;
- if(auth&&!auth.user.mustChange)return children(auth.user,async()=>{await workspaceAPI('/logout',{});setAuth(null)});
- return <main className="hq-login">
+ if(auth&&!auth.user.mustChange){const logout=async()=>{await workspaceAPI('/logout',{});setAuth(null)};return <SessionLock auth={auth} onLogout={logout}>{children(auth.user,logout)}</SessionLock>}
+ const login=<main className="hq-login">
   <section className="hq-login-visual" aria-label="HQ Hair">
    <picture className="hq-login-photo"><source media="(max-width: 760px)" srcSet="/assets/login/hq-hair-editorial-mobile.webp"/><img src="/assets/login/hq-hair-editorial.webp" alt="Mái tóc nâu dài với những lọn sóng mềm trong ánh sáng ấm" width="1122" height="1402" fetchPriority="high" decoding="async"/></picture>
    <div className="hq-login-shade"/>
@@ -42,4 +43,5 @@ export function WorkspaceGate({children}){
    <footer className="hq-login-footer"><span>© {new Date().getFullYear()} HQ Hair</span><span>Kết nối để cùng phát triển.</span></footer>
   </section>
  </main>;
+ return auth?<SessionLock auth={auth} onLogout={async()=>{await workspaceAPI('/logout',{});setAuth(null)}}>{login}</SessionLock>:login;
 }

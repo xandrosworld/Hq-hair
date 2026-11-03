@@ -1,3 +1,4 @@
+import {SESSION_LOCK_MS,SESSION_IDLE_MS} from './session-policy.js';
 import {compactReceipts} from './receipt-delivery.js';
 import {setupCleanup} from './workspace-cleanup.js';
 import {migrateCustomerNumbering} from './customer-numbering.js';
@@ -41,6 +42,7 @@ export async function createWorkspace(dir){
  CREATE TABLE IF NOT EXISTS requests(user_id TEXT NOT NULL,key TEXT NOT NULL,hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(user_id,key));
  CREATE TABLE IF NOT EXISTS login_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,reset INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS sequences(key TEXT PRIMARY KEY,value INTEGER NOT NULL);`);
+ if(!db.prepare('PRAGMA table_info(auth_sessions)').all().some(c=>c.name==='last_activity')){db.exec('ALTER TABLE auth_sessions ADD COLUMN last_activity INTEGER NOT NULL DEFAULT 0');db.prepare('UPDATE auth_sessions SET last_activity=expires-?,expires=MIN(expires,expires-?+?)').run(8*3600000,8*3600000,SESSION_IDLE_MS)}
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='deleted_at'))db.exec('ALTER TABLE users ADD COLUMN deleted_at TEXT');
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='phone'))db.exec("ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''");
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='factory_view'))db.exec("ALTER TABLE users ADD COLUMN factory_view TEXT NOT NULL DEFAULT 'full'");
@@ -76,12 +78,13 @@ export async function createWorkspace(dir){
  const dummy=await hashPassword(randomBytes(24).toString('hex'));
  const router=express.Router();
  router.use((req,res,next)=>{res.set('Cache-Control','no-store');next()});
- const cookieOptions={httpOnly:true,sameSite:'strict',secure:process.env.NODE_ENV==='production',path:'/api/work',maxAge:8*3600000};
+ const cookieOptions={httpOnly:true,sameSite:'strict',secure:process.env.NODE_ENV==='production',path:'/api/work',maxAge:SESSION_IDLE_MS};
+ function sessionInfo(session){return {locked:Date.now()-session.last_activity>=SESSION_LOCK_MS,lockAt:session.last_activity+SESSION_LOCK_MS,expiresAt:session.expires,serverNow:Date.now()}}
  function issue(user,res){
   db.prepare('DELETE FROM auth_sessions WHERE expires<?').run(Date.now());
   const token=randomBytes(32).toString('hex'),csrf=randomBytes(32).toString('hex');
-  db.prepare('INSERT INTO auth_sessions VALUES (?,?,?,?)').run(digest(token),user.id,csrf,Date.now()+8*3600000);
-  res.cookie('hq_work',token,cookieOptions);return {user:safeUser(user),csrf};
+  db.prepare('INSERT INTO auth_sessions(token,user_id,csrf,expires,last_activity) VALUES (?,?,?,?,?)').run(digest(token),user.id,csrf,Date.now()+SESSION_IDLE_MS,Date.now());
+  res.cookie('hq_work',token,cookieOptions);return {user:safeUser(user),csrf,...sessionInfo({last_activity:Date.now(),expires:Date.now()+SESSION_IDLE_MS})};
  }
  router.post('/login',async(req,res)=>{
   const email=String(req.body.email||'').trim().toLowerCase();
@@ -103,12 +106,27 @@ export async function createWorkspace(dir){
   const user=session&&db.prepare('SELECT * FROM users WHERE id=? AND active=1').get(session.user_id);
   if(!user)return res.status(401).json({error:'Vui lòng đăng nhập để tiếp tục.'});
   if(req.method!=='GET'&&req.get('X-CSRF-Token')!==session.csrf)return res.status(403).json({error:'Phiên thao tác không hợp lệ. Vui lòng tải lại trang.'});
-  req.user=user;req.session=session;req.work=true;
-  if(user.must_change&&!['/me','/password','/logout'].includes(req.path))return res.status(403).json({error:'Vui lòng đổi mật khẩu ban đầu.'});
+  req.user=user;req.session=session;req.work=true;req.sessionToken=token;
+  if(sessionInfo(session).locked&&!['/me','/unlock','/logout'].includes(req.path))return res.status(423).json({error:'Phiên đã khóa. Nhập mật khẩu để tiếp tục.',...sessionInfo(session)});
+  if(user.must_change&&!['/me','/password','/logout','/unlock','/activity'].includes(req.path))return res.status(403).json({error:'Vui lòng đổi mật khẩu ban đầu.'});
   next();
  });
  router.post('/profile-contact',(req,res)=>{const phone=typeof req.body.phone==='string'?req.body.phone.trim():'';if(phone.length>40||phone&&!/^[+0-9().\s-]+$/.test(phone))reject(400,'Số điện thoại không hợp lệ.');db.prepare('UPDATE users SET phone=? WHERE id=?').run(phone,req.user.id);audit(req.user,'profile-contact',req.user.id,{phone});res.json({ok:true,phone})});
- router.get('/me',(req,res)=>res.json({user:safeUser(req.user),csrf:req.session.csrf}));
+ router.get('/me',(req,res)=>res.json({user:safeUser(req.user),csrf:req.session.csrf,...sessionInfo(req.session)}));
+ function renew(req,res){
+  const now=Date.now();db.prepare('UPDATE auth_sessions SET last_activity=?,expires=? WHERE token=?').run(now,now+SESSION_IDLE_MS,req.session.token);
+  res.cookie('hq_work',req.sessionToken,cookieOptions);return {...sessionInfo({last_activity:now,expires:now+SESSION_IDLE_MS})};
+ }
+ router.post('/activity',(req,res)=>res.json(renew(req,res)));
+ router.post('/unlock',async(req,res)=>{
+  const key='unlock:'+req.user.id,now=Date.now(),limit=db.prepare('SELECT * FROM login_limits WHERE key=?').get(key);
+  if(limit&&limit.reset>now&&limit.count>=10){res.set('Retry-After','900');return res.status(429).json({error:'Đã thử nhiều lần. Vui lòng thử lại sau 15 phút.'})}
+  db.prepare('INSERT INTO login_limits VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN reset<? THEN 1 ELSE count+1 END,reset=CASE WHEN reset<? THEN excluded.reset ELSE reset END').run(key,now+900000,now,now);
+  if(!await verify(req.body.password,req.user.password))return res.status(400).json({error:'Mật khẩu không đúng. Vui lòng thử lại.'});
+  const fresh=db.prepare('SELECT * FROM users WHERE id=? AND active=1').get(req.user.id),session=db.prepare('SELECT * FROM auth_sessions WHERE token=? AND expires>?').get(req.session.token,Date.now());
+  if(!session||!fresh||fresh.password!==req.user.password)return res.status(401).json({error:'Phiên đã kết thúc. Vui lòng đăng nhập lại.'});
+  db.prepare('DELETE FROM login_limits WHERE key=?').run(key);audit(req.user,'session-unlock');res.json({user:safeUser(fresh),csrf:session.csrf,...renew(req,res)});
+ });
  router.post('/logout',(req,res)=>{db.prepare('DELETE FROM auth_sessions WHERE token=?').run(req.session.token);res.clearCookie('hq_work',cookieOptions);res.json({ok:true})});
  router.post('/password',async(req,res)=>{
   if(!await verify(req.body.currentPassword,req.user.password))reject(400,'Mật khẩu hiện tại không đúng.');
