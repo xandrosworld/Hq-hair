@@ -126,7 +126,7 @@ try{
  await b.call('/password',{currentPassword:'Reset-New-Password',password:'Final-New-Password'});
  await stop();await start();assert.equal((await b.call('/state')).orders[0].id,id);
  const backupInfo=await owner.call('/backup-status');assert.ok(backupInfo.lastBackup);
- const copies=readdirSync(path.join(dir,'backups')).filter(n=>n.endsWith('.sqlite')).sort();assert.ok(copies.length>=1);
+ const copies=readdirSync(path.join(dir,'backups')).filter(n=>n.endsWith('.sqlite')).sort();assert.equal(copies.length,1);assert.equal(backupInfo.retention,1);
  const copy=new DatabaseSync(path.join(dir,'backups',copies.at(-1)),{readOnly:true});assert.equal(copy.prepare('PRAGMA integrity_check').get().integrity_check,'ok');assert.equal(JSON.parse(copy.prepare('SELECT data FROM workspace').get().data).orders.length,1);copy.close();
  const restoreDir=path.join(dir,'restore-check');const restored=spawnSync(process.execPath,['scripts/restore-workspace.mjs',path.join(dir,'backups',copies.at(-1)),restoreDir],{encoding:'utf8'});assert.equal(restored.status,0,restored.stderr);
  const restoredDb=new DatabaseSync(path.join(restoreDir,'workspace.sqlite'),{readOnly:true});assert.equal(restoredDb.prepare('SELECT COUNT(*) n FROM auth_sessions').get().n,0);assert.equal(JSON.parse(restoredDb.prepare('SELECT data FROM workspace').get().data).orders.length,1);assert.equal(restoredDb.prepare('SELECT COUNT(*) n FROM chat_images').get().n,1);restoredDb.close();

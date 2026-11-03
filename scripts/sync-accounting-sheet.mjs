@@ -1,4 +1,4 @@
-import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import {readFileSync,mkdirSync,writeFileSync,readdirSync,unlinkSync,lstatSync} from 'node:fs';
 import {createSign} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import path from 'node:path';
@@ -69,5 +69,10 @@ if(write){
  for(let i=0;i<data.length;i++)for(let col=0;col<13;col++){
   if((verification.valueRanges?.[i]?.values?.[0]?.[col]??'')!==data[i].values[0][col])throw Error('Read-back verification failed; inspect backup before retry.');
  }
+}
+// Retain only this verified write snapshot; previews never remove recovery data.
+if(write)for(const name of readdirSync(backupDir)){
+ const old=path.join(backupDir,name);
+ if(/^\d+-(write|preview)\.json$/.test(name)&&old!==filename&&lstatSync(old).isFile())unlinkSync(old);
 }
 console.log(JSON.stringify({mode:write?'written-and-verified':'preview',rows:data.length,costOrders:approvedOrders.length,costChanges:costPlan.requests.length,costExpansions:costPlan.expansions.length,asOf:payload.asOf,backup:filename}));

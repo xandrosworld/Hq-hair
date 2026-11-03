@@ -15,15 +15,8 @@ git archive "$revision" | tar -x -C "$release"
 image="hqhaircrm:$revision"
 echo "Building revision $revision"
 docker build --label io.hqhaircrm.revision="$revision" -t "$image" "$release"
-# SQLite online backups before any container replacement.
-stamp=$(date -u +%Y%m%dT%H%M%SZ)
-mkdir -p "$ROOT/backups/predeploy-$stamp"
-for db in workspace demo; do
- if [[ -f "$ROOT/data/$db.sqlite" ]]; then
-  sqlite3 "$ROOT/data/$db.sqlite" ".backup '$ROOT/backups/predeploy-$stamp/$db.sqlite'"
-  [[ $(sqlite3 "$ROOT/backups/predeploy-$stamp/$db.sqlite" 'PRAGMA integrity_check;') == ok ]]
- fi
-done
+# Shared, verified single-snapshot policy, serialized with the daily job.
+bash "$ROOT/config/backup.sh"
 [[ ! -f "$ROOT/config/runtime.env" ]] || cp "$ROOT/config/runtime.env" "$ROOT/state/previous.env"
 printf 'APP_IMAGE=%s\nAPP_REVISION=%s\n' "$image" "$revision" > "$ROOT/config/runtime.env"
 # Stable compose is installed by the operator, not replaced during an automatic deployment.

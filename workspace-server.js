@@ -179,15 +179,14 @@ export async function createWorkspace(dir){
  async function makeBackup(){
   if(backingUp)return;backingUp=true;
   const file=path.join(backupDir,`workspace-${new Date().toISOString().replaceAll(':','-')}-${randomUUID().slice(0,8)}.sqlite`);
-  try{await backup(db,file);const check=new DatabaseSync(file,{readOnly:true});try{if(check.prepare('PRAGMA integrity_check').get().integrity_check!=='ok')throw Error('Integrity check failed')}finally{check.close()}
+  try{await backup(db,file);const check=new DatabaseSync(file);try{if(check.prepare('PRAGMA integrity_check').get().integrity_check!=='ok')throw Error('Integrity check failed');check.exec('PRAGMA journal_mode=DELETE')}finally{check.close()}
    lastBackup=new Date().toISOString();backupError=null;
-   const files=readdirSync(backupDir).filter(x=>/^workspace-[\wT.:-]+\.sqlite$/.test(x)).sort((a,b)=>statSync(path.join(backupDir,b)).mtimeMs-statSync(path.join(backupDir,a)).mtimeMs);
-   // Keep the newest valid snapshot for each of the last 14 backup days.
-   const days=new Set();
-   for(const name of files){const day=name.slice(10,20);if(days.has(day)||days.size>=14)unlinkSync(path.join(backupDir,name));else days.add(day)}
+   const files=readdirSync(backupDir).filter(x=>/^workspace-[\wT.:-]+\.sqlite(?:-wal|-shm)?$/.test(x)).sort((a,b)=>statSync(path.join(backupDir,b)).mtimeMs-statSync(path.join(backupDir,a)).mtimeMs);
+   // Remove older snapshots only after this snapshot passes integrity checking.
+   for(const name of files)if(path.join(backupDir,name)!==file)unlinkSync(path.join(backupDir,name));
   }catch(e){backupError='Sao lưu chưa hoàn thành';console.error('Workspace backup failed:',e.message)}finally{backingUp=false}
  }
- router.get('/backup-status',manager,(req,res)=>res.json({lastBackup,backupError,separateLocation:!!process.env.BACKUP_DIR,retention:14}));
+ router.get('/backup-status',manager,(req,res)=>res.json({lastBackup,backupError,separateLocation:!!process.env.BACKUP_DIR,retention:1}));
  let exporting=false;
  router.get('/backup-download',manager,async(req,res)=>{
   if(exporting)return res.status(409).json({error:'Đang chuẩn bị bản sao lưu. Vui lòng thử lại sau.'});

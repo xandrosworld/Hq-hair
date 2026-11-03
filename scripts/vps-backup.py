@@ -80,16 +80,11 @@ sha256sum workspace.sqlite demo.sqlite revision > SHA256SUMS
         temporary.write_text(json.dumps(result, indent=2), encoding='utf-8')
         temporary.replace(DEST / 'status.json')
         snapshots = sorted(DEST.glob('snapshot-*'), reverse=True)
-        kept_days = set()
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).strftime('%Y%m%d')
         for folder in snapshots:
             if folder.is_symlink() or not folder.is_dir() or folder.resolve().parent != DEST.resolve():
                 continue
-            day = folder.name[9:17]
-            if day in kept_days or day < cutoff:
+            if folder != target:
                 shutil.rmtree(folder)
-            else:
-                kept_days.add(day)
         return result
     finally:
         try:

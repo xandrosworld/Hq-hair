@@ -37,7 +37,7 @@ SAO LƯU / KHÔI PHỤC
   và số hàng của mọi bảng bền vững (bao gồm media), thu hồi phiên cũ, khởi chạy
   máy chủ riêng khỏe và xác nhận API vẫn yêu cầu đăng nhập.
 - Đã bật và chạy thử thành công tác vụ Windows HQHair-OutsideVPS-Backup:
-  09:30 mỗi ngày và khi đăng nhập, giữ tối đa 14 ngày. Máy phải bật, có mạng,
+  09:30 mỗi ngày và khi đăng nhập, chỉ giữ một snapshot mới nhất đã kiểm tra (cập nhật theo yêu cầu 03/11). Máy phải bật, có mạng,
   người dùng đã đăng nhập và .env còn thông tin hợp lệ. Đây chưa phải kho backup
   độc lập luôn hoạt động khi máy vận hành tắt. Không lưu khóa/mật khẩu trong Git.
 
@@ -68,3 +68,7 @@ Kiểm thử: npm test; tests/security.mjs; tests/workflow-security.mjs;
 tests/accounting-qc.mjs; tests/factory-integration.mjs;
 tests/concurrent-workspace.mjs; tests/navigation-audit.mjs;
 tests/production-boundary.mjs; tests/mobile-workspace.mjs.
+
+Cập nhật chính sách lưu: mỗi nhóm backup chỉ giữ bản mới nhất đã xác minh;
+backup daily và predeploy dùng chung một nhóm. Bản cũ chỉ bị xóa sau khi
+bản mới hoàn tất. Các nhóm CRM và Google Sheet là dữ liệu khác nhau.

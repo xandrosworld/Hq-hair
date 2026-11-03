@@ -1,6 +1,6 @@
 import {DatabaseSync} from 'node:sqlite';
 import {createHash,randomUUID} from 'node:crypto';
-import {mkdirSync} from 'node:fs';
+import {mkdirSync,readdirSync,unlinkSync,lstatSync} from 'node:fs';
 import path from 'node:path';
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})};
 export const cleanupLabels={customers:'XOA KHACH HANG',orders:'XOA DON HANG',all:'XOA TAT CA'};
@@ -20,6 +20,7 @@ export function executeCleanup(db,dir,user,body,audit){
  const backupDir=path.join(dir,'cleanup-backups');
  const backupName=`before-cleanup-${Date.now()}-${randomUUID()}.sqlite`,file=path.join(backupDir,backupName);
  try{mkdirSync(backupDir,{recursive:true});db.prepare('VACUUM INTO ?').run(file);const snapshot=new DatabaseSync(file,{readOnly:true});try{if(snapshot.prepare('PRAGMA integrity_check').get().integrity_check!=='ok')throw Error('Integrity check failed');if(fingerprint(snapshot.prepare('SELECT data FROM workspace WHERE id=1').get().data)!==preview.token)throw Error('Snapshot differs')}finally{snapshot.close()}}catch{fail(503,'Không tạo được bản sao lưu hợp lệ. Chưa xóa dữ liệu.');}
+ for(const name of readdirSync(backupDir)){const old=path.join(backupDir,name);if(/^before-cleanup-[\w-]+\.sqlite$/.test(name)&&name!==backupName&&lstatSync(old).isFile())unlinkSync(old)}
  db.exec('BEGIN IMMEDIATE');
  try{
   const data=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
