@@ -1,0 +1,19 @@
+HQ Hair login editorial asset
+Generated with the built-in image_gen tool, 03/11/2026.
+AI-generated brand atmosphere; not a photograph of staff or the factory.
+Files: hq-hair-editorial.webp (desktop), hq-hair-editorial-mobile.webp (mobile).
+Image generation source remains outside the repository; web assets are optimized WebP.
+
+Final generation prompt:
+Use case: photorealistic-natural. Create a bespoke luxury hair brand editorial photograph for the left hero panel of the HQ Hair staff login website. Portrait composition 4:5, photographic realism, exceptionally refined beauty campaign art direction. An adult woman seen from behind and a very slight side angle, face not visible, with exceptionally long, smooth, healthy dark chocolate brunette hair cascading down her back in broad graceful S waves, highly detailed individual hair strands and understated warm champagne highlights. Wearing a simple ivory silk top with only a small shoulder visible. Subject occupies center-right of frame, hair is the absolute focal point. Deep muted midnight navy studio backdrop, softly illuminated from the upper right with warm softbox light, sophisticated shadows, luxurious natural texture, no plastic shine. The upper-left quarter and bottom-left third should have quieter darker negative space to support white typography added later in code. A few strands move gently, elegant stillness, expensive art-directed photography, editorial framing cropped at waist, medium-close crop, shot on portrait lens. Palette: midnight blue #142e3c, brunette #33251f, warm champagne #c8b58e, ivory #f4f0e8. No text, no letters, no logos, no watermark, no borders, no UI, no collage, no props, no fake lens flares. This is a brand atmosphere image, not a photograph of actual staff or factory.
+
+Design review:
+Login redesign for HQ Hair staff, preserving existing navy/gold identity, HQ monogram,
+Be Vietnam Pro typography, form order, autofill labels and authentication routes.
+Direction: editorial beauty photography with a light application surface.
+Dials: variance 7, motion 3, density 3. Native React/CSS and existing Phosphor icons.
+Retired empty solid-color panel; no fictional testimonials, statistics or dead links.
+Responsive photo and short mobile header preserve visible login CTA at 320px and up.
+Reduced motion disables entrances; visible keyboard focus, password visibility control,
+caps-lock warning, password recovery instructions, error and first-login setup states.
+Public metadata remains noindex; no changes to protected workspace navigation.
