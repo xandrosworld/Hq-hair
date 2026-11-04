@@ -1,3 +1,4 @@
+import {passwordVault} from './password-vault.js';
 import {SESSION_LOCK_MS,SESSION_IDLE_MS} from './session-policy.js';
 import {compactReceipts} from './receipt-delivery.js';
 import {setupCleanup} from './workspace-cleanup.js';
@@ -42,6 +43,8 @@ export async function createWorkspace(dir){
  CREATE TABLE IF NOT EXISTS requests(user_id TEXT NOT NULL,key TEXT NOT NULL,hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(user_id,key));
  CREATE TABLE IF NOT EXISTS login_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,reset INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS sequences(key TEXT PRIMARY KEY,value INTEGER NOT NULL);`);
+ if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='password_cipher'))db.exec('ALTER TABLE users ADD COLUMN password_cipher TEXT');
+ const vault=passwordVault(dir,!!db.prepare('SELECT id FROM users WHERE password_cipher IS NOT NULL LIMIT 1').get());
  if(!db.prepare('PRAGMA table_info(auth_sessions)').all().some(c=>c.name==='last_activity')){db.exec('ALTER TABLE auth_sessions ADD COLUMN last_activity INTEGER NOT NULL DEFAULT 0');db.prepare('UPDATE auth_sessions SET last_activity=expires-?,expires=MIN(expires,expires-?+?)').run(8*3600000,8*3600000,SESSION_IDLE_MS)}
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='deleted_at'))db.exec('ALTER TABLE users ADD COLUMN deleted_at TEXT');
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='phone'))db.exec("ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''");
@@ -134,11 +137,17 @@ export async function createWorkspace(dir){
   if(await verify(req.body.password,req.user.password))reject(400,'Mật khẩu mới phải khác mật khẩu cũ.');
   const fresh=db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
   if(!fresh.active||fresh.password!==req.user.password)reject(409,'Tài khoản đã thay đổi. Vui lòng đăng nhập lại.');
-  db.prepare('UPDATE users SET password=?,must_change=0 WHERE id=?').run(password,req.user.id);
+  db.prepare('UPDATE users SET password=?,password_cipher=?,must_change=0 WHERE id=?').run(password,vault.seal(req.body.password,req.user.id),req.user.id);
   db.prepare('DELETE FROM auth_sessions WHERE user_id=?').run(req.user.id);
   audit(req.user,'password-change');res.json(issue({...req.user,must_change:0},res));
  });
  const manager=(req,res,next)=>req.user.role==='manager'?next():res.status(403).json({error:'Chỉ quản lý được thực hiện thao tác này.'});
+ router.post('/users/:id/reveal-password',manager,(req,res)=>{
+  const target=db.prepare('SELECT id,password_cipher FROM users WHERE id=? AND deleted_at IS NULL').get(req.params.id);
+  if(!target)return res.status(404).json({error:'Không tìm thấy tài khoản.'});
+  audit(req.user,'password-reveal',target.id,{available:!!target.password_cipher});
+  res.json({password:target.password_cipher?vault.open(target.password_cipher,target.id):null});
+ });
  setupCleanup(router,db,dir,manager,verify,audit);
  setupPricing(router,db,audit);
  setupStandards(router);
@@ -172,7 +181,7 @@ export async function createWorkspace(dir){
    // Authorization must still hold after hashing.
    if(!db.prepare('SELECT token FROM auth_sessions WHERE token=?').get(req.session.token))reject(401,'Phiên đã kết thúc.');
    if(db.prepare('SELECT deleted_at FROM users WHERE id=?').get(b.id)?.deleted_at)reject(404,'Tài khoản đã bị xóa.');
-   db.prepare('UPDATE users SET active=?,password=COALESCE(?,password),must_change=CASE WHEN ? IS NULL THEN must_change ELSE 1 END WHERE id=?').run(b.active===false?0:1,password,password,b.id);
+   db.prepare('UPDATE users SET active=?,password=COALESCE(?,password),password_cipher=COALESCE(?,password_cipher),must_change=CASE WHEN ? IS NULL THEN must_change ELSE 1 END WHERE id=?').run(b.active===false?0:1,password,password?vault.seal(b.password,b.id):null,password,b.id);
    db.prepare('DELETE FROM auth_sessions WHERE user_id=?').run(b.id);audit(req.user,password?'user-reset':'user-status',b.id);
   }else{
    const email=String(b.email||'').trim().toLowerCase(),name=String(b.name||'').trim().slice(0,100);
@@ -186,7 +195,7 @@ export async function createWorkspace(dir){
    if(code&&!new RegExp('^'+prefix+'-[A-Z0-9]{2,12}$').test(code))reject(400,`Mã tài khoản cần dạng ${prefix}-TÊNVIẾTTẮT (2–12 chữ cái hoặc số).`);
    if(!code){let n=db.prepare('SELECT COUNT(*) AS n FROM users').get().n+1;do{code=prefix+'-S'+String(n++).padStart(3,'0')}while(db.prepare('SELECT id FROM users WHERE code=?').get(code))}
    if(db.prepare('SELECT id FROM users WHERE code=?').get(code))reject(409,'Mã tài khoản đã được sử dụng. Chọn mã khác.');
-   db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(id,email,name,code,b.role,password);audit(req.user,'user-create',id,{name,email,role:b.role,code});
+   db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(id,email,name,code,b.role,password);db.prepare('UPDATE users SET password_cipher=? WHERE id=?').run(vault.seal(b.password,id),id);audit(req.user,'user-create',id,{name,email,role:b.role,code});
   }
   res.json(db.prepare('SELECT * FROM users WHERE deleted_at IS NULL ORDER BY name').all().map(safeUser));
  });
