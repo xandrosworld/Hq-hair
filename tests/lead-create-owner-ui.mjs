@@ -1,0 +1,8 @@
+import {createServer} from 'vite';
+import {chromium,expect} from '@playwright/test';
+const server=await createServer({server:{port:3199,host:'127.0.0.1'},logLevel:'error'});await server.listen();let browser;
+try{browser=await chromium.launch({headless:true,channel:'msedge'});const page=await browser.newPage();page.on('pageerror',e=>console.log(e.message));const user={id:'lead',name:'Lead',role:'sales_lead',code:'TL-SALE',leadEdit:true,leadAssign:true};const sale={id:'sale',name:'Judy',code:'HQ-JD'};
+await page.route('**/api/work/**',r=>r.fulfill({json:{user,customers:[{id:'TL-SALE-1',ownerId:'lead',name:'Lead Buyer',sale:'Lead',country:'United States',group:'Salon',email:'',phone:'+123',address:'road'},{id:'HQ-JD-1',ownerId:'sale',name:'Sale Buyer',sale:'Judy',country:'United States',group:'Salon',email:'',phone:'+456',address:'road'}],orders:[],catalog:[],prices:[],colors:[],creationOwners:[user,sale],csrf:'test',lockAt:Date.now()+600000,expiresAt:Date.now()+900000,serverNow:Date.now()}}));
+await page.goto('http://127.0.0.1:3199/workspace');await page.getByRole('button',{name:'Tạo đơn hàng',exact:true}).click();await expect(page.getByLabel('Sale phụ trách / mã đơn',{exact:true})).toHaveValue('lead');await page.getByLabel('Sale phụ trách / mã đơn',{exact:true}).selectOption('sale');await page.getByLabel('Khách hàng',{exact:true}).selectOption('HQ-JD-1');await expect(page.getByLabel('Sale phụ trách / mã đơn',{exact:true})).toHaveValue('sale');await expect(page.getByLabel('Người phụ trách',{exact:true})).toHaveValue('Judy · HQ-JD');console.log('PASS Lead default, Sale selector and customer owner UI');
+}finally{await browser?.close();await server.close()}
+

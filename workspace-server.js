@@ -229,6 +229,13 @@ export async function createWorkspace(dir){
  await makeBackup();const timer=setInterval(makeBackup,86400000);timer.unref();
  router.use((req,res,next)=>{
   if(!['sale','manager','sales_lead','factory','accounting'].includes(req.user.role))return res.status(403).json({error:'Phân hệ này dành cho Sale và quản lý. Phân hệ của bạn sẽ được mở ở giai đoạn tương ứng.'});
+  req.creationOwner=id=>{
+   if(!id||id===req.user.id)return req.user;
+   if(req.user.role!=='manager'&&!(req.user.role==='sales_lead'&&req.user.lead_edit&&req.user.lead_assign))reject(403,'Chưa được cấp quyền tạo thay Sale.');
+   const owner=db.prepare("SELECT id,name,code,role FROM users WHERE id=? AND active=1 AND deleted_at IS NULL AND role='sale'").get(id);
+   if(!owner)reject(400,'Sale được chọn không còn hoạt động.');
+   return owner;
+  };
   req.imageDb=db;req.data=JSON.parse(db.prepare('SELECT data FROM workspace WHERE id=1').get().data);
   const beforeCustomers=new Map(req.data.customers.map(c=>[c.id,JSON.stringify(c)]));
   const beforeCatalog=JSON.stringify(req.data.catalog);
@@ -237,7 +244,7 @@ export async function createWorkspace(dir){
   req.assertAccess=record=>{if(!req.canRead(record))reject(404,'Không tìm thấy dữ liệu trong phạm vi được giao.')};
   req.assertVersion=record=>{if(record&&req.body.version!==record.version)reject(409,'Dữ liệu đã được cập nhật ở nơi khác. Tải lại trang trước khi sửa tiếp.')};
   req.nextCode=key=>db.prepare('INSERT INTO sequences VALUES (?,1) ON CONFLICT(key) DO UPDATE SET value=value+1 RETURNING value').get(key).value;
-  req.view=()=>{const phones=new Map(db.prepare('SELECT id,phone FROM users').all().map(u=>[u.id,u.phone]));const orders=req.data.orders.filter(req.canRead).map(o=>({...o,salePhone:phones.get(o.ownerId)||''}));if(req.user.role==='accounting')return {orders:orders.map(compactReceipts),customers:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};if(req.user.role==='factory')return {orders:factoryView(req.user)==='products'?orders.map(factoryOrder):orders,customers:factoryView(req.user)==='products'?[]:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};return {...req.data,customers:req.data.customers.filter(req.canRead),orders,user:safeUser(req.user),mode:'workspace'}};
+  req.view=()=>{const phones=new Map(db.prepare('SELECT id,phone FROM users').all().map(u=>[u.id,u.phone]));const orders=req.data.orders.filter(req.canRead).map(o=>({...o,salePhone:phones.get(o.ownerId)||''}));if(req.user.role==='accounting')return {orders:orders.map(compactReceipts),customers:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};if(req.user.role==='factory')return {orders:factoryView(req.user)==='products'?orders.map(factoryOrder):orders,customers:factoryView(req.user)==='products'?[]:req.data.customers.filter(c=>orders.some(o=>o.customerId===c.id)),catalog:[],user:safeUser(req.user),mode:'workspace'};return {...req.data,customers:req.data.customers.filter(req.canRead),orders,creationOwners:req.user.role==='manager'||(req.user.role==='sales_lead'&&req.user.lead_edit&&req.user.lead_assign)?db.prepare("SELECT id,name,code FROM users WHERE active=1 AND deleted_at IS NULL AND (role='sale' OR id=?)").all(req.user.id):[],user:safeUser(req.user),mode:'workspace'}};
   req.save=()=>{
    for(const c of req.data.customers){const before=beforeCustomers.get(c.id);if(before!==JSON.stringify(c))audit(req.user,before?'customer-update':'customer-create',c.id,{before:before?JSON.parse(before):null,after:c})}
    if(beforeCatalog!==JSON.stringify(req.data.catalog))audit(req.user,'catalog-update','catalog',{before:JSON.parse(beforeCatalog),after:req.data.catalog});

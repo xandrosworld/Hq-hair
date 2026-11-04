@@ -77,7 +77,10 @@ business.post('/customers',(req,res)=>{
  const existing=req.data.customers.find(x=>x.id===b.id);
  if(b.id){req.assertAccess(existing);req.assertVersion(existing)}
  assertUniqueCustomerPhone(c,req.data.customers,existing);
- if(existing)Object.assign(existing,c,{version:(existing.version||0)+1});else req.data.customers.push({...c,ownerId:req.user.id,version:1,id:req.work?`${req.user.code}-${req.nextCode('customer:'+req.user.id)}`:`HQ-JD-${Math.max(0,...req.data.customers.map(x=>Number(x.id.split('-').at(-1))))+1}`,sale:req.user.name,created:today()});
+ if(existing)Object.assign(existing,c,{version:(existing.version||0)+1});else {
+  const owner=req.work?req.creationOwner(b.ownerId):req.user;
+  req.data.customers.push({...c,ownerId:owner.id,version:1,id:req.work?`${owner.code}-${req.nextCode('customer:'+owner.id)}`:`HQ-JD-${Math.max(0,...req.data.customers.map(x=>Number(x.id.split('-').at(-1))))+1}`,sale:owner.name,created:today()});
+ }
  req.save();res.json(req.view());
 });
 function cleanPayment(p){
