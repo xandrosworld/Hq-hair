@@ -23,6 +23,7 @@ async function verifyBytes(client,url,bytes){
  const partial=await client.ctx.request.get(url,{headers:{Range:'bytes=0-31'}});assert.equal(partial.status(),206);assert.deepEqual(await partial.body(),bytes.subarray(0,32));
 }
 async function playback(video){
+ await video.evaluate(v=>{v.muted=true;v.play().catch(()=>{})});
  const recovery=video.locator('..').getByRole('button',{name:'Tải video để phát',exact:true});
  await expect.poll(async()=>await recovery.isVisible()||await video.evaluate(v=>v.videoWidth===180&&v.videoHeight===320),{timeout:15000}).toBe(true);
  if(await recovery.isVisible())await recovery.tap();

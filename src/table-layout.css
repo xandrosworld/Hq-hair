@@ -53,3 +53,10 @@
   .team-table>table .actions .btn { flex:1 1 140px;min-height:44px; }
  }
 }
+@media screen {
+ .price-hero { flex-wrap:wrap;gap:16px; }
+ .price-hero>div:first-child { flex:1 1 360px;min-width:0; }
+ .price-hero>.actions { display:flex;flex-wrap:wrap;max-width:100%;gap:8px; }
+ .price-hero>.actions .btn { flex:0 1 auto; }
+ .color-form { box-sizing:border-box;max-width:calc(100% - 32px);right:16px; }
+}
