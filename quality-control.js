@@ -19,11 +19,11 @@ export function assertQCWrite(order,user,body){
 export function qcMedia(input){
  if(typeof input?.data!=='string')fail(400,'Chọn ảnh hoặc video kiểm định.');
  if(input.data.startsWith('data:image/')){const file=parseChatImages([input])[0];if(file.size>5*1024*1024)fail(400,'Ảnh kiểm định tối đa 5 MiB.');return file;}
- const match=input.data.match(/^data:(video\/(?:mp4|webm));base64,([A-Za-z0-9+/]+={0,2})$/);
- if(!match||match[2].length>16*1024*1024)fail(400,'Video chỉ nhận MP4/WebM tối đa 12 MiB.');
+ const match=input.data.match(/^data:(video\/(?:mp4|webm|quicktime));base64,([A-Za-z0-9+/]+={0,2})$/);
+ if(!match||match[2].length>Math.ceil(50*1024*1024/3)*4)fail(400,'Video chỉ nhận MP4/WebM/MOV tối đa 50 MiB.');
  const bytes=Buffer.from(match[2],'base64'),mime=match[1];
- const valid=mime==='video/mp4'?bytes.subarray(4,8).toString()==='ftyp':bytes.subarray(0,4).equals(Buffer.from([0x1a,0x45,0xdf,0xa3]));
- if(!valid||bytes.length<16||bytes.length>12*1024*1024)fail(400,'Nội dung video không đúng định dạng hoặc vượt 12 MiB.');
+ const valid=mime!=='video/webm'?bytes.subarray(4,8).toString()==='ftyp':bytes.subarray(0,4).equals(Buffer.from([0x1a,0x45,0xdf,0xa3]));
+ if(!valid||bytes.length<16||bytes.length>50*1024*1024)fail(400,'Nội dung video không đúng định dạng hoặc vượt 50 MiB.');
  return {id:randomUUID(),name:clean(input.name,120)||'Video QC',mime,size:bytes.length,bytes};
 }
 export function saveQC(order,user,body){

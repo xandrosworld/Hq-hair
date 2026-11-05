@@ -16,3 +16,15 @@ test('approval FX falls back only to one complete confirmed receipt rate and kee
  o.payments.push({amount:10,confirmed:true,exchangeRate:26000});assert.equal(approvalRate(o),null);o.payments[1].exchangeRate=null;assert.equal(approvalRate(o),null);o.accountingApproval.exchangeRate=25000;assert.equal(approvalRate(o),25000);
  const before=structuredClone(o.payments);o.contentLockedAt='now';applyAccounting(o,actor,'accounting-rate',{approvalExchangeRate:24500},()=>{});assert.deepEqual(o.payments,before);assert.equal(o.accountingApproval.exchangeRate,24500);assert.equal(o.stage,7);
 });
+
+test('common receipt FX updates confirmed receipts only, preserves debt and reports sum per receipt',()=>{
+ const o=make();o.shippingFee=10;o.payments=[{id:'a',amount:30,confirmed:true,exchangeRate:24000,receivedDate:'2026-10-01',confirmedAt:'2026-10-01T10:00:00Z'},{id:'b',amount:40,confirmed:true,exchangeRate:25000,receivedDate:'2026-10-02',confirmedAt:'2026-10-02T10:00:00Z'},{id:'c',amount:5,confirmed:false}];
+ const beforeDebt=totals(o).debt;
+ assert.equal(accountingCurrencies([o],periodDashboard([o]),'').total,1720000);
+ applyAccounting(o,actor,'accounting-rate',{approvalExchangeRate:26000,applyToReceipts:true},()=>{});
+ assert.equal(accountingCurrencies([o],periodDashboard([o]),'').total,1820000);
+ assert.equal(totals(o).debt,beforeDebt);assert.equal(o.payments[2].exchangeRate,undefined);
+ assert.equal(o.payments[0].rateHistory[0].before,24000);assert.equal(o.payments[1].rateHistory[0].before,25000);
+ assert.equal(o.payments[0].exchangeRate,26000);assert.equal(o.accountingApproval.exchangeRate,26000);
+ const snapshot=structuredClone(o);assert.throws(()=>applyAccounting(o,actor,'accounting-rate',{approvalExchangeRate:-1,applyToReceipts:true},()=>{}));assert.deepEqual(o,snapshot);
+});

@@ -25,11 +25,19 @@ export function applyAccounting(order,user,action,body,event){
  if(user.role!=='accounting')fail(403,'Chỉ Kế toán được xử lý bước duyệt thanh toán.');
  if(action==='accounting-rate'){
   if(!order.accountingApproval||!order.orderCode||order.cancelledAt)fail(400,'Chỉ cập nhật tỷ giá cho đơn đã duyệt.');
-  const rate=receiptRate(body.approvalExchangeRate);if(rate===null)fail(400,'Nhập tỷ giá doanh thu và giảm giá.');
+  const rate=receiptRate(body.approvalExchangeRate);if(rate===null)fail(400,'Nhập tỷ giá nhận tiền.');
+  const now=new Date().toISOString();
+  if(body.applyToReceipts===true){
+   for(const p of order.payments||[]){
+    if(!p.confirmed)continue;
+    p.rateHistory=[...(p.rateHistory||[]),{before:p.exchangeRate??null,after:rate,by:user.id,name:user.name,time:now,reason:'Áp dụng tỷ giá nhận tiền chung cho đơn'}];
+    p.exchangeRate=rate;p.exchangeRateSource='order-common';
+   }
+  }
   const previous=order.accountingApproval.exchangeRate;
   order.accountingApproval.exchangeRate=rate;
   order.accountingApproval.rateUpdatedAt=new Date().toISOString();order.accountingApproval.rateUpdatedBy=user.id;
-  event('Cập nhật tỷ giá duyệt đơn',`${previous||'Chưa có'} → ${rate} VND/USD`);return true;
+  event(body.applyToReceipts===true?'Áp dụng tỷ giá nhận tiền chung':'Cập nhật tỷ giá duyệt đơn',`${previous||'Chưa có'} → ${rate} VND/USD${body.applyToReceipts===true?' · cập nhật tất cả khoản đã thu':''}`);return true;
  }
  if(order.cancelledAt||(order.contentLockedAt&&!(action==='accounting-receive'&&order.finalPaymentCheck?.status==='credit')))fail(400,'Đơn đã hủy hoặc đã khóa nội dung.');
  const now=new Date().toISOString(),note=typeof body.text==='string'?body.text.trim().slice(0,1000):'';

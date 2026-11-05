@@ -56,3 +56,13 @@ test('Forfeiture cannot silently discard receipt confirmation inputs',()=>{
  const o={...order(),stage:4,orderCode:'HQ-1',production:{status:'paused'},payments:[{id:'p',amount:30,confirmed:true},{id:'p2',amount:20,confirmed:false}]};const original=structuredClone(o);
  assert.throws(()=>applyAccounting(o,accountant,'accounting-forfeit',{text:'Stop',receipts:[{id:'p2',amount:20}]},()=>{}),{status:400});assert.deepEqual(o,original);
 });
+
+
+test('QC accepts iPhone MOV above the old limit and rejects spoofed/oversized video',()=>{
+ const bytes=Buffer.alloc(13*1024*1024);bytes.write('ftyp',4);bytes.write('qt  ',8);
+ const input=b=>({name:'IMG_001.MOV',data:'data:video/quicktime;base64,'+b.toString('base64')});
+ const parsed=qcMedia(input(bytes));assert.equal(parsed.mime,'video/quicktime');assert.deepEqual(parsed.bytes,bytes);
+ assert.throws(()=>qcMedia(input(Buffer.from('not a quicktime video'))),{status:400});
+ const large=Buffer.alloc(50*1024*1024+1);large.write('ftyp',4);
+ assert.throws(()=>qcMedia(input(large)),{status:400});
+});

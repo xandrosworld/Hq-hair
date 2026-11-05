@@ -3,7 +3,7 @@ export const isWorkspace=location.pathname.startsWith('/workspace');
 let csrf='';
 let sessionChannel;try{sessionChannel=new BroadcastChannel('hq-session');sessionChannel.onmessage=()=>window.dispatchEvent(new Event('hq-session-sync'))}catch{}
 const pendingWrites=new Map();
-export async function workspaceAPI(path,body){
+export async function workspaceAPI(path,body,{onUploadProgress}={}){
  const controller=new AbortController(),timeout=!body?setTimeout(()=>controller.abort(),30000):null;
  try{
  const businessWrite=!!body&&(/^\/orders(?:\/|$)/.test(path)||['/factory/batch','/customers','/catalog','/assign','/pricing/adjust','/pricing/restore','/pricing/colors','/pricing/entries','/pricing/import'].includes(path));
@@ -11,10 +11,17 @@ export async function workspaceAPI(path,body){
  const key=body?(pendingWrites.get(signature)||crypto.randomUUID()):null;
  if(businessWrite)pendingWrites.set(signature,key);
  const options={signal:controller.signal,method:body?'POST':'GET',headers:body?{'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':key}:{},body:body?JSON.stringify(body):undefined};
+ const send=()=>onUploadProgress?new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest();xhr.open(options.method,'/api/work'+path);xhr.timeout=120000;
+  for(const [name,value] of Object.entries(options.headers))xhr.setRequestHeader(name,value);
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)onUploadProgress(Math.round(e.loaded/e.total*100))};
+  xhr.onload=()=>resolve({status:xhr.status,ok:xhr.status>=200&&xhr.status<300,json:async()=>JSON.parse(xhr.responseText)});
+  xhr.onerror=()=>reject(Error('Mất kết nối'));xhr.ontimeout=()=>reject(Error('Quá thời gian tải tệp'));xhr.send(options.body);
+ }):fetch('/api/work'+path,options);
  let response;
- try{response=await fetch('/api/work'+path,options)}catch{
+ try{response=await send()}catch{
   if(!businessWrite)throw Error(controller.signal.aborted?'Tải dữ liệu quá lâu. Vui lòng thử lại.':'Mất kết nối. Vui lòng thử lại.');
-  try{response=await fetch('/api/work'+path,options)}catch{throw Error('Mất kết nối. Nội dung vẫn được giữ trên màn hình; bấm lưu lại để tiếp tục cùng thao tác.')}
+  try{response=await send()}catch{throw Error('Mất kết nối. Nội dung vẫn được giữ trên màn hình; bấm lưu lại để tiếp tục cùng thao tác.')}
  }
  let data;try{data=await response.json()}catch{throw Error(controller.signal.aborted?'Tải dữ liệu quá lâu. Vui lòng thử lại.':'Máy chủ chưa trả được dữ liệu. Vui lòng thử lại.')}
  if(businessWrite&&response.status<500)pendingWrites.delete(signature);
