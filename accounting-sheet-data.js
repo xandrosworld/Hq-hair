@@ -1,3 +1,4 @@
+import {approvalRate} from './approval-rate.js';
 import {periodDashboard} from './period-dashboard.js';
 import {accountingCurrencies} from './accounting-currencies.js';
 import {round,today} from './shared.js';
@@ -22,7 +23,7 @@ export function accountingSheetData(orders,users,year,asOf=today()){
    const rates=accountingCurrencies(selected,report,period);
    const listed=report.approved.map(a=>{
     const o=selected.find(o=>o.id===a.id),usd=round(a.revenue+(Number(o.discount)||0));
-    return {usd,vnd:usd===0?0:o.accountingApproval?.exchangeRate>0?Math.round(usd*o.accountingApproval.exchangeRate):null};
+    return {usd,vnd:usd===0?0:approvalRate(o)>0?Math.round(usd*approvalRate(o)):null};
    });
    rows.push({key:`${period}:${user.code}`,period,month,code:user.code,name:user.name,cutoff:report.cutoff,
     usd:{listed:round(listed.reduce((n,r)=>n+r.usd,0)),discount:report.discount,shipping:report.shippingPaid,total:report.paid,cash:report.revenuePaid,current:report.currentReceipts,recovered:report.recoveredDebt,debt:report.debt,damages:report.damages},

@@ -6,7 +6,7 @@ export const orderListTabs=[
  {key:'factory',label:'Xưởng ghi nhận',options:productionLabels},
  {key:'sale',label:'Sale tiếp nhận',options:saleReviewLabels},
  {key:'office',label:'Đã gửi đến văn phòng'},
- {key:'final',label:'Kiểm tra thanh toán lần cuối',options:{full:'Xác nhận đủ',forfeited:'Hủy đơn mất cọc'}},
+ {key:'final',label:'Kiểm tra thanh toán lần cuối',options:{full:'Xác nhận thanh toán đủ',credit:'Giao hàng công nợ',forfeited:'Hủy đơn mất cọc'}},
  {key:'inspection',label:'Phiếu kiểm định và đặt ship'},
  {key:'received',label:'Đã nhận',options:feedbackLabels},
 ];
@@ -22,7 +22,7 @@ export function orderListPosition(o){
  }
  if(o.stage===6)return {key:'office'};
  if(o.stage===7)return {key:'final',sub:o.finalPaymentCheck?.status};
- if(o.stage===8)return o.inspection?.completedAt||o.contentLockedAt?{key:'inspection'}:o.finalPaymentCheck?.status==='full'?{key:'final',sub:'full'}:{key:'inspection'};
+ if(o.stage===8)return o.inspection?.completedAt||o.contentLockedAt?{key:'inspection'}:['full','credit'].includes(o.finalPaymentCheck?.status)?{key:'final',sub:o.finalPaymentCheck.status}:{key:'inspection'};
  if(o.stage===9)return {key:'received',sub:o.customerFeedback?.status};
  return null;
 }

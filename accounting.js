@@ -1,3 +1,4 @@
+import {approvalRate} from './approval-rate.js';
 import {receiptRate} from './receipt-fx.js';
 import {receiptDate} from './receipt-corrections.js';
 import {totals,round} from './shared.js';
@@ -20,21 +21,29 @@ function confirmReceipts(order,user,receipts,now){
 }
 export const canForfeitPaused=order=>order.stage===4&&order.production?.status==='paused'&&!!order.orderCode&&!order.cancelledAt&&!order.contentLockedAt;
 export function applyAccounting(order,user,action,body,event){
- if(!['accounting-receive','accounting-approve','accounting-cancel','accounting-final','accounting-forfeit'].includes(action))return false;
+ if(!['accounting-rate','accounting-receive','accounting-approve','accounting-cancel','accounting-final','accounting-credit','accounting-forfeit'].includes(action))return false;
  if(user.role!=='accounting')fail(403,'Chỉ Kế toán được xử lý bước duyệt thanh toán.');
- if(order.cancelledAt||order.contentLockedAt)fail(400,'Đơn đã hủy hoặc đã khóa nội dung.');
+ if(action==='accounting-rate'){
+  if(!order.accountingApproval||!order.orderCode||order.cancelledAt)fail(400,'Chỉ cập nhật tỷ giá cho đơn đã duyệt.');
+  const rate=receiptRate(body.approvalExchangeRate);if(rate===null)fail(400,'Nhập tỷ giá doanh thu và giảm giá.');
+  const previous=order.accountingApproval.exchangeRate;
+  order.accountingApproval.exchangeRate=rate;
+  order.accountingApproval.rateUpdatedAt=new Date().toISOString();order.accountingApproval.rateUpdatedBy=user.id;
+  event('Cập nhật tỷ giá duyệt đơn',`${previous||'Chưa có'} → ${rate} VND/USD`);return true;
+ }
+ if(order.cancelledAt||(order.contentLockedAt&&!(action==='accounting-receive'&&order.finalPaymentCheck?.status==='credit')))fail(400,'Đơn đã hủy hoặc đã khóa nội dung.');
  const now=new Date().toISOString(),note=typeof body.text==='string'?body.text.trim().slice(0,1000):'';
  if(action==='accounting-receive'){
-  if(![3,4,5,6,7].includes(order.stage)||!order.accountingApproval||!order.orderCode)fail(400,'Chỉ ghi nhận bổ sung cho đơn đã duyệt, chưa kiểm tra thanh toán cuối.');
+  if(!([3,4,5,6,7].includes(order.stage)||([8,9,10].includes(order.stage)&&order.finalPaymentCheck?.status==='credit'))||!order.accountingApproval||!order.orderCode)fail(400,'Chỉ ghi nhận bổ sung cho đơn đã duyệt, chưa kiểm tra thanh toán cuối.');
   if(!Array.isArray(body.receipts)||!body.receipts.length)fail(400,'Chọn chứng từ mới và nhập tiền thực nhận.');
   const payments=confirmReceipts(order,user,body.receipts,now);
   order.payments=payments;
   event('Kế toán ghi nhận khoản thu bổ sung',note||'Đã đối soát chứng từ bổ sung.');
   return true;
  }
- if(['accounting-final','accounting-forfeit'].includes(action)){
+ if(['accounting-final','accounting-credit','accounting-forfeit'].includes(action)){
   if(action==='accounting-forfeit'&&!canForfeitPaused(order))fail(400,'Chỉ hủy mất cọc khi Xưởng đang tạm dừng sản xuất.');
-  if(action==='accounting-final'&&(![6,7].includes(order.stage)||!order.orderCode||(!order.officeDispatch&&!order.history?.some(h=>['Đã gửi đến văn phòng','Gửi đến văn phòng'].includes(h.title)))))fail(400,'Xưởng phải xác nhận gửi đến văn phòng trước bước kiểm tra thanh toán lần cuối.');
+  if(['accounting-final','accounting-credit'].includes(action)&&(![6,7].includes(order.stage)||!order.orderCode||(!order.officeDispatch&&!order.history?.some(h=>['Đã gửi đến văn phòng','Gửi đến văn phòng'].includes(h.title)))))fail(400,'Xưởng phải xác nhận gửi đến văn phòng trước bước kiểm tra thanh toán lần cuối.');
   if(action==='accounting-forfeit'){
    if(body.receipts?.length)fail(400,'Không xác nhận thêm chứng từ trong thao tác hủy mất cọc.');
    const total=totals(order);
@@ -45,9 +54,10 @@ export function applyAccounting(order,user,action,body,event){
    event('Kiểm tra thanh toán lần cuối',`Hủy đơn mất cọc · ${total.paid} USD · ${note}`);event('Hoàn thành','Đóng đơn do hủy mất cọc.');return true;
   }
   const payments=confirmReceipts(order,user,body.receipts||[],now),total=totals({...order,payments});
-  if(total.debt>0)fail(400,'Phải xác nhận đủ tiền trước khi chuyển sang phiếu kiểm định và đặt ship.');
-  order.payments=payments;order.finalPaymentCheck={status:'full',by:user.id,name:user.name,time:now,note,paid:total.paid};order.stage=8;
-  event('Kiểm tra thanh toán lần cuối','Xác nhận đủ'+(note?' · '+note:''));return true;
+  if(action==='accounting-credit'&&total.debt<=0)fail(400,'Đơn đã đủ tiền. Chọn Xác nhận thanh toán đủ.');
+  if(action==='accounting-final'&&total.debt>0)fail(400,'Phải xác nhận đủ tiền trước khi chuyển sang phiếu kiểm định và đặt ship.');
+  order.payments=payments;order.finalPaymentCheck={status:action==='accounting-credit'?'credit':'full',by:user.id,name:user.name,time:now,note,paid:total.paid,debt:total.debt};order.stage=8;
+  event('Kiểm tra thanh toán lần cuối',(action==='accounting-credit'?`Giao hàng công nợ · còn nợ ${total.debt} USD`:'Xác nhận đủ')+(note?' · '+note:''));return true;
  }
  if(order.stage!==2)fail(400,'Chỉ duyệt khi đơn đang chờ duyệt; đơn đã duyệt phải chuyển sang Xưởng.');
  if(action==='accounting-cancel'){
@@ -62,7 +72,7 @@ export function applyAccounting(order,user,action,body,event){
  const total=totals({...order,payments});
  if(body.paymentStatus==='full'&&total.debt>0)fail(400,'Tiền xác nhận chưa đủ tổng phải nhận. Chọn thanh toán một phần.');
  if(body.paymentStatus==='partial'&&(total.paid<=0||total.debt<=0))fail(400,'Thanh toán một phần cần có tiền đã nhận và còn công nợ.');
- const exchangeRate=receiptRate(body.approvalExchangeRate);
+ const exchangeRate=receiptRate(body.approvalExchangeRate)??approvalRate({payments});
  order.payments=payments;order.stage=3;
  order.accountingApproval={exchangeRate,status:body.paymentStatus,by:user.id,name:user.name,time:now,paid:total.paid,note};
  event('Kế toán duyệt',paymentLabels[body.paymentStatus]+(note?' · '+note:''));

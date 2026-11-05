@@ -6,7 +6,7 @@ export function workflowStep(order,step){
  const event=order.history?.findLast(h=>aliases[step]?.includes(h.title));
  const record=({3:order.accountingApproval,4:order.production,5:order.saleReview,6:order.officeDispatch,7:order.finalPaymentCheck,8:order.inspection,9:order.customerFeedback})[step];
  const done=step<=2?!!event||order.stage>=step:!!record||!!event&&(order.stage>step||step===10);
- const label=step===3?({partial:'Thanh toán 1 phần',full:'Thanh toán đủ'})[record?.status]:step===4?productionLabels[record?.status]:step===5?saleReviewLabels[record?.result]:step===7?({full:'Xác nhận đủ',forfeited:'Hủy đơn mất cọc'})[record?.status]:step===9?feedbackLabels[record?.status]:null;
- const tone=step===7?(record?.status==='forfeited'?'red':'green'):step===3?(record?.status==='full'?'green':'amber'):step===5?(record?.result==='accepted'?'green':'red'):step===4?(record?.status==='paused'?'amber':'blue'):step===9?(record?.status?.startsWith('claim')?'red':'green'):'green';
+ const label=step===3?({partial:'Thanh toán 1 phần',full:'Thanh toán đủ'})[record?.status]:step===4?productionLabels[record?.status]:step===5?saleReviewLabels[record?.result]:step===7?({full:'Xác nhận thanh toán đủ',credit:'Giao hàng công nợ',forfeited:'Hủy đơn mất cọc'})[record?.status]:step===9?feedbackLabels[record?.status]:null;
+ const tone=step===7?(record?.status==='forfeited'?'red':record?.status==='credit'?'amber':'green'):step===3?(record?.status==='full'?'green':'amber'):step===5?(record?.result==='accepted'?'green':'red'):step===4?(record?.status==='paused'?'amber':'blue'):step===9?(record?.status?.startsWith('claim')?'red':'green'):'green';
  return {done,label,tone,actor:record?.name||event?.actor,time:record?.time||record?.completedAt||event?.time};
 }
