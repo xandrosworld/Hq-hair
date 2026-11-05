@@ -19,3 +19,12 @@ export function cleanProductFields(p){
 }
 
 export const displayUnit=unit=>/^(g|gam|grams?)$/i.test(String(unit||'').trim())?'G':unit;
+
+// Explicit unit changes preserve the entered quantity; they never convert grams to pieces.
+export function quantityUnitChange(unit){return {unit,priceBasis:displayUnit(unit)==='G'?'100g':'unit',priceReference:undefined}}
+export function priceBasisChange(item,priceBasis){return {priceBasis,unit:priceBasis==='100g'?'Gram':displayUnit(item.unit)==='G'||!item.unit?'Piece':item.unit,priceReference:undefined}}
+
+export function productQuantities(items){
+ const units=new Map();for(const p of items){const unit=displayUnit(p.unit)||'đơn vị';units.set(unit,(units.get(unit)||0)+Number(p.qty||0))}
+ return [...units].map(([unit,qty])=>({unit,qty:Math.round(qty*1000)/1000}));
+}

@@ -1,5 +1,6 @@
 import {publicSecurity,productionBoundary} from './public-security.js';
 import {factoryView} from './permissions.js';
+import {factoryPDFRoutes} from './factory-pdf.js';
 import {receiptBytes} from './receipt-delivery.js';
 import {cleanPaymentAttachments} from './payment-attachments.js';
 import {applyReceiptCorrection} from './receipt-corrections.js';
@@ -61,6 +62,7 @@ const num=(v,max=10000000)=>{const n=Number(v);if((typeof v!=='number'&&typeof v
 const event=(req,o,title,note='')=>o.history.push({title,note,actor:req.user.name+' · '+(req.user.role==='manager'?'Quản lý':req.user.role==='accounting'?'Kế toán':req.user.role==='factory'?'Xưởng':req.user.role==='sales_lead'?'Trưởng nhóm Sale':'Sale'),actorId:req.user.id,time:new Date().toISOString()});
 business.get('/orders/:id/images/:imageId',(req,res)=>{const o=req.data.orders.find(o=>o.id===req.params.id);req.assertAccess(o);if(!o||!o.messages.some(m=>m.images?.some(i=>i.id===req.params.imageId)))return res.status(404).json({error:'Không tìm thấy ảnh trong đơn này.'});const image=req.imageDb.prepare('SELECT data,mime FROM chat_images WHERE id=?').get(req.params.imageId);if(!image)return res.status(404).json({error:'Không tìm thấy ảnh.'});res.set({'Cache-Control':'private, no-store','Content-Type':image.mime,'Content-Security-Policy':"default-src 'none'; sandbox"});const bytes=Buffer.from(image.data);res.set('Accept-Ranges','bytes');if(req.headers.range){const range=/^bytes=(\d+)-(\d*)$/.exec(req.headers.range);const start=range?Number(range[1]):-1,end=range&&range[2]?Math.min(Number(range[2]),bytes.length-1):bytes.length-1;if(start<0||start>=bytes.length||end<start)return res.status(416).set('Content-Range',`bytes */${bytes.length}`).end();return res.status(206).set('Content-Range',`bytes ${start}-${end}/${bytes.length}`).send(bytes.subarray(start,end+1))}res.send(bytes)});
 qcRoutes(business);
+factoryPDFRoutes(business);
 business.get('/orders/:id/receipts/:paymentId/:file',(req,res)=>{
  const order=req.data.orders.find(o=>o.id===req.params.id);req.assertAccess(order);
  if(req.user.role==='factory'&&factoryView(req.user)==='products')return res.status(404).json({error:'Không tìm thấy chứng từ.'});
