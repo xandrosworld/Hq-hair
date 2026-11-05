@@ -32,3 +32,24 @@
  :is(.shell,.factory-shell) .unfinished-orders th { white-space:normal;overflow-wrap:break-word; }
  :is(.shell,.factory-shell) .unfinished-orders .order-link { white-space:nowrap; }
 }
+/* Account actions must wrap within the panel instead of pushing Delete offscreen. */
+@media screen {
+ :is(.shell,.factory-shell) .team-table:has(>table) { overflow:visible; }
+ :is(.shell,.factory-shell) .team-table>table { table-layout:fixed;width:100%;min-width:0; }
+ .team-table>table th:nth-child(1) { width:23%; }
+ .team-table>table th:nth-child(2) { width:24%; }
+ .team-table>table th:nth-child(3) { width:15%; }
+ .team-table>table th:nth-child(4) { width:38%; }
+ .team-table>table td { overflow-wrap:anywhere;vertical-align:middle; }
+ .team-table>table .actions { display:flex;flex-wrap:wrap;gap:8px;min-width:0; }
+ .team-table>table .actions .btn { flex:0 1 auto;min-width:0;max-width:100%;white-space:normal;padding:9px 12px; }
+ .team-table>table .actions [role=status] { flex-basis:100%;overflow-wrap:anywhere; }
+ @media(max-width:700px) {
+  .team-table>table thead { display:none; }
+  .team-table>table,.team-table>table tbody,.team-table>table tr,.team-table>table td { display:block;width:100%; }
+  .team-table>table tr { padding:14px 16px;border-bottom:1px solid #e2eaf1; }
+  :is(.shell,.factory-shell) .team-table>table td { padding:5px 0;border:0; }
+  .team-table>table .actions { margin-top:8px; }
+  .team-table>table .actions .btn { flex:1 1 140px;min-height:44px; }
+ }
+}
