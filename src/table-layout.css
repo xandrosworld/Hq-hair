@@ -1,0 +1,34 @@
+/* Tables scroll inside their panel, with enough space for labels and actions. */
+@media screen {
+ .shell main,.factory-shell main,.detail-layout>*,.panel { min-width:0; }
+ .table-scroll { width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain; }
+ .table-scroll :is(.order-link,.numeric) { white-space:nowrap; }
+ .table-scroll .btn { flex-shrink:0;white-space:nowrap;min-width:max-content; }
+ .table-scroll th { overflow-wrap:normal;word-break:normal; }
+ .unfinished-orders { table-layout:fixed;min-width:1180px;width:100%; }
+ :is(.shell,.factory-shell) .unfinished-orders :is(th,td) { padding:12px 10px;vertical-align:middle; }
+ .unfinished-orders th { white-space:normal; }
+ .unfinished-orders th:nth-child(1) { width:44px; }
+ .unfinished-orders th:nth-child(2) { width:132px; }
+ .unfinished-orders th:nth-child(3) { width:auto; }
+ .unfinished-orders th:nth-child(4) { width:112px; }
+ .unfinished-orders th:nth-child(5) { width:126px; }
+ .unfinished-orders th:nth-child(6) { width:120px; }
+ .unfinished-orders th:nth-child(7) { width:188px; }
+ .unfinished-orders th:nth-child(8) { width:112px; }
+ .unfinished-orders th:nth-child(9) { width:84px; }
+ .unfinished-orders td:nth-child(3) { overflow-wrap:anywhere; }
+ .unfinished-orders :is(td:nth-child(4),td:nth-child(5)) { white-space:nowrap; }
+ .unfinished-orders .badge { display:inline-flex;align-items:flex-start;gap:5px;max-width:100%;white-space:normal; }
+ .unfinished-orders .badge::before { flex-shrink:0;margin-top:6px; }
+ .unfinished-orders :is(th,td):last-child { position:sticky;right:0;z-index:1;background:#fff;box-shadow:-4px 0 8px #243d4c0a; }
+ .unfinished-orders th:last-child { background:#eff5fb;z-index:2; }
+ .unfinished-orders .order-view { min-width:60px;min-height:40px;padding:8px 12px; }
+ .unfinished-orders td small { display:block;margin-top:4px; }
+}
+
+@media screen {
+ :is(.shell,.factory-shell) .unfinished-orders { table-layout:fixed;min-width:1180px; }
+ :is(.shell,.factory-shell) .unfinished-orders th { white-space:normal;overflow-wrap:break-word; }
+ :is(.shell,.factory-shell) .unfinished-orders .order-link { white-space:nowrap; }
+}
