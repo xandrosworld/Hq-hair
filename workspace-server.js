@@ -1,3 +1,4 @@
+import {releaseDeletedUserCode} from './user-code-reuse.js';
 import {passwordVault} from './password-vault.js';
 import {SESSION_LOCK_MS,SESSION_IDLE_MS} from './session-policy.js';
 import {compactReceipts} from './receipt-delivery.js';
@@ -47,6 +48,7 @@ export async function createWorkspace(dir){
  const vault=passwordVault(dir,!!db.prepare('SELECT id FROM users WHERE password_cipher IS NOT NULL LIMIT 1').get());
  if(!db.prepare('PRAGMA table_info(auth_sessions)').all().some(c=>c.name==='last_activity')){db.exec('ALTER TABLE auth_sessions ADD COLUMN last_activity INTEGER NOT NULL DEFAULT 0');db.prepare('UPDATE auth_sessions SET last_activity=expires-?,expires=MIN(expires,expires-?+?)').run(8*3600000,8*3600000,SESSION_IDLE_MS)}
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='deleted_at'))db.exec('ALTER TABLE users ADD COLUMN deleted_at TEXT');
+ if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='original_code'))db.exec('ALTER TABLE users ADD COLUMN original_code TEXT');
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='phone'))db.exec("ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''");
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='factory_view'))db.exec("ALTER TABLE users ADD COLUMN factory_view TEXT NOT NULL DEFAULT 'full'");
  db.prepare('INSERT OR IGNORE INTO workspace VALUES (1,?)').run(JSON.stringify({customers:[],orders:[],catalog:[]}));
@@ -194,8 +196,12 @@ export async function createWorkspace(dir){
    let code=String(b.code||'').trim().toUpperCase();
    if(code&&!new RegExp('^'+prefix+'-[A-Z0-9]{2,12}$').test(code))reject(400,`Mã tài khoản cần dạng ${prefix}-TÊNVIẾTTẮT (2–12 chữ cái hoặc số).`);
    if(!code){let n=db.prepare('SELECT COUNT(*) AS n FROM users').get().n+1;do{code=prefix+'-S'+String(n++).padStart(3,'0')}while(db.prepare('SELECT id FROM users WHERE code=?').get(code))}
-   if(db.prepare('SELECT id FROM users WHERE code=?').get(code))reject(409,'Mã tài khoản đã được sử dụng. Chọn mã khác.');
-   db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(id,email,name,code,b.role,password);db.prepare('UPDATE users SET password_cipher=? WHERE id=?').run(vault.seal(b.password,id),id);audit(req.user,'user-create',id,{name,email,role:b.role,code});
+   db.exec('BEGIN IMMEDIATE');try{
+    const released=releaseDeletedUserCode(db,code);
+    db.prepare('INSERT INTO users(id,email,name,code,role,password,active,must_change) VALUES (?,?,?,?,?,?,1,1)').run(id,email,name,code,b.role,password);db.prepare('UPDATE users SET password_cipher=? WHERE id=?').run(vault.seal(b.password,id),id);
+    if(released)audit(req.user,'user-code-reuse',id,{previousUserId:released.id,code});
+    audit(req.user,'user-create',id,{name,email,role:b.role,code});db.exec('COMMIT');
+   }catch(e){db.exec('ROLLBACK');throw e}
   }
   res.json(db.prepare('SELECT * FROM users WHERE deleted_at IS NULL ORDER BY name').all().map(safeUser));
  });
