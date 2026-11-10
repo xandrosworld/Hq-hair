@@ -1,3 +1,4 @@
+import {parseChatImages} from './chat-images.js';
 import {hairSegment} from './hair-classification.js';
 import {readFileSync} from 'node:fs';
 import {migrateBrightColors} from './color-confirmations.js';
@@ -10,6 +11,7 @@ const seed=JSON.parse(readFileSync(new URL('./resources/pricing-seed.json',impor
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})};
 export function setupPricing(router,db,audit){
  db.exec(`CREATE TABLE IF NOT EXISTS pricing(id INTEGER PRIMARY KEY CHECK(id=1),data TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS color_photos(id TEXT PRIMARY KEY, mime TEXT NOT NULL, bytes BLOB NOT NULL);
  CREATE TABLE IF NOT EXISTS pricing_history(id TEXT PRIMARY KEY,time TEXT NOT NULL,actor TEXT NOT NULL,actor_name TEXT NOT NULL,details TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS pricing_requests(user_id TEXT NOT NULL,key TEXT NOT NULL,hash TEXT NOT NULL,result TEXT NOT NULL,PRIMARY KEY(user_id,key));`);
  for(const column of ['price_edit','color_edit'])if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name===column))db.exec(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 0`);
@@ -20,7 +22,7 @@ export function setupPricing(router,db,audit){
  const view=u=>({...read(),canEditPrices:can(u,'price_edit'),canEditColors:can(u,'color_edit')});
  router.use('/pricing',(req,res,next)=>['manager','sale','sales_lead'].includes(req.user.role)?next():res.status(403).json({error:'Bảng giá dành cho kinh doanh và quản trị.'}));
  router.get('/pricing',(req,res)=>res.json(view(req.user)));
- router.get('/pricing/images/:id',(req,res)=>{const id=req.params.id;if(!seed.colors.some(c=>c.images.some(i=>i.id===id)))return res.status(404).end();res.type('webp').sendFile(fileURLToPath(new URL('./resources/color-images/'+id+'.webp',import.meta.url)))});
+ router.get('/pricing/images/:id',(req,res)=>{const id=req.params.id;const photo=db.prepare('SELECT mime,bytes FROM color_photos WHERE id=?').get(id);if(photo)return res.set({'Content-Type':photo.mime,'Cache-Control':'private, no-store'}).send(Buffer.from(photo.bytes));if(!seed.colors.some(c=>c.images.some(i=>i.id===id)))return res.status(404).end();res.type('webp').sendFile(fileURLToPath(new URL('./resources/color-images/'+id+'.webp',import.meta.url)))});
  router.get('/pricing/history',(req,res)=>{if(!can(req.user,'price_edit'))fail(403,'Bạn chưa được cấp quyền quản lý giá.');res.json(db.prepare('SELECT * FROM pricing_history ORDER BY rowid DESC LIMIT 50').all().map(h=>{const d=JSON.parse(h.details);return {id:h.id,time:h.time,actor:h.actor_name,...d,changes:d.changes.map(c=>({id:c.id,before:c.before,after:c.after}))}}))});
  router.post('/pricing/permissions/:id',(req,res)=>{
   if(req.user.role!=='manager')fail(403,'Chỉ quản trị được cấp quyền.');
@@ -108,6 +110,9 @@ export function setupPricing(router,db,audit){
   const tone=mix?highestTone(components.map(id=>data.colors.find(c=>c.id===id).tone)):({Black:'black',Brown:'brown',Blonde:'blonde',Other:'blonde'})[category];
   if(!tone||!Object.hasOwn(toneNames,tone))fail(400,'Chọn các màu thành phần để xác định tông giá.');
   const color={id:existing?.id||randomUUID(),code,category,tone,components,images:existing?.images||[],note:String(b.note||'').trim().slice(0,1000),unlistedComponents:[]};
+  const uploads=b.uploads??[];
+  if(!Array.isArray(uploads)||uploads.length>4||uploads.some(f=>typeof f?.data!=='string'||!f.data.startsWith('data:image/')||f.data.length>7_000_000))fail(400,'Chọn tối đa 4 ảnh JPG, PNG hoặc WebP, mỗi ảnh tối đa 5 MB.');
+  for(const f of parseChatImages(uploads)){if(f.size>5*1024*1024)fail(400,'Ảnh vượt 5 MB.');db.prepare('INSERT INTO color_photos VALUES(?,?,?)').run(f.id,f.mime,f.bytes);color.images.push({id:f.id,kind:'Product',name:f.name})}
   if(existing)Object.assign(existing,color);else data.colors.push(color);
   // Refresh dependent mixes when a base color is corrected; preserve unresolved source components.
   for(const c of data.colors){

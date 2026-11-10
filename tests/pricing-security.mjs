@@ -44,7 +44,8 @@ try{
  const black=prices.colors.find(c=>c.category==='Black'),brown=prices.colors.find(c=>c.category==='Brown'),blonde=prices.colors.find(c=>c.category==='Blonde');
  await sale.call('/pricing/colors',{version:4,code:black.code.replace(/^#/,''),category:'Black'},{status:400});
  await sale.call('/pricing/colors',{version:4,code:'#',category:'Black'},{status:400});
- prices=await sale.call('/pricing/colors',{version:4,code:'#TEST MIX',category:'Ombre',components:[black.id,brown.id,blonde.id]});assert.equal(prices.colors.at(-1).tone,'blonde');
+ prices=await sale.call('/pricing/colors',{version:4,code:'#TEST MIX',category:'Ombre',components:[black.id,blonde.id],uploads:[{name:'sample.png',data:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jFuoAAAAASUVORK5CYII='}]});assert.equal(prices.colors.at(-1).tone,'blonde');
+ const photo=prices.colors.at(-1).images[0];assert.ok(photo.id);const downloaded=await fetch(base+'/pricing/images/'+photo.id,{headers:{Cookie:sale.cookie}});assert.equal(downloaded.status,200);assert.equal(downloaded.headers.get('content-type'),'image/png');assert.ok((await downloaded.arrayBuffer()).byteLength>12);
  await sale.call('/pricing/colors',{version:5,code:'#BAD',category:'Ombre',components:['unknown']},{status:400});
  prices=await sale.call('/pricing/colors',{version:5,code:'#NEW-TEST',category:'Blonde'});assert.equal(prices.colors.find(c=>c.code==='#Ombre Grey-9C').tone,'blonde');
  const entry={version:prices.version,tier:'Basic',product:'QA custom weft',segment:'Super Double Drawn',variant:'',lengthCm:55,inches:22,tone:'brown',priceBasis:'100g',price:88.5,note:'Customer managed rate'};

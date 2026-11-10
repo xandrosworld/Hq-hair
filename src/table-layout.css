@@ -60,3 +60,8 @@
  .price-hero>.actions .btn { flex:0 1 auto; }
  .color-form { box-sizing:border-box;max-width:calc(100% - 32px);right:16px; }
 }
+
+.color-form.panel {display:flex;flex-direction:column;overflow:hidden;max-height:calc(100dvh - 32px)}
+.color-form.panel form {display:flex;flex:1;flex-direction:column;min-height:0}
+.color-form-scroll {min-height:0;overflow:auto;overscroll-behavior:contain}
+.color-form.panel form>.actions {position:static;flex:none;background:white;padding-top:8px}
