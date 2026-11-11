@@ -6,7 +6,7 @@ const pendingWrites=new Map();
 export async function workspaceAPI(path,body,{onUploadProgress}={}){
  const controller=new AbortController(),timeout=!body?setTimeout(()=>controller.abort(),30000):null;
  try{
- const businessWrite=!!body&&(/^\/orders(?:\/|$)/.test(path)||['/factory/batch','/customers','/catalog','/assign','/pricing/adjust','/pricing/restore','/pricing/colors','/pricing/entries','/pricing/import'].includes(path));
+ const businessWrite=!!body&&(/^\/orders(?:\/|$)/.test(path)||['/factory/batch','/customers','/catalog','/assign','/pricing/adjust','/pricing/restore','/pricing/colors','/pricing/textures','/pricing/entries','/pricing/import'].includes(path));
  const signature=businessWrite?path+JSON.stringify(body):null;
  const key=body?(pendingWrites.get(signature)||crypto.randomUUID()):null;
  if(businessWrite)pendingWrites.set(signature,key);

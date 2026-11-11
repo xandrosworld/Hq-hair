@@ -66,5 +66,8 @@ try{
  let r=await fetch(base+'/pricing/images/'+image,{headers:{Cookie:sale.cookie}});assert.equal(r.status,200);assert.equal(r.headers.get('content-type'),'image/webp');
  r=await fetch(base+'/pricing/images/'+image);assert.equal(r.status,401);
  await stop();await start();await owner.call('/login',{email:'owner@example.com',password:'Owner-New-Password-2026'});const persisted=await owner.call('/pricing');assert.equal(persisted.version,prices.version);assert.equal(persisted.prices.find(p=>p.id===added.id).price,91.25);
+ const changed=await owner.call('/pricing/textures',{version:persisted.version,name:'  Deep  Wave '});assert.deepEqual(changed.textures,['Natural Straight','Natural Wavy','Deep Wave']);assert.deepEqual(changed.prices,persisted.prices);
+ await owner.call('/pricing/textures',{version:changed.version,name:'deep wave'},{status:400});
+ await sale.call('/pricing/textures',{version:changed.version,name:'Blocked'},{status:403});assert.ok((await sale.call('/pricing')).textures.includes('Deep Wave'));
  console.log('PASS: 2874 imported prices, 96 colors, auth/CSRF/permissions, preview, scoped adjustment, rounding, stale/retry/rollback protection, history restore, fixed order prices, color mix/unknown resolution, protected images and restart persistence.');
 }finally{if(server)await stop();rmSync(dir,{recursive:true,force:true})}

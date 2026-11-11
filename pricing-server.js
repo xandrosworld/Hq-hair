@@ -17,7 +17,7 @@ export function setupPricing(router,db,audit){
  for(const column of ['price_edit','color_edit'])if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name===column))db.exec(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 0`);
  db.prepare('INSERT OR IGNORE INTO pricing VALUES(1,?)').run(JSON.stringify(seed));
  migrateBrightColors(db,audit);
- const read=()=>{const data=JSON.parse(db.prepare('SELECT data FROM pricing WHERE id=1').get().data);return {...data,prices:data.prices.map(p=>({...p,segment:hairSegment(p.segment)}))}};
+ const read=()=>{const data=JSON.parse(db.prepare('SELECT data FROM pricing WHERE id=1').get().data);return {...data,textures:data.textures||['Natural Straight','Natural Wavy'],prices:data.prices.map(p=>({...p,segment:hairSegment(p.segment)}))}};
  const can=(u,key)=>u.role==='manager'||(u.role==='sale'&&(key==='catalog_import'?(!!u.price_edit||!!u.color_edit):!!u[key]));
  const view=u=>({...read(),canEditPrices:can(u,'price_edit'),canEditColors:can(u,'color_edit')});
  router.use('/pricing',(req,res,next)=>['manager','sale','sales_lead'].includes(req.user.role)?next():res.status(403).json({error:'Bảng giá dành cho kinh doanh và quản trị.'}));
@@ -94,6 +94,12 @@ export function setupPricing(router,db,audit){
   const last=db.prepare('SELECT * FROM pricing_history ORDER BY rowid DESC LIMIT 1').get();if(!last||last.id!==req.body.historyId)fail(409,'Chỉ khôi phục lần điều chỉnh giá gần nhất.');const old=JSON.parse(last.details);if(old.kind!=='adjust')fail(400,'Lần điều chỉnh đã được khôi phục.');
   const changes=old.changes.map(c=>({id:c.id,before:c.after,after:c.before}));for(const c of changes){const p=data.prices.find(p=>p.id===c.id);if(!p||p.price!==c.before)fail(409,'Giá đã thay đổi. Không thể khôi phục.');p.price=c.after}
   const id=randomUUID();db.prepare('INSERT INTO pricing_history VALUES(?,?,?,?,?)').run(id,new Date().toISOString(),req.user.id,req.user.name,JSON.stringify({kind:'restore',restored:last.id,version:data.version+1,changes}));audit(req.user,'price-restore',id,{restored:last.id});
+ }));
+ router.post('/pricing/textures',(req,res)=>write(req,res,'color_edit',data=>{
+  const name=typeof req.body.name==='string'?req.body.name.normalize('NFC').trim().replace(/\s+/g,' '):'';
+  if(!name||name.length>100)fail(400,'Nhập tên kiểu tóc từ 1 đến 100 ký tự.');
+  if(data.textures.some(t=>t.toLocaleLowerCase('vi')===name.toLocaleLowerCase('vi')))fail(400,'Kiểu tóc này đã có trong danh mục.');
+  data.textures.push(name);audit(req.user,'texture-create',name,{name});
  }));
  router.post('/pricing/colors',(req,res)=>write(req,res,'color_edit',data=>{
   const b=req.body,code=String(b.code||'').trim(),category=b.category;
